@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Coach — Pro Performance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:#14171B;--surface:#1D2126;--surface-2:#262B31;--border:#2E333A;
+  --text:#F3F2EE;--text-muted:#9BA1AA;--text-faint:#666B73;--accent:#C6F135;
+  --font-display:'Oswald',sans-serif;--font-body:'Inter',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);-webkit-font-smoothing:antialiased;}
+
+/* LAYOUT */
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:220px;flex:0 0 220px;background:var(--surface);border-right:1px solid var(--border);padding:20px 0;position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;}
+.main{flex:1;margin-left:220px;padding:24px;}
+
+.logo{padding:0 18px 20px;border-bottom:1px solid var(--border);margin-bottom:12px;}
+.logo-title{font-family:var(--font-display);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);}
+.logo-sub{font-size:11px;color:var(--text-faint);margin-top:2px;}
+
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 18px;cursor:pointer;font-size:13px;color:var(--text-muted);transition:all .15s;border-left:2px solid transparent;}
+.nav-item:hover{background:var(--surface-2);color:var(--text);}
+.nav-item.active{background:var(--surface-2);color:var(--text);border-left-color:var(--accent);}
+.nav-icon{font-size:16px;width:20px;text-align:center;}
+.nav-label{font-weight:500;}
+
+/* VIEWS */
+.view{display:none;}
+.view.active{display:block;}
+
+/* HEADER */
+.page-title{font-family:var(--font-display);font-size:24px;font-weight:700;text-transform:uppercase;margin:0 0 6px;}
+.page-sub{font-size:13px;color:var(--text-muted);margin:0 0 24px;}
+
+/* CARDS GRID */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:24px;}
+
+.athlete-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:border-color .15s;}
+.athlete-card:hover{border-color:var(--accent);}
+.athlete-card-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.athlete-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;}
+.athlete-name{font-family:var(--font-display);font-size:16px;font-weight:600;text-transform:uppercase;}
+.athlete-meta{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+.athlete-stats{display:flex;gap:8px;}
+.astat{flex:1;background:var(--surface-2);border-radius:8px;padding:8px;text-align:center;}
+.astat .v{font-family:var(--font-mono);font-weight:700;font-size:14px;}
+.astat .l{font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+.astat .v.ok{color:#4CAF7D;}
+.astat .v.warn{color:#E0C23D;}
+.astat .v.muted{color:var(--text-faint);font-size:11px;}
+
+/* SECTION */
+.section{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:16px;overflow:hidden;}
+.section-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.section-title{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);font-weight:600;}
+.section-body{padding:16px;}
+
+/* FORM */
+.field{margin-bottom:14px;}
+.field label{display:block;font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);margin-bottom:5px;}
+.field input,.field select,.field textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 11px;font-family:var(--font-body);font-size:13.5px;outline:none;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);}
+.field textarea{resize:vertical;min-height:80px;font-family:var(--font-mono);font-size:12px;line-height:1.5;}
+.field select{-webkit-appearance:none;appearance:none;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* BUTTONS */
+.btn{padding:9px 16px;border-radius:8px;border:none;font-family:var(--font-mono);font-weight:700;font-size:12px;letter-spacing:.03em;cursor:pointer;transition:opacity .15s;}
+.btn:active{opacity:.7;}
+.btn-primary{background:var(--accent);color:var(--bg);}
+.btn-secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--border);}
+.btn-danger{background:#5c1a1a;color:#ffb3b3;border:1px solid #7a2020;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+
+/* TOAST */
+#toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#1a4d2e;color:#b3ffcc;padding:10px 18px;border-radius:10px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;z-index:9999;display:none;box-shadow:0 4px 20px rgba(0,0,0,.5);}
+#toast.err{background:#5c1a1a;color:#ffb3b3;}
+
+/* TABLE */
+.table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.table th{text-align:left;font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);padding:6px 10px;border-bottom:1px solid var(--border);}
+.table td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text-muted);}
+.table tr:last-child td{border-bottom:none;}
+.table td b{color:var(--text);}
+
+/* PILL */
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;font-family:var(--font-mono);}
+.pill-green{background:#1a4d2e;color:#4CAF7D;}
+.pill-yellow{background:#3a2e10;color:#E0C23D;}
+.pill-red{background:#3a1010;color:#E05B5B;}
+
+/* ATHLETE SELECTOR */
+.athlete-selector{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.ath-btn{padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);font-family:var(--font-mono);font-size:11.5px;font-weight:600;cursor:pointer;}
+.ath-btn.active{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+
+/* BACK BTN */
+.back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--text-faint);font-size:12px;cursor:pointer;margin-bottom:16px;font-family:var(--font-mono);}
+.back-btn:hover{color:var(--text);}
+
+@media(max-width:600px){
+  .sidebar{width:100%;height:auto;position:relative;flex-direction:row;display:flex;overflow-x:auto;}
+  .main{margin-left:0;}
+  .layout{flex-direction:column;}
+  .logo{display:none;}
+  .nav-item{padding:10px 14px;border-left:none;border-bottom:2px solid transparent;white-space:nowrap;}
+  .nav-item.active{border-bottom-color:var(--accent);border-left:none;}
+  .field-row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="logo-title">Pro Performance</div>
+      <div class="logo-sub">Panel del Coach</div>
+    </div>
+    <div class="nav-item active" data-view="atletas">
+      <span class="nav-icon">👥</span><span class="nav-label">Mis Atletas</span>
+    </div>
+    <div class="nav-item" data-view="editar">
+      <span class="nav-icon">✏️</span><span class="nav-label">Editar Plan</span>
+    </div>
+    <div class="nav-item" data-view="progreso">
+      <span class="nav-icon">📈</span><span class="nav-label">Progreso</span>
+    </div>
+    <div class="nav-item" data-view="acceso">
+      <span class="nav-icon">🔐</span><span class="nav-label">Acceso</span>
+    </div>
+    <div class="nav-item" data-view="nuevo">
+      <span class="nav-icon">➕</span><span class="nav-label">Nuevo Atleta</span>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- VIEW: ATLETAS -->
+    <div class="view active" id="view-atletas">
+      <p class="page-title">Mis Atletas</p>
+      <p class="page-sub">Datos en tiempo real desde Firebase. Toca un atleta para editarlo.</p>
+      <div class="grid" id="athleteGrid">
+        <div style="color:var(--text-faint);font-size:13px;padding:20px;">Cargando atletas…</div>
+      </div>
+    </div>
+
+    <!-- VIEW: EDITAR PLAN -->
+    <div class="view" id="view-editar">
+      <p class="page-title">Editar Plan</p>
+      <p class="page-sub">Los cambios se aplican instantáneamente en la app del atleta.</p>
+
+      <div class="athlete-selector" id="editSelector"></div>
+
+      <div id="editForm" style="display:none">
+        <div class="section">
+          <div class="section-head"><span class="section-title">📋 Información general</span></div>
+          <div class="section-body">
+            <div class="field-row">
+              <div class="field"><label>Nombre del atleta</label><input id="e-nombre" type="text"></div>
+              <div class="field"><label>Categoría</label><input id="e-categoria" type="text"></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label>Fecha de inicio (YYYY-MM-DD)</label><input id="e-startDate" type="date"></div>
+              <div class="field"><label>Fecha de chequeo (YYYY-MM-DD)</label><input id="e-checkDate" type="date"></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label>Vencimiento de acceso (dejar vacío = sin límite)</label><input id="e-expires" type="date"></div>
+              <div class="field"><label>Etiqueta del mesociclo</label><input id="e-meso" type="text" placeholder="ej. Agosto 2026"></div>
+            </div>
+            <div class="field"><label>Meta / descripción (HTML permitido, ej. &lt;b&gt;Open&lt;/b&gt; · NPC)</label><input id="e-meta" type="text"></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head"><span class="section-title">🥗 Macros objetivo</span></div>
+          <div class="section-body">
+            <div class="field-row">
+              <div class="field"><label>Kcal/día</label><input id="e-kcal" type="number"></div>
+              <div class="field"><label>Proteína (g)</label><input id="e-prot" type="number"></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label>Carbohidratos (g)</label><input id="e-carb" type="number"></div>
+              <div class="field"><label>Grasas (g)</label><input id="e-fat" type="number"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head"><span class="section-title">📝 Notas del plan (texto libre para el atleta)</span></div>
+          <div class="section-body">
+            <div class="field"><label>Instrucciones generales / cambios de semana</label><textarea id="e-notes" placeholder="Ej: Semana 3 → sube carbos a 180g los días de piernas. Chequeo con fotos el lunes..."></textarea></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head"><span class="section-title">⚡ Actualización rápida por JSON</span></div>
+          <div class="section-body">
+            <div style="font-size:12px;color:var(--text-faint);margin-bottom:10px;line-height:1.6;">
+              Pega aquí un JSON con los campos que quieres actualizar (macros, mealWindows, etc.) y toca "Aplicar JSON". Solo reemplaza los campos que incluyas.
+            </div>
+            <div class="field">
+              <label>JSON del plan</label>
+              <textarea id="e-json" placeholder='{"macros":{"kcal":1850,"proteinG":130,"carbG":235,"fatG":43},"mealWindows":[...]}'></textarea>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-primary" id="applyJsonBtn">⚡ Aplicar JSON</button>
+              <button class="btn btn-secondary" id="clearJsonBtn">Limpiar</button>
+            </div>
+            <div id="jsonStatus" style="margin-top:8px;font-size:12px;display:none"></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head">
+            <span class="section-title">🥗 Plan de comidas</span>
+            <button class="btn btn-secondary" id="addMealWindowBtn" style="font-size:10px;padding:5px 10px;">+ Bloque</button>
+          </div>
+          <div class="section-body">
+            <div style="font-size:12px;color:var(--text-faint);margin-bottom:12px;line-height:1.6;">
+              Edita los bloques de comidas del atleta. Los cambios se sincronizan instantáneamente en su app.
+            </div>
+            <div id="mealWindowsEditor"></div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" id="saveEditBtn">💾 Guardar cambios</button>
+          <button class="btn btn-secondary" id="cancelEditBtn">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW: PROGRESO -->
+    <div class="view" id="view-progreso">
+      <p class="page-title">Progreso</p>
+      <p class="page-sub">Historial de peso, composición corporal y cumplimiento.</p>
+
+      <div class="athlete-selector" id="progresoSelector"></div>
+
+      <div id="progresoData">
+        <div style="color:var(--text-faint);font-size:13px;padding:20px;">Selecciona un atleta.</div>
+      </div>
+    </div>
+
+    <!-- VIEW: ACCESO -->
+    <div class="view" id="view-acceso">
+      <p class="page-title">Control de Acceso</p>
+      <p class="page-sub">Activa, extiende o bloquea el acceso de cada atleta.</p>
+
+      <div class="athlete-selector" id="accesoSelector"></div>
+
+      <div id="accesoData">
+        <div style="color:var(--text-faint);font-size:13px;padding:20px;">Selecciona un atleta.</div>
+      </div>
+    </div>
+
+    <!-- VIEW: NUEVO ATLETA -->
+    <div class="view" id="view-nuevo">
+      <p class="page-title">Nuevo Atleta</p>
+      <p class="page-sub">Crea el perfil base del atleta en Firebase. Después sube su archivo HTML a GitHub con el mismo ID.</p>
+
+      <div class="section">
+        <div class="section-head"><span class="section-title">👤 Datos del atleta</span></div>
+        <div class="section-body">
+          <div class="field-row">
+            <div class="field">
+              <label>Nombre completo</label>
+              <input id="n-nombre" type="text" placeholder="ej. Juan Pérez">
+            </div>
+            <div class="field">
+              <label>Categoría</label>
+              <input id="n-cat" type="text" placeholder="ej. Classic Physique · NPC">
+            </div>
+          </div>
+          <div class="field">
+            <label>ID del atleta — debe coincidir EXACTO con el ATHLETE_ID del archivo HTML</label>
+            <input id="n-id" type="text" placeholder="ej. juan-perez-agosto-2026">
+            <div style="margin-top:5px;font-size:11px;color:var(--text-faint)">Solo letras minúsculas, números y guiones. Sin espacios ni tildes.</div>
+          </div>
+          <div class="field">
+            <label>Link del archivo en GitHub Pages</label>
+            <input id="n-url" type="text" placeholder="https://paulcifuentes91-lab.github.io/Coaching-app-ppc/plan-nombre.html">
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head"><span class="section-title">📋 Plan inicial</span></div>
+        <div class="section-body">
+          <div class="field-row">
+            <div class="field"><label>Fecha de inicio</label><input id="n-start" type="date"></div>
+            <div class="field"><label>Fecha de chequeo</label><input id="n-check" type="date"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Vencimiento de acceso (opcional)</label><input id="n-expires" type="date"></div>
+            <div class="field"><label>Etiqueta mesociclo</label><input id="n-meso" type="text" placeholder="ej. Agosto 2026"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Objetivo / meta (descripción corta)</label><input id="n-meta" type="text" placeholder="ej. Recomposición corporal · déficit 20%"></div>
+            <div class="field"><label>Color acento (hex)</label><input id="n-accent" type="text" placeholder="#C6F135" value="#C6F135"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head"><span class="section-title">🥗 Macros objetivo</span></div>
+        <div class="section-body">
+          <div class="field-row">
+            <div class="field"><label>Kcal/día</label><input id="n-kcal" type="number" placeholder="2000"></div>
+            <div class="field"><label>Proteína (g)</label><input id="n-prot" type="number" placeholder="150"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Carbohidratos (g)</label><input id="n-carb" type="number" placeholder="200"></div>
+            <div class="field"><label>Grasas (g)</label><input id="n-fat" type="number" placeholder="60"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head"><span class="section-title">📝 Notas iniciales del coach</span></div>
+        <div class="section-body">
+          <div class="field"><label>Observaciones / contexto</label><textarea id="n-notes" placeholder="ej. Atleta con 5 años de experiencia. Prioridad: definición para competencia de octubre..."></textarea></div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="createAthleteBtn">➕ Crear atleta en Firebase</button>
+      </div>
+      <div id="createResult" style="margin-top:16px;display:none"></div>
+
+      <div class="section" style="margin-top:24px">
+        <div class="section-head"><span class="section-title">📋 Próximos pasos</span></div>
+        <div class="section-body" style="font-size:13px;color:var(--text-muted);line-height:1.8;">
+          1. Completa el formulario y toca "Crear atleta en Firebase"<br>
+          2. Descarga el archivo <code style="background:var(--surface-2);padding:1px 6px;border-radius:4px;font-family:var(--font-mono);font-size:11px;">nuevo-atleta-template.html</code> desde Claude<br>
+          3. Cambia <code style="background:var(--surface-2);padding:1px 6px;border-radius:4px;font-family:var(--font-mono);font-size:11px;">ATHLETE_ID</code> por el mismo ID que pusiste aquí<br>
+          4. Sube el archivo a GitHub con el nombre que corresponde<br>
+          5. Pega el link en el campo de arriba y guarda<br>
+          6. ¡Listo! El atleta ya aparece en el panel y su app está activa
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+// ── Firebase ──────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyBtGeuSrw57EkNLFl4bMfkD5mGpqcwdd_I",
+  authDomain: "pro-performance-e811e.firebaseapp.com",
+  projectId: "pro-performance-e811e",
+  storageBucket: "pro-performance-e811e.firebasestorage.app",
+  messagingSenderId: "672514380516",
+  appId: "1:672514380516:web:ce69f2aece5e2f77e112f1"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ── Atletas registrados ───────────────────────────────────
+// Para agregar un atleta nuevo: copia un bloque y cambia id, nombre, url y accent
+const ATLETAS = [
+  { id:'sandy-gaete-junio-2026',    nombre:'Sandy Gaete',     cat:'Wellness Open · NPC',          url:'https://paulcifuentes91-lab.github.io/Coaching-app-ppc/plan-sandy-gaete-11.html',    accent:'#FF7FAE' },
+  { id:'nicole-jerez-julio-2026',   nombre:'Nicole Jerez',    cat:'Fitness · Fuerza+Hipertrofia',  url:'https://paulcifuentes91-lab.github.io/Coaching-app-ppc/plan-nicole-jerez-v2-6.html', accent:'#8C7BFF' },
+  { id:'paul-cifuentes-julio-2026', nombre:'Paul Cifuentes',  cat:'Fisicoculturismo Open',         url:'https://paulcifuentes91-lab.github.io/Coaching-app-ppc/plan-paul-cifuentes-4.html',  accent:'#C6F135' },
+  { id:'diego-valdebenito-julio-2026', nombre:'Diego Valdebenito', cat:'Classic Physique · NPC/IFBB', url:'https://paulcifuentes91-lab.github.io/Coaching-app-ppc/plan-diego-valdebenito.html', accent:'#E0C23D' }
+];
+
+// ── Estado ────────────────────────────────────────────────
+let currentAthleteId = null;
+let athleteData = {};
+
+// ── Utils ─────────────────────────────────────────────────
+function toast(msg, err=false){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = err ? 'err' : '';
+  el.style.display = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(()=> el.style.display='none', 3500);
+}
+
+function timeAgo(ts){
+  if(!ts || !ts.toDate) return '—';
+  const diff = Date.now() - ts.toDate().getTime();
+  const m = Math.floor(diff/60000);
+  if(m<1) return 'justo ahora';
+  if(m<60) return `hace ${m} min`;
+  const h = Math.floor(m/60);
+  if(h<24) return `hace ${h} h`;
+  return `hace ${Math.floor(h/24)} d`;
+}
+
+function pctColor(p){
+  if(p>=80) return 'ok';
+  if(p>=50) return 'warn';
+  return 'muted';
+}
+
+// ── Navegación ────────────────────────────────────────────
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.addEventListener('click',()=>{
+    document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    item.classList.add('active');
+    const v = document.getElementById('view-'+item.dataset.view);
+    if(v) v.classList.add('active');
+    if(item.dataset.view==='editar') renderEditSelectors();
+    if(item.dataset.view==='progreso') renderProgresoSelectors();
+    if(item.dataset.view==='acceso') renderAccesoSelectors();
+  });
+});
+
+// ── VIEW: ATLETAS ─────────────────────────────────────────
+function loadAthletes(){
+  const grid = document.getElementById('athleteGrid');
+  grid.innerHTML = '';
+  ATLETAS.forEach(a=>{
+    const card = document.createElement('div');
+    card.className = 'athlete-card';
+    card.innerHTML = `
+      <div class="athlete-card-top">
+        <div class="athlete-dot" style="background:${a.accent}"></div>
+        <div>
+          <div class="athlete-name">${a.nombre}</div>
+          <div class="athlete-meta">${a.cat}</div>
+        </div>
+      </div>
+      <div class="athlete-stats" id="stats-${a.id}">
+        <div class="astat"><div class="v muted">…</div><div class="l">Último peso</div></div>
+        <div class="astat"><div class="v muted">…</div><div class="l">Actividad</div></div>
+        <div class="astat"><div class="v muted">…</div><div class="l">Cumplimiento</div></div>
+      </div>
+      ${a.url ? `<div style="margin-top:10px"><a href="${a.url}" target="_blank" style="font-family:var(--font-mono);font-size:10px;color:${a.accent};">↗ Abrir app del atleta</a></div>` : '<div style="margin-top:10px;font-size:10px;color:var(--text-faint);font-family:var(--font-mono);">Sin link configurado</div>'}
+    `;
+    grid.appendChild(card);
+
+    db.collection('athletes').doc(a.id).onSnapshot(doc=>{
+      const el = document.getElementById('stats-'+a.id);
+      if(!el) return;
+      if(!doc.exists){ el.innerHTML = '<div class="astat" style="flex:1"><div class="v muted">Sin datos</div></div>'; return; }
+      const data = doc.data();
+      const log = (data.progressLog||[]).filter(e=>e.weight).sort((x,y)=>new Date(y.date)-new Date(x.date));
+      const peso = log.length ? `${log[0].weight} kg` : '—';
+      const fecha = log.length ? `<div style="font-size:9px;color:var(--text-faint);margin-top:1px">${log[0].date}</div>` : '';
+
+      // Adherence from daily history
+      const mealChecks = data.mealChecks || {};
+      const last7 = [...new Set(Object.keys(mealChecks).map(k=>k.slice(0,10)))].sort().reverse().slice(0,7);
+      const mealPct = last7.length ? Math.round(last7.reduce((s,d)=>{
+        const done = Object.keys(mealChecks).filter(k=>k.startsWith(d+'-') && mealChecks[k]).length;
+        return s + Math.min(done/5*100, 100);
+      },0)/last7.length) : null;
+
+      el.innerHTML = `
+        <div class="astat"><div class="v">${peso}</div>${fecha}<div class="l">Último peso</div></div>
+        <div class="astat"><div class="v ${pctColor(0)}">${timeAgo(data.updatedAt)}</div><div class="l">Actividad</div></div>
+        <div class="astat"><div class="v ${mealPct!==null ? pctColor(mealPct) : 'muted'}">${mealPct!==null ? mealPct+'%' : '—'}</div><div class="l">Comidas 7d</div></div>
+      `;
+    });
+  });
+}
+
+// ── MEAL WINDOWS EDITOR ───────────────────────────────────
+let editMealWindows = [];
+
+function renderMealWindowsEditor(){
+  const el = document.getElementById('mealWindowsEditor');
+  if(!el) return;
+  if(!editMealWindows.length){
+    el.innerHTML = '<div style="color:var(--text-faint);font-size:12px;">Sin bloques de comidas. Toca "+ Bloque" para agregar.</div>';
+    return;
+  }
+  el.innerHTML = editMealWindows.map((mw, wi)=>`
+    <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;">
+        <input value="${mw.label||''}" placeholder="Nombre del bloque (ej. Lunes a Domingo)" 
+          style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:7px 10px;font-size:13px;"
+          onchange="editMealWindows[${wi}].label=this.value">
+        <button class="btn btn-danger" style="padding:5px 10px;font-size:10px;" onclick="editMealWindows.splice(${wi},1);renderMealWindowsEditor()">✕</button>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-faint);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">Comidas</div>
+      ${(mw.meals||[]).map((meal, mi)=>`
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px;">
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <input value="${meal.name||''}" placeholder="Nombre comida (ej. Comida 1)"
+              style="flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 9px;font-size:12.5px;"
+              onchange="editMealWindows[${wi}].meals[${mi}].name=this.value">
+            <button onclick="editMealWindows[${wi}].meals.splice(${mi},1);renderMealWindowsEditor()" 
+              style="background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:14px;">✕</button>
+          </div>
+          <textarea placeholder="Alimentos — uno por línea&#10;ej: 120 g pechuga de pollo&#10;150 g arroz cocido"
+            style="width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:7px 9px;font-family:var(--font-mono);font-size:11.5px;resize:vertical;min-height:80px;line-height:1.5;"
+            onchange="editMealWindows[${wi}].meals[${mi}].items=this.value.split('\\n').filter(x=>x.trim())"
+          >${(meal.items||[]).join('\n')}</textarea>
+        </div>
+      `).join('')}
+      <button class="btn btn-secondary" style="width:100%;font-size:11px;padding:7px;" 
+        onclick="editMealWindows[${wi}].meals.push({name:'Nueva comida',sub:null,items:[]});renderMealWindowsEditor()">
+        + Agregar comida
+      </button>
+    </div>
+  `).join('');
+}
+
+document.getElementById('addMealWindowBtn').addEventListener('click',()=>{
+  editMealWindows.push({ id:'bloque-'+Date.now(), label:'Nuevo bloque', accent:'#FFB74D', meals:[
+    { name:'Comida 1', sub:null, items:[] }
+  ]});
+  renderMealWindowsEditor();
+});
+
+// ── VIEW: EDITAR ──────────────────────────────────────────
+function renderEditSelectors(){
+  const el = document.getElementById('editSelector');
+  el.innerHTML = ATLETAS.map(a=>
+    `<button class="ath-btn ${currentAthleteId===a.id&&document.getElementById('view-editar').classList.contains('active')?'active':''}" data-id="${a.id}">${a.nombre}</button>`
+  ).join('');
+  el.querySelectorAll('.ath-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      el.querySelectorAll('.ath-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      loadEditForm(btn.dataset.id);
+    });
+  });
+}
+
+function loadEditForm(athleteId){
+  currentAthleteId = athleteId;
+  const a = ATLETAS.find(x=>x.id===athleteId);
+  document.getElementById('editForm').style.display = 'block';
+  toast('Cargando datos de '+a.nombre+'…');
+
+  db.collection('athletes').doc(athleteId).get().then(doc=>{
+    const data = doc.exists ? doc.data() : {};
+    const p = data.plan || {};
+
+    document.getElementById('e-nombre').value = p.nombre || a.nombre || '';
+    document.getElementById('e-categoria').value = a.cat || '';
+    document.getElementById('e-startDate').value = p.startDate || '';
+    document.getElementById('e-checkDate').value = p.checkDate || '';
+    document.getElementById('e-expires').value = p.accessExpiresAt || '';
+    document.getElementById('e-meso').value = p.mesocicloLabel || '';
+    document.getElementById('e-meta').value = p.meta || '';
+    document.getElementById('e-kcal').value = (p.macros||{}).kcal || '';
+    document.getElementById('e-prot').value = (p.macros||{}).proteinG || '';
+    document.getElementById('e-carb').value = (p.macros||{}).carbG || '';
+    document.getElementById('e-fat').value = (p.macros||{}).fatG || '';
+    document.getElementById('e-notes').value = data.coachNotes || '';
+    // Load meal windows into editor
+    editMealWindows = JSON.parse(JSON.stringify((p.mealWindows)||[]));
+    renderMealWindowsEditor();
+    toast('Datos cargados ✓');
+  }).catch(()=> toast('Error al cargar datos', true));
+}
+
+document.getElementById('applyJsonBtn').addEventListener('click',()=>{
+  if(!currentAthleteId){ toast('Selecciona un atleta primero', true); return; }
+  const raw = document.getElementById('e-json').value.trim();
+  if(!raw){ toast('El campo JSON está vacío', true); return; }
+  let parsed;
+  try{ parsed = JSON.parse(raw); }
+  catch(err){
+    document.getElementById('jsonStatus').style.display='block';
+    document.getElementById('jsonStatus').innerHTML='<span style="color:#ffb3b3">JSON inválido: '+err.message+'</span>';
+    return;
+  }
+  const update = { 'updatedAt': firebase.firestore.FieldValue.serverTimestamp() };
+  if(parsed.macros) update['plan.macros'] = parsed.macros;
+  if(parsed.mealWindows){
+    update['plan.mealWindows'] = parsed.mealWindows;
+    editMealWindows = JSON.parse(JSON.stringify(parsed.mealWindows));
+    renderMealWindowsEditor();
+  }
+  if(parsed.macros){
+    document.getElementById('e-kcal').value = parsed.macros.kcal||'';
+    document.getElementById('e-prot').value = parsed.macros.proteinG||'';
+    document.getElementById('e-carb').value = parsed.macros.carbG||'';
+    document.getElementById('e-fat').value = parsed.macros.fatG||'';
+  }
+  if(parsed.startDate) update['plan.startDate'] = parsed.startDate;
+  if(parsed.checkDate) update['plan.checkDate'] = parsed.checkDate;
+  if(parsed.mesocicloLabel) update['plan.mesocicloLabel'] = parsed.mesocicloLabel;
+  toast('Guardando…');
+  db.collection('athletes').doc(currentAthleteId).set(update, {merge:true})
+    .then(()=>{
+      toast('✓ JSON aplicado');
+      document.getElementById('jsonStatus').style.display='block';
+      document.getElementById('jsonStatus').innerHTML='<span style="color:#4CAF7D">✓ Guardado en Firebase — el atleta verá los cambios al recargar su app</span>';
+      document.getElementById('e-json').value='';
+    })
+    .catch(err=> toast('Error: '+err.message, true));
+});
+
+document.getElementById('clearJsonBtn').addEventListener('click',()=>{
+  document.getElementById('e-json').value='';
+  document.getElementById('jsonStatus').style.display='none';
+});
+
+document.getElementById('saveEditBtn').addEventListener('click',()=>{
+  if(!currentAthleteId){ toast('Selecciona un atleta primero', true); return; }
+  const expires = document.getElementById('e-expires').value;
+  const update = {
+    'plan.nombre': document.getElementById('e-nombre').value,
+    'plan.startDate': document.getElementById('e-startDate').value,
+    'plan.checkDate': document.getElementById('e-checkDate').value,
+    'plan.accessExpiresAt': expires || null,
+    'plan.mesocicloLabel': document.getElementById('e-meso').value,
+    'plan.meta': document.getElementById('e-meta').value,
+    'plan.macros': {
+      kcal: parseInt(document.getElementById('e-kcal').value)||0,
+      proteinG: parseInt(document.getElementById('e-prot').value)||0,
+      carbG: parseInt(document.getElementById('e-carb').value)||0,
+      fatG: parseInt(document.getElementById('e-fat').value)||0,
+    },
+    'plan.mealWindows': editMealWindows,
+    'coachNotes': document.getElementById('e-notes').value,
+    'updatedAt': firebase.firestore.FieldValue.serverTimestamp()
+  };
+  toast('Guardando…');
+  db.collection('athletes').doc(currentAthleteId).set(update, {merge:true})
+    .then(()=> toast('✓ Guardado — el atleta verá los cambios al recargar su app'))
+    .catch(err=> toast('Error: '+err.message, true));
+});
+
+document.getElementById('cancelEditBtn').addEventListener('click',()=>{
+  document.getElementById('editForm').style.display = 'none';
+  currentAthleteId = null;
+  document.querySelectorAll('#editSelector .ath-btn').forEach(b=>b.classList.remove('active'));
+});
+
+// ── VIEW: PROGRESO ────────────────────────────────────────
+function renderProgresoSelectors(){
+  const el = document.getElementById('progresoSelector');
+  el.innerHTML = ATLETAS.map(a=>
+    `<button class="ath-btn" data-id="${a.id}">${a.nombre}</button>`
+  ).join('');
+  el.querySelectorAll('.ath-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      el.querySelectorAll('.ath-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      loadProgreso(btn.dataset.id);
+    });
+  });
+}
+
+function loadProgreso(athleteId){
+  const a = ATLETAS.find(x=>x.id===athleteId);
+  const el = document.getElementById('progresoData');
+  el.innerHTML = '<div style="color:var(--text-faint);padding:16px;">Cargando…</div>';
+
+  db.collection('athletes').doc(athleteId).get().then(doc=>{
+    if(!doc.exists){ el.innerHTML = '<div style="color:var(--text-faint);padding:16px;">Sin datos todavía.</div>'; return; }
+    const data = doc.data();
+    const log = (data.progressLog||[]).sort((a,b)=>new Date(b.date)-new Date(a.date));
+    const feel = data.dailyFeel || {};
+    const meso = data.mesocicloHistory || {};
+
+    let html = `<div class="section"><div class="section-head"><span class="section-title">⚖️ Registro corporal — ${a.nombre}</span></div><div class="section-body">`;
+
+    if(!log.length){
+      html += '<div style="color:var(--text-faint);font-size:13px;">Sin registros de progreso todavía.</div>';
+    } else {
+      html += `<table class="table"><tr><th>Fecha</th><th>Peso</th><th>% Grasa</th><th>Masa Magra</th><th>Notas</th></tr>`;
+      log.forEach(e=>{
+        const fm = e.bodyFatPct ? (e.weight*e.bodyFatPct/100).toFixed(1) : '—';
+        const lm = e.bodyFatPct ? (e.weight - e.weight*e.bodyFatPct/100).toFixed(1) : '—';
+        html += `<tr><td><b>${e.date}</b></td><td><b>${e.weight} kg</b></td><td>${e.bodyFatPct ? e.bodyFatPct+'%' : '—'}</td><td>${lm !== '—' ? lm+' kg' : '—'}</td><td style="font-size:11px;color:var(--text-faint)">${e.notes||'—'}</td></tr>`;
+      });
+      html += '</table>';
+    }
+    html += '</div></div>';
+
+    // Mesociclo history
+    if(Object.keys(meso).length){
+      html += `<div class="section"><div class="section-head"><span class="section-title">📊 Cumplimiento por mesociclo</span></div><div class="section-body"><table class="table"><tr><th>Mesociclo</th><th>Entreno</th><th>Comidas</th></tr>`;
+      Object.keys(meso).sort().forEach(label=>{
+        const m = meso[label];
+        html += `<tr><td><b>${label}</b></td><td><span class="pill pill-${m.trainPct>=80?'green':m.trainPct>=50?'yellow':'red'}">${m.trainPct}%</span></td><td><span class="pill pill-${m.mealPct>=80?'green':m.mealPct>=50?'yellow':'red'}">${m.mealPct}%</span></td></tr>`;
+      });
+      html += '</table></div></div>';
+    }
+
+    // Daily feel recent
+    const feelDates = Object.keys(feel).sort().reverse().slice(0,10);
+    if(feelDates.length){
+      html += `<div class="section"><div class="section-head"><span class="section-title">🙂 Sensaciones recientes</span></div><div class="section-body"><table class="table"><tr><th>Fecha</th><th>⚡ Energía</th><th>😴 Sueño</th><th>💢 Dolor</th></tr>`;
+      feelDates.forEach(d=>{
+        const f = feel[d];
+        html += `<tr><td><b>${d}</b></td><td>${f.energia||'—'}/5</td><td>${f.sueno||'—'}/5</td><td>${f.dolor||'—'}/5</td></tr>`;
+      });
+      html += '</table></div></div>';
+    }
+
+    el.innerHTML = html;
+  }).catch(()=> el.innerHTML = '<div style="color:#ffb3b3;padding:16px;">Error al cargar datos.</div>');
+}
+
+// ── VIEW: ACCESO ──────────────────────────────────────────
+function renderAccesoSelectors(){
+  const el = document.getElementById('accesoSelector');
+  el.innerHTML = ATLETAS.map(a=>
+    `<button class="ath-btn" data-id="${a.id}">${a.nombre}</button>`
+  ).join('');
+  el.querySelectorAll('.ath-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      el.querySelectorAll('.ath-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      loadAcceso(btn.dataset.id);
+    });
+  });
+}
+
+function loadAcceso(athleteId){
+  const a = ATLETAS.find(x=>x.id===athleteId);
+  const el = document.getElementById('accesoData');
+  el.innerHTML = '<div style="color:var(--text-faint);padding:16px;">Cargando…</div>';
+
+  db.collection('athletes').doc(athleteId).get().then(doc=>{
+    const data = doc.exists ? doc.data() : {};
+    const p = data.plan || {};
+    const expires = p.accessExpiresAt;
+    const today = new Date().toISOString().slice(0,10);
+    const daysLeft = expires ? Math.ceil((new Date(expires)-new Date(today))/86400000) : null;
+
+    let status, statusClass;
+    if(!expires){ status = 'Sin vencimiento'; statusClass = 'pill-green'; }
+    else if(daysLeft < 0){ status = `Vencido (${expires})`; statusClass = 'pill-red'; }
+    else if(daysLeft <= 7){ status = `Vence en ${daysLeft} días (${expires})`; statusClass = 'pill-yellow'; }
+    else { status = `Activo hasta ${expires}`; statusClass = 'pill-green'; }
+
+    el.innerHTML = `
+      <div class="section">
+        <div class="section-head"><span class="section-title">🔐 Acceso — ${a.nombre}</span></div>
+        <div class="section-body">
+          <div style="margin-bottom:14px">
+            Estado actual: <span class="pill ${statusClass}">${status}</span>
+          </div>
+          <div class="field"><label>Nueva fecha de vencimiento</label><input type="date" id="acc-date" value="${expires||''}"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="acc-save">Guardar fecha</button>
+            <button class="btn btn-secondary" id="acc-remove">Quitar vencimiento</button>
+            <button class="btn btn-danger" id="acc-block">Bloquear acceso hoy</button>
+          </div>
+          <div style="margin-top:12px;font-size:11.5px;color:var(--text-faint);line-height:1.6;">
+            "Bloquear acceso hoy" pone la fecha de hoy como vencimiento → el atleta verá la pantalla bloqueada al abrir la app.
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('acc-save').addEventListener('click',()=>{
+      const d = document.getElementById('acc-date').value;
+      if(!d){ toast('Elige una fecha', true); return; }
+      db.collection('athletes').doc(athleteId).set({'plan.accessExpiresAt':d,'updatedAt':firebase.firestore.FieldValue.serverTimestamp()},{merge:true})
+        .then(()=>{ toast('Acceso actualizado ✓'); loadAcceso(athleteId); })
+        .catch(e=>toast('Error: '+e.message,true));
+    });
+    document.getElementById('acc-remove').addEventListener('click',()=>{
+      db.collection('athletes').doc(athleteId).set({'plan.accessExpiresAt':null,'updatedAt':firebase.firestore.FieldValue.serverTimestamp()},{merge:true})
+        .then(()=>{ toast('Vencimiento eliminado ✓'); loadAcceso(athleteId); })
+        .catch(e=>toast('Error: '+e.message,true));
+    });
+    document.getElementById('acc-block').addEventListener('click',()=>{
+      if(!confirm('¿Bloquear acceso de '+a.nombre+' a partir de hoy?')) return;
+      db.collection('athletes').doc(athleteId).set({'plan.accessExpiresAt':today,'updatedAt':firebase.firestore.FieldValue.serverTimestamp()},{merge:true})
+        .then(()=>{ toast('Acceso bloqueado ✓'); loadAcceso(athleteId); })
+        .catch(e=>toast('Error: '+e.message,true));
+    });
+
+  }).catch(()=> el.innerHTML = '<div style="color:#ffb3b3;padding:16px;">Error al cargar.</div>');
+}
+
+// ── VIEW: NUEVO ATLETA ────────────────────────────────────
+document.getElementById('createAthleteBtn').addEventListener('click', async ()=>{
+  const nombre = document.getElementById('n-nombre').value.trim();
+  const cat = document.getElementById('n-cat').value.trim();
+  const id = document.getElementById('n-id').value.trim().toLowerCase().replace(/\s+/g,'-');
+  const url = document.getElementById('n-url').value.trim();
+  const start = document.getElementById('n-start').value;
+  const check = document.getElementById('n-check').value;
+  const expires = document.getElementById('n-expires').value || null;
+  const meso = document.getElementById('n-meso').value.trim();
+  const meta = document.getElementById('n-meta').value.trim();
+  const accent = document.getElementById('n-accent').value.trim() || '#C6F135';
+  const notes = document.getElementById('n-notes').value.trim();
+  const kcal = parseInt(document.getElementById('n-kcal').value)||0;
+  const prot = parseInt(document.getElementById('n-prot').value)||0;
+  const carb = parseInt(document.getElementById('n-carb').value)||0;
+  const fat = parseInt(document.getElementById('n-fat').value)||0;
+
+  if(!nombre||!id){ toast('Nombre e ID son obligatorios', true); return; }
+  if(!/^[a-z0-9-]+$/.test(id)){ toast('ID inválido — solo letras minúsculas, números y guiones', true); return; }
+
+  // Check if already exists
+  const existing = await db.collection('athletes').doc(id).get();
+  if(existing.exists){
+    if(!confirm(`Ya existe un atleta con el ID "${id}". ¿Sobreescribir sus datos de perfil?`)) return;
+  }
+
+  toast('Creando atleta…');
+  try {
+    await db.collection('athletes').doc(id).set({
+      profile: { nombre, categoria: cat },
+      plan: {
+        nombre, meta: `<b>${cat}</b> · ${meta}`,
+        startDate: start || null,
+        checkDate: check || null,
+        accessExpiresAt: expires,
+        mesocicloLabel: meso || 'Mesociclo 1',
+        macros: { kcal, proteinG:prot, carbG:carb, fatG:fat }
+      },
+      coachNotes: notes,
+      trainingChecks:{}, mealChecks:{}, supplementChecks:{},
+      exerciseLoads:{}, progressLog:[], mesocicloHistory:{},
+      dailyFeel:{}, exercisePRs:{},
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    // Add to local ATLETAS array for this session
+    const exists = ATLETAS.find(a=>a.id===id);
+    if(!exists) ATLETAS.push({ id, nombre, cat, url, accent });
+    else { exists.url = url; exists.accent = accent; }
+
+    const result = document.getElementById('createResult');
+    result.style.display = 'block';
+    result.innerHTML = `
+      <div class="section">
+        <div class="section-body">
+          <div style="color:#4CAF7D;font-family:var(--font-mono);font-weight:700;margin-bottom:10px;">✓ Atleta creado en Firebase</div>
+          <div style="font-size:13px;color:var(--text-muted);line-height:1.8;">
+            <b style="color:var(--text)">ID:</b> ${id}<br>
+            <b style="color:var(--text)">Nombre:</b> ${nombre}<br>
+            ${url ? `<b style="color:var(--text)">Link:</b> <a href="${url}" target="_blank" style="color:var(--accent)">${url}</a><br>` : ''}
+            <br>
+            <b style="color:#E0C23D">⚠ Recuerda:</b> el archivo HTML debe tener <code style="background:var(--surface-2);padding:1px 6px;border-radius:4px;font-family:var(--font-mono);font-size:11px;">ATHLETE_ID = '${id}'</code> para conectarse a estos datos.
+          </div>
+        </div>
+      </div>
+    `;
+    toast(`✓ ${nombre} creado correctamente`);
+    loadAthletes(); // refresh grid
+  } catch(err){
+    toast('Error: '+err.message, true);
+  }
+});
+
+// ── INIT ──────────────────────────────────────────────────
+loadAthletes();
+</script>
+</body>
+</html>
