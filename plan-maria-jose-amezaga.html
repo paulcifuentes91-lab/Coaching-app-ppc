@@ -172,7 +172,6 @@
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 </head>
 <body>
 <div id="loadingOverlay" style="position:fixed;inset:0;background:#14171B;color:#9BA1AA;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:13px;z-index:999;">Conectando con la base de datos…</div>
@@ -455,7 +454,6 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
-const fbStorage = firebase.storage();
 // modo offline desactivado (compatibilidad Safari/iPhone)
 const athleteRef = db.collection('athletes').doc(ATHLETE_ID);
 
@@ -1486,7 +1484,7 @@ function renderProgressView(){
   dateInput.value = new Date().toISOString().slice(0,10);
   document.getElementById('pf-add').addEventListener('click', addProgressEntry);
   document.getElementById('pf-upload').addEventListener('click', uploadProgressPhotos);
-  renderPhotoGallery();
+  loadPhotoGallery();
 
   renderProgressList();
 }
@@ -1495,31 +1493,52 @@ async function uploadProgressPhotos(){
   const input = document.getElementById('pf-photos');
   const status = document.getElementById('photoStatus');
   if(!input.files.length){ status.textContent = 'Selecciona una o más fotos primero.'; return; }
-  status.textContent = 'Subiendo…';
+  status.textContent = 'Comprimiendo y subiendo…';
   const date = todayStr();
   try{
     for(const file of input.files){
-      const ref = fbStorage.ref(`athletes/${ATHLETE_ID}/${date}_${Date.now()}_${file.name}`);
-      await ref.put(file);
-      const url = await ref.getDownloadURL();
-      progressPhotos.push({ date, url });
+      const dataUrl = await compressImage(file, 900, 0.72);
+      if(dataUrl.length > 850000){ status.textContent = 'Una foto quedó muy pesada incluso comprimida — intenta con otra.'; continue; }
+      await db.collection('athletes').doc(ATHLETE_ID).collection('photos').add({
+        date, data: dataUrl, ts: Date.now()
+      });
     }
-    saveField('progressPhotos', progressPhotos);
     input.value = '';
-    status.textContent = '✓ Fotos subidas — tu coach ya puede verlas.';
-    renderPhotoGallery();
+    status.textContent = '✓ Fotos guardadas — tu coach ya puede verlas.';
+    loadPhotoGallery();
   }catch(err){
-    status.textContent = 'Error al subir: ' + err.message + ' (avisa a tu coach)';
+    status.textContent = 'Error al subir: ' + err.message;
   }
 }
 
-function renderPhotoGallery(){
+function compressImage(file, maxDim, quality){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(img.width * scale);
+      cv.height = Math.round(img.height * scale);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      resolve(cv.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+async function loadPhotoGallery(){
   const el = document.getElementById('photoGallery');
   if(!el) return;
-  const recent = [...progressPhotos].reverse().slice(0,12);
-  el.innerHTML = recent.map(p=>
-    `<a href="${p.url}" target="_blank" style="display:block"><img src="${p.url}" style="width:72px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><div style="font-size:9px;color:var(--text-faint);text-align:center;margin-top:2px">${p.date}</div></a>`
-  ).join('');
+  try{
+    const snap = await db.collection('athletes').doc(ATHLETE_ID).collection('photos')
+      .orderBy('ts','desc').limit(12).get();
+    const items = [];
+    snap.forEach(d=> items.push(d.data()));
+    el.innerHTML = items.map(p=>
+      `<a href="${p.data}" target="_blank" style="display:block"><img src="${p.data}" style="width:72px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><div style="font-size:9px;color:var(--text-faint);text-align:center;margin-top:2px">${p.date}</div></a>`
+    ).join('');
+  }catch(e){ /* sin fotos aún */ }
 }
 
 function addProgressEntry(){
