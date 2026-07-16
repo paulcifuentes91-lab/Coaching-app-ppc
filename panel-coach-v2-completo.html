@@ -1,0 +1,1609 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Coach — Pro Performance (v2.0 con Dashboard Inteligente)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:#14171B;--surface:#1D2126;--surface-2:#262B31;--border:#2E333A;
+  --text:#F3F2EE;--text-muted:#9BA1AA;--text-faint:#666B73;--accent:#C6F135;
+  --font-display:'Oswald',sans-serif;--font-body:'Inter',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);-webkit-font-smoothing:antialiased;}
+
+/* LAYOUT */
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:220px;flex:0 0 220px;background:var(--surface);border-right:1px solid var(--border);padding:20px 0;position:fixed;top:0;left:0;height:100vh;overflow-y:auto;z-index:100;}
+.main{flex:1;margin-left:220px;padding:24px;}
+
+.logo{padding:0 18px 20px;border-bottom:1px solid var(--border);margin-bottom:12px;}
+.logo-title{font-family:var(--font-display);font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);}
+.logo-sub{font-size:11px;color:var(--text-faint);margin-top:2px;}
+
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 18px;cursor:pointer;font-size:13px;color:var(--text-muted);transition:all .15s;border-left:2px solid transparent;}
+.nav-item:hover{background:var(--surface-2);color:var(--text);}
+.nav-item.active{background:var(--surface-2);color:var(--text);border-left-color:var(--accent);}
+.nav-icon{font-size:16px;width:20px;text-align:center;}
+.nav-label{font-weight:500;}
+
+/* VIEWS */
+.view{display:none;}
+.view.active{display:block;}
+
+/* HEADER */
+.page-title{font-family:var(--font-display);font-size:24px;font-weight:700;text-transform:uppercase;margin:0 0 6px;}
+.page-sub{font-size:13px;color:var(--text-muted);margin:0 0 24px;}
+
+/* CARDS GRID */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:24px;}
+
+.athlete-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:border-color .15s;}
+.athlete-card:hover{border-color:var(--accent);}
+.athlete-card-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.athlete-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;}
+.athlete-name{font-family:var(--font-display);font-size:16px;font-weight:600;text-transform:uppercase;}
+.athlete-meta{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+.athlete-stats{display:flex;gap:8px;}
+.astat{flex:1;background:var(--surface-2);border-radius:8px;padding:8px;text-align:center;}
+.astat .v{font-family:var(--font-mono);font-weight:700;font-size:14px;}
+.astat .l{font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+.astat .v.ok{color:#4CAF7D;}
+.astat .v.warn{color:#E0C23D;}
+.astat .v.muted{color:var(--text-faint);font-size:11px;}
+
+/* SECTION */
+.section{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:16px;overflow:hidden;}
+.section-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.section-title{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);font-weight:600;}
+.section-body{padding:16px;}
+
+/* FORM */
+.field{margin-bottom:14px;}
+.field label{display:block;font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);margin-bottom:5px;}
+.field input,.field select,.field textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 11px;font-family:var(--font-body);font-size:13.5px;outline:none;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);}
+.field textarea{resize:vertical;min-height:80px;font-family:var(--font-mono);font-size:12px;line-height:1.5;}
+.field select{-webkit-appearance:none;appearance:none;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* BUTTONS */
+.btn{padding:9px 16px;border-radius:8px;border:none;font-family:var(--font-mono);font-weight:700;font-size:12px;letter-spacing:.03em;cursor:pointer;transition:opacity .15s;}
+.btn:active{opacity:.7;}
+.btn-primary{background:var(--accent);color:var(--bg);}
+.btn-secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--border);}
+.btn-danger{background:#5c1a1a;color:#ffb3b3;border:1px solid #7a2020;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
+
+/* TOAST */
+#toast{position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#1a4d2e;color:#b3ffcc;padding:10px 18px;border-radius:10px;font-family:var(--font-mono);font-size:12.5px;font-weight:700;z-index:9999;display:none;box-shadow:0 4px 20px rgba(0,0,0,.5);}
+#toast.err{background:#5c1a1a;color:#ffb3b3;}
+
+/* TABLE */
+.table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.table th{text-align:left;font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);padding:6px 10px;border-bottom:1px solid var(--border);}
+.table td{padding:9px 10px;border-bottom:1px solid var(--border);color:var(--text-muted);}
+.table tr:last-child td{border-bottom:none;}
+.table td b{color:var(--text);}
+
+/* PILL */
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;font-family:var(--font-mono);}
+.pill-green{background:#1a4d2e;color:#4CAF7D;}
+.pill-yellow{background:#3a2e10;color:#E0C23D;}
+.pill-red{background:#3a1010;color:#E05B5B;}
+
+/* ATHLETE SELECTOR */
+.athlete-selector{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.ath-btn{padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);font-family:var(--font-mono);font-size:11.5px;font-weight:600;cursor:pointer;transition:all .15s;}
+.ath-btn:hover{border-color:var(--accent);}
+.ath-btn.active{background:var(--accent);color:var(--bg);border-color:var(--accent);}
+
+/* BACK BTN */
+.back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--text-faint);font-size:12px;cursor:pointer;margin-bottom:16px;font-family:var(--font-mono);}
+.back-btn:hover{color:var(--text);}
+
+/* ──────────────────────────────────────────────────── */
+/* COACH DASHBOARD CARDS (FASE 1) */
+/* ──────────────────────────────────────────────────── */
+
+.coach-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.coach-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.coach-card.status-red {
+  border-color: #E05B5B;
+}
+
+.coach-card.status-yellow {
+  border-color: #E0C23D;
+}
+
+.coach-card.status-green {
+  border-color: #4CAF7D;
+}
+
+.coach-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.coach-card-title {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.coach-card-status {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.coach-card-body {
+  display: none;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.coach-card.expanded .coach-card-body {
+  display: block;
+}
+
+.coach-card-stat {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.coach-card-stat-label {
+  color: var(--text-muted);
+}
+
+.coach-card-stat-value {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.coach-recommendation {
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.coach-rec-title {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.coach-rec-reason {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.coach-rec-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.coach-rec-action {
+  font-size: 12px;
+  color: var(--text);
+  padding: 6px 0;
+  padding-left: 16px;
+  position: relative;
+}
+
+.coach-rec-action:before {
+  content: "→";
+  position: absolute;
+  left: 0;
+}
+
+/* ALERTS BOX (FASE 2) */
+.alerts-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.alerts-box-title {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  color: var(--text-muted);
+}
+
+.alert-item {
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.alert-item.emergencia {
+  background: #3a1010;
+  color: #ffb3b3;
+}
+
+.alert-item.importante {
+  background: #3a2e10;
+  color: #E0C23D;
+}
+
+.alert-item.info {
+  background: #1a2e3a;
+  color: #6ba3c0;
+}
+
+/* CHECKIN FORM (FASE 3) */
+.checkin-question {
+  margin-bottom: 16px;
+}
+
+.checkin-question-text {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--text);
+}
+
+.checkin-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-2);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.checkin-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+.checkin-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+}
+
+.checkin-slider-value {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--accent);
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.checkin-radio-group, .checkin-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkin-option {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.checkin-option:hover {
+  background: var(--border);
+}
+
+.checkin-option input {
+  margin-right: 8px;
+  cursor: pointer;
+}
+
+.checkin-option label {
+  cursor: pointer;
+  flex: 1;
+}
+
+@media(max-width:600px){
+  .sidebar{width:100%;height:auto;position:relative;flex-direction:row;display:flex;overflow-x:auto;}
+  .main{margin-left:0;}
+  .layout{flex-direction:column;}
+  .logo{display:none;}
+  .nav-item{padding:10px 14px;border-left:none;border-bottom:2px solid transparent;white-space:nowrap;}
+  .nav-item.active{border-bottom-color:var(--accent);border-left:none;}
+  .field-row{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="logo">
+      <div class="logo-title">Pro Performance</div>
+      <div class="logo-sub">Panel del Coach v2.0</div>
+    </div>
+    <div class="nav-item active" data-view="dashboard">
+      <span class="nav-icon">📊</span><span class="nav-label">Dashboard</span>
+    </div>
+    <div class="nav-item" data-view="coach-dashboard">
+      <span class="nav-icon">🎯</span><span class="nav-label">Coach Dashboard</span>
+    </div>
+    <div class="nav-item" data-view="atletas">
+      <span class="nav-icon">👥</span><span class="nav-label">Mis Atletas</span>
+    </div>
+    <div class="nav-item" data-view="editar">
+      <span class="nav-icon">✏️</span><span class="nav-label">Editar Plan</span>
+    </div>
+    <div class="nav-item" data-view="progreso">
+      <span class="nav-icon">📈</span><span class="nav-label">Progreso</span>
+    </div>
+    <div class="nav-item" data-view="checkin">
+      <span class="nav-icon">📝</span><span class="nav-label">Check-in Atleta</span>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div id="app">
+
+      <!-- DASHBOARD VIEW -->
+      <div class="view active" id="view-dashboard">
+        <div class="page-title">Dashboard General</div>
+        <div class="page-sub">Resumen de todos tus atletas</div>
+        <div id="kpiGrid" class="grid"></div>
+        <div class="section">
+          <div class="section-head"><div class="section-title">🚨 Alertas Críticas</div></div>
+          <div class="section-body" id="alertsBox"></div>
+        </div>
+        <div class="section">
+          <div class="section-head"><div class="section-title">📊 Gráfico de Peso (7 últimos días)</div></div>
+          <div class="section-body" id="weightChartBox"></div>
+        </div>
+        <div class="section">
+          <div class="section-head"><div class="section-title">📋 Cumplimiento Semanal</div></div>
+          <div class="section-body" id="complianceBox"></div>
+        </div>
+      </div>
+
+      <!-- COACH DASHBOARD VIEW (FASE 1, 2, 3) -->
+      <div class="view" id="view-coach-dashboard">
+        <div class="page-title">Coach Dashboard</div>
+        <div class="page-sub">Estado inteligente con recomendaciones automáticas</div>
+        
+        <div class="athlete-selector" id="coachAthleteSelector"></div>
+        
+        <div id="alertsBoxCoach" class="alerts-box" style="display: none;">
+          <div class="alerts-box-title">🚨 Alertas Activas</div>
+          <div id="alertsList"></div>
+        </div>
+        
+        <div id="coachDashboardCards"></div>
+        
+        <div id="coachRecommendation"></div>
+      </div>
+
+      <!-- ATLETAS VIEW -->
+      <div class="view" id="view-atletas">
+        <div class="page-title">Mis Atletas</div>
+        <div class="page-sub">Gestiona tu roster de entrenamiento</div>
+        <button class="btn btn-primary" onclick="toggleForm('new-athlete')">+ Nuevo Atleta</button>
+        <div id="newAthleteForm" style="display:none;margin-top:16px;" class="section">
+          <div class="section-head"><div class="section-title">Crear Nuevo Atleta</div></div>
+          <div class="section-body">
+            <div class="field"><label>Nombre</label><input id="newAthleteName" placeholder="Ej: Juan García"></div>
+            <div class="field-row">
+              <div class="field"><label>Edad</label><input id="newAthleteAge" type="number" placeholder="30"></div>
+              <div class="field"><label>Peso (kg)</label><input id="newAthleteWeight" type="number" placeholder="82.5"></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label>Color (hex)</label><input id="newAthleteColor" type="text" value="#FF6B6B" placeholder="#FF6B6B"></div>
+              <div class="field"><label>Objetivo</label><input id="newAthleteGoal" placeholder="Ej: Ganar masa muscular"></div>
+            </div>
+            <div class="btn-row">
+              <button class="btn btn-secondary" onclick="toggleForm('new-athlete')">Cancelar</button>
+              <button class="btn btn-primary" onclick="createAthlete()">Crear Atleta</button>
+            </div>
+          </div>
+        </div>
+        <div id="athletesGrid" class="grid" style="margin-top:16px;"></div>
+      </div>
+
+      <!-- EDITAR PLAN VIEW -->
+      <div class="view" id="view-editar">
+        <div class="back-btn" onclick="switchView('atletas')">← Volver a Atletas</div>
+        <div class="page-title" id="editTitle">Editar Plan</div>
+        <div class="page-sub" id="editSub"></div>
+        <div class="section">
+          <div class="section-head"><div class="section-title">Plan de Entrenamiento</div></div>
+          <div class="section-body">
+            <div class="field"><label>Frecuencia Semanal</label><input id="editFreq" type="number" placeholder="4"></div>
+            <div class="field"><label>Tipo</label><select id="editType"><option>Fuerza</option><option>Hipertrofia</option><option>Resistencia</option></select></div>
+            <div class="field"><label>Objetivos</label><textarea id="editGoal"></textarea></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-head"><div class="section-title">Métricas de Salud</div></div>
+          <div class="section-body">
+            <div class="field-row">
+              <div class="field"><label>Sueño (horas)</label><input id="editSleep" type="number" step="0.5" placeholder="8"></div>
+              <div class="field"><label>Estrés (1-10)</label><input id="editStress" type="number" min="1" max="10" placeholder="5"></div>
+            </div>
+            <div class="field"><label>¿Lesión o dolor?</label><select id="editInjury"><option value="false">No</option><option value="true">Sí</option></select></div>
+            <div class="field"><label>Ubicación (si aplica)</label><input id="editInjuryLocation" placeholder="Ej: Rodilla izquierda"></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-head"><div class="section-title">Checks Requeridos</div></div>
+          <div class="section-body">
+            <div class="field"><label>Fecha de Chequeo Próximo</label><input id="editCheckDate" type="date"></div>
+            <div class="field"><label>Acceso Vence En</label><input id="editAccessExpiry" type="date"></div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="switchView('atletas')">Cancelar</button>
+          <button class="btn btn-primary" onclick="savePlan()">Guardar Plan</button>
+        </div>
+      </div>
+
+      <!-- PROGRESO VIEW -->
+      <div class="view" id="view-progreso">
+        <div class="back-btn" onclick="switchView('atletas')">← Volver a Atletas</div>
+        <div class="page-title" id="progresoTitle">Progreso</div>
+        <div class="page-sub" id="progresoSub"></div>
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title">Registro de Peso</div>
+            <button class="btn btn-primary" style="padding:6px 12px;font-size:11px;" onclick="toggleForm('new-weight')">+ Nuevo Peso</button>
+          </div>
+          <div class="section-body">
+            <div id="newWeightForm" style="display:none;margin-bottom:16px;" class="field-row">
+              <div class="field"><label>Fecha</label><input id="newWeightDate" type="date"></div>
+              <div class="field"><label>Peso (kg)</label><input id="newWeightVal" type="number" step="0.1" placeholder="82.5"></div>
+            </div>
+            <button class="btn btn-secondary" id="newWeightBtn" style="display:none;" onclick="saveWeight()">Guardar Peso</button>
+            <table class="table" id="progressTable"><thead><tr><th>Fecha</th><th>Peso</th><th>Cambio</th><th></th></tr></thead><tbody id="progressBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHECK-IN VIEW (FASE 3) -->
+      <div class="view" id="view-checkin">
+        <div class="page-title">Check-in Inteligente</div>
+        <div class="page-sub" id="checkinSubtitle">Preguntas personalizadas según tu estado</div>
+        
+        <!-- Selector de atleta -->
+        <div class="athlete-selector" id="checkinAthleteSelector"></div>
+        
+        <!-- Contenedor de preguntas -->
+        <div id="checkinContainer"></div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── CONFIG FIREBASE ──────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyBZjvYaQqsEJnqr2E5YqPfuJZQqJqJZQqJ",
+  projectId: "pro-performance-coach",
+  authDomain: "pro-performance-coach.firebaseapp.com",
+  databaseURL: "https://pro-performance-coach.firebaseio.com",
+  storageBucket: "pro-performance-coach.appspot.com"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ── DATOS GLOBALES ──────────────────────────────────
+let ATLETAS = [];
+let CURRENT_ATHLETE = null;
+
+// ── UTILS ──────────────────────────────────────────────────
+function toast(msg, err=false){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.toggle('err', err);
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3000);
+}
+
+function switchView(view){
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelector(`[data-view="${view}"]`).classList.add('active');
+}
+
+function toggleForm(id){
+  const el = document.getElementById(id + 'Form') || document.getElementById(id);
+  if(el) el.style.display = el.style.display==='none'?'block':'none';
+}
+
+// ── CARGA INICIAL ──────────────────────────────────
+async function loadRoster(){
+  try{
+    const snap = await db.collection('coaches').doc('default').get();
+    if(snap.exists && snap.data().atletas){
+      ATLETAS = snap.data().atletas;
+    }
+  }catch(e){
+    console.log('No roster found, using empty array');
+    ATLETAS = [];
+  }
+}
+
+// ── CREAR ATLETA ──────────────────────────────────
+async function createAthlete(){
+  const nombre = document.getElementById('newAthleteName').value;
+  const edad = document.getElementById('newAthleteAge').value;
+  const peso = parseFloat(document.getElementById('newAthleteWeight').value);
+  const accent = document.getElementById('newAthleteColor').value;
+  const objetivo = document.getElementById('newAthleteGoal').value;
+
+  if(!nombre) return alert('Ingresa nombre');
+
+  const id = 'athlete_' + Date.now();
+  ATLETAS.push({id, nombre, edad, accent: accent||'#FF6B6B'});
+
+  await db.collection('coaches').doc('default').set({atletas:ATLETAS}, {merge:true});
+  await db.collection('athletes').doc(id).set({
+    nombre, edad, peso, objetivo,
+    plan:{
+      freq: 4, type: 'Fuerza', goal: objetivo,
+      sleepHours: 8, stress: 5, injury: false,
+      checkDate: '', accessExpiresAt: ''
+    },
+    progressLog:[{date:new Date().toISOString().slice(0,10), weight:peso, exercise:'-', load:'-', rpe:'-'}],
+    mealChecks:{}, trainingChecks:{}, lastCheckin:{}, alerts:[]
+  });
+
+  const url = `athlete.html?id=${id}`;
+  const html = `
+    <div style="background:#1a4d2e;color:#b3ffcc;padding:12px;border-radius:8px;margin-top:12px;font-size:12px;line-height:1.6;">
+      <b style="color:var(--text)">✓ Atleta creado</b><br>
+      <b style="color:var(--text)">ID:</b> ${id}<br>
+      <b style="color:var(--text)">Nombre:</b> ${nombre}<br>
+      ${url ? `<b style="color:var(--text)">Link:</b> <a href="${url}" target="_blank" style="color:var(--accent)">${url}</a><br>` : ''}
+      <br>
+      <b style="color:#E0C23D">⚠ Recuerda:</b> el archivo HTML debe tener <code style="background:var(--surface-2);padding:1px 6px;border-radius:4px;font-family:var(--font-mono);font-size:11px;">ATHLETE_ID = '${id}'</code> para conectarse a estos datos.
+    </div>
+  `;
+  toast(`✓ ${nombre} creado`);
+  loadAthletes();
+}
+
+// ── CARGAR ATLETAS ──────────────────────────────────
+async function loadAthletes(){
+  const html = ATLETAS.map(a => `
+    <div class="athlete-card" onclick="selectAthlete('${a.id}')">
+      <div class="athlete-card-top">
+        <div class="athlete-dot" style="background:${a.accent};"></div>
+        <div><div class="athlete-name">${a.nombre}</div><div class="athlete-meta">${a.edad} años</div></div>
+      </div>
+      <div class="athlete-stats" id="stats-${a.id}"></div>
+    </div>
+  `).join('');
+  document.getElementById('athletesGrid').innerHTML = html;
+
+  for(let a of ATLETAS){
+    const doc = await db.collection('athletes').doc(a.id).get();
+    const d = doc.data()||{};
+    const days7 = [...Array(7)].map((_,i)=>{ const dt=new Date(); dt.setDate(dt.getDate()-i); return dt.toISOString().slice(0,10); });
+    const meals = Math.round(days7.reduce((s,day)=> s + Math.min(Object.keys(d.mealChecks||{}).filter(k=>k.startsWith(day) && d.mealChecks[k]).length/4, 1), 0)/7*100);
+    const trains = Math.round(days7.reduce((s,day)=> s + Math.min(Object.keys(d.trainingChecks||{}).filter(k=>k.startsWith(day) && d.trainingChecks[k]).length/6, 1), 0)/7*100);
+    document.getElementById('stats-'+a.id).innerHTML = `
+      <div class="astat"><div class="v ${meals>=80?'ok':'warn'}">${meals}%</div><div class="l">🥗 Comidas</div></div>
+      <div class="astat"><div class="v ${trains>=80?'ok':'warn'}">${trains}%</div><div class="l">🏋️ Entrenamientos</div></div>
+      <div class="astat"><div class="v muted">−</div><div class="l">📊 Peso</div></div>
+    `;
+  }
+}
+
+function selectAthlete(id){
+  CURRENT_ATHLETE = id;
+  localStorage.setItem('currentAthleteId', id);
+  switchView('editar');
+  loadPlan();
+}
+
+// ── EDITAR PLAN ──────────────────────────────────
+async function loadPlan(){
+  const doc = await db.collection('athletes').doc(CURRENT_ATHLETE).get();
+  const d = doc.data();
+  const a = ATLETAS.find(x=>x.id===CURRENT_ATHLETE);
+
+  document.getElementById('editTitle').textContent = `Editar Plan — ${a.nombre}`;
+  document.getElementById('editSub').textContent = `${a.edad} años • ID: ${CURRENT_ATHLETE}`;
+  
+  document.getElementById('editFreq').value = d.plan.freq;
+  document.getElementById('editType').value = d.plan.type;
+  document.getElementById('editGoal').value = d.plan.goal;
+  document.getElementById('editSleep').value = d.plan.sleepHours;
+  document.getElementById('editStress').value = d.plan.stress;
+  document.getElementById('editInjury').value = d.plan.injury;
+  document.getElementById('editInjuryLocation').value = d.plan.injuryLocation||'';
+  document.getElementById('editCheckDate').value = d.plan.checkDate||'';
+  document.getElementById('editAccessExpiry').value = d.plan.accessExpiresAt||'';
+}
+
+async function savePlan(){
+  const plan = {
+    freq: parseInt(document.getElementById('editFreq').value),
+    type: document.getElementById('editType').value,
+    goal: document.getElementById('editGoal').value,
+    sleepHours: parseFloat(document.getElementById('editSleep').value),
+    stress: parseInt(document.getElementById('editStress').value),
+    injury: document.getElementById('editInjury').value==='true',
+    injuryLocation: document.getElementById('editInjuryLocation').value,
+    checkDate: document.getElementById('editCheckDate').value,
+    accessExpiresAt: document.getElementById('editAccessExpiry').value
+  };
+
+  await db.collection('athletes').doc(CURRENT_ATHLETE).update({plan});
+  toast('✓ Plan guardado');
+  
+  // Re-chequear alertas
+  updateAlerts();
+  
+  switchView('atletas');
+}
+
+// ── PROGRESO ──────────────────────────────────
+async function loadProgreso(){
+  const doc = await db.collection('athletes').doc(CURRENT_ATHLETE).get();
+  const d = doc.data();
+  const a = ATLETAS.find(x=>x.id===CURRENT_ATHLETE);
+
+  document.getElementById('progresoTitle').textContent = `Progreso — ${a.nombre}`;
+  document.getElementById('progresoSub').textContent = `Registro de cambios físicos`;
+
+  const log = (d.progressLog||[]).sort((x,y)=>new Date(y.date)-new Date(x.date));
+  let html = '';
+  log.forEach((e,i)=>{
+    const prev = log[i+1];
+    const cambio = prev ? (e.weight - prev.weight).toFixed(1) : '-';
+    html += `<tr>
+      <td>${e.date}</td>
+      <td><b>${e.weight} kg</b></td>
+      <td style="color:${cambio>0?'#E0C23D':'#4CAF7D'}">${cambio>0?'+':''}</td>
+      <td><button class="btn btn-danger" style="padding:4px 8px;font-size:10px;" onclick="delWeight('${e.date}')">✕</button></td>
+    </tr>`;
+  });
+  document.getElementById('progressBody').innerHTML = html;
+}
+
+async function saveWeight(){
+  const date = document.getElementById('newWeightDate').value;
+  const weight = parseFloat(document.getElementById('newWeightVal').value);
+  if(!date||!weight) return alert('Completa campos');
+
+  const doc = await db.collection('athletes').doc(CURRENT_ATHLETE).get();
+  const log = doc.data().progressLog||[];
+  log.push({date, weight, exercise:'-', load:'-', rpe:'-'});
+
+  await db.collection('athletes').doc(CURRENT_ATHLETE).update({progressLog:log});
+  document.getElementById('newWeightDate').value='';
+  document.getElementById('newWeightVal').value='';
+  toggleForm('new-weight');
+  loadProgreso();
+  toast('✓ Peso registrado');
+}
+
+async function delWeight(date){
+  const doc = await db.collection('athletes').doc(CURRENT_ATHLETE).get();
+  const log = doc.data().progressLog.filter(e=>e.date!==date);
+  await db.collection('athletes').doc(CURRENT_ATHLETE).update({progressLog:log});
+  loadProgreso();
+}
+
+// ════════════════════════════════════════════════════════════════
+// FASE 1: COACH DASHBOARD - CARDS MINIMALISTA
+// ════════════════════════════════════════════════════════════════
+
+function calculateAthleteStatus(data) {
+  if (!data) return { status: 'red', icon: '🔴', label: 'Sin datos' };
+  
+  const days7 = [...Array(7)].map((_,i)=>{ 
+    const dt=new Date(); dt.setDate(dt.getDate()-i); 
+    return dt.toISOString().slice(0,10); 
+  });
+  
+  const trainPct = Math.round(days7.reduce((s,day) => 
+    s + Math.min(Object.keys(data.trainingChecks||{})
+      .filter(k => k.startsWith(day) && data.trainingChecks[k]).length / 6, 1), 0) / 7 * 100);
+  
+  const mealPct = Math.round(days7.reduce((s,day) => 
+    s + Math.min(Object.keys(data.mealChecks||{})
+      .filter(k => k.startsWith(day) && data.mealChecks[k]).length / 4, 1), 0) / 7 * 100);
+  
+  const adherence = Math.round((trainPct + mealPct) / 2);
+  const sleepHours = data.plan?.sleepHours || 7;
+  const stress = data.plan?.stress || 5;
+  const hasInjury = data.plan?.injury || false;
+  
+  if (hasInjury || adherence < 75 || sleepHours < 6) {
+    return {
+      status: 'red',
+      icon: '🔴',
+      label: 'CRÍTICO',
+      adherence,
+      sleepHours,
+      stress,
+      hasInjury,
+      trainPct,
+      mealPct
+    };
+  } else if (adherence < 85 || sleepHours < 6.5 || stress > 7.5) {
+    return {
+      status: 'yellow',
+      icon: '🟡',
+      label: 'REVISAR',
+      adherence,
+      sleepHours,
+      stress,
+      hasInjury,
+      trainPct,
+      mealPct
+    };
+  } else {
+    return {
+      status: 'green',
+      icon: '🟢',
+      label: 'ÓPTIMO',
+      adherence,
+      sleepHours,
+      stress,
+      hasInjury,
+      trainPct,
+      mealPct
+    };
+  }
+}
+
+async function renderCoachDashboard(athleteId) {
+  const atletaRef = ATLETAS.find(a => a.id === athleteId);
+  if (!atletaRef) return;
+  
+  const doc = await db.collection('athletes').doc(athleteId).get();
+  const data = doc.exists ? doc.data() : null;
+  if (!data) {
+    document.getElementById('coachDashboardCards').innerHTML = '<div style="color: var(--text-faint);">Sin datos aún</div>';
+    return;
+  }
+  
+  const st = calculateAthleteStatus(data);
+  
+  const progressLog = data.progressLog || [];
+  const lastWeight = progressLog.length > 0 ? progressLog[progressLog.length - 1].weight : 0;
+  const prevWeight = progressLog.length > 1 ? progressLog[progressLog.length - 2].weight : lastWeight;
+  const weightChange = lastWeight - prevWeight;
+  
+  const lastSession = progressLog.length > 0 ? progressLog[progressLog.length - 1] : null;
+  const lastExercise = lastSession?.exercise || 'Sin datos';
+  const lastLoad = lastSession?.load || '-';
+  const lastRPE = lastSession?.rpe || '-';
+  
+  const cardsHTML = `
+    <!-- CARD 1: Adherencia -->
+    <div class="coach-card status-${st.status}">
+      <div class="coach-card-header">
+        <div class="coach-card-title">📋 Adherencia</div>
+        <div class="coach-card-status">${st.icon}</div>
+      </div>
+      <div style="font-size: 32px; font-weight: 700; font-family: var(--font-mono); margin: 8px 0;">${st.adherence}%</div>
+      <div class="coach-card-body">
+        <div class="coach-card-stat">
+          <span class="coach-card-stat-label">Entrenamientos:</span>
+          <span class="coach-card-stat-value">${st.trainPct}%</span>
+        </div>
+        <div class="coach-card-stat">
+          <span class="coach-card-stat-label">Nutrición:</span>
+          <span class="coach-card-stat-value">${st.mealPct}%</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- CARD 2: Salud & Recuperación -->
+    <div class="coach-card status-${st.status}">
+      <div class="coach-card-header">
+        <div class="coach-card-title">💪 Salud & Recuperación</div>
+        <div class="coach-card-status">${st.icon}</div>
+      </div>
+      <div style="display: flex; gap: 12px;">
+        <div style="flex: 1;">
+          <div style="font-size: 24px; font-weight: 700; font-family: var(--font-mono);">${st.sleepHours}</div>
+          <div style="font-size: 10px; color: var(--text-faint);">HORAS SUEÑO</div>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-size: 24px; font-weight: 700; font-family: var(--font-mono);">${st.stress}/10</div>
+          <div style="font-size: 10px; color: var(--text-faint);">ESTRÉS</div>
+        </div>
+      </div>
+      ${st.hasInjury ? '<div style="margin-top: 8px; color: #E05B5B; font-size: 12px;">⚠ Lesión reportada</div>' : ''}
+      <div class="coach-card-body">
+        <div class="coach-card-stat">
+          <span class="coach-card-stat-label">Sueño:</span>
+          <span class="coach-card-stat-value">${st.sleepHours}h</span>
+        </div>
+        <div class="coach-card-stat">
+          <span class="coach-card-stat-label">Estrés:</span>
+          <span class="coach-card-stat-value">${st.stress}/10</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- CARD 3: Composición Corporal -->
+    <div class="coach-card status-green">
+      <div class="coach-card-header">
+        <div class="coach-card-title">⚖️ Composición</div>
+        <div class="coach-card-status">${lastWeight}</div>
+      </div>
+      <div style="font-size: 12px; color: ${weightChange < 0 ? '#4CAF7D' : '#E0C23D'}; font-family: var(--font-mono);">
+        ${weightChange > 0 ? '+' : ''}${weightChange.toFixed(1)} kg
+      </div>
+      <div class="coach-card-body">
+        <div class="coach-card-stat">
+          <span class="coach-card-stat-label">Peso:</span>
+          <span class="coach-card-stat-value">${lastWeight} kg</span>
+        </div>
+        <div class="coach-card-stat">
+          <span class="coach-card-stat-label">Cambio:</span>
+          <span class="coach-card-stat-value">${weightChange > 0 ? '+' : ''}${weightChange.toFixed(1)} kg</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- CARD 4: Último Entrenamiento -->
+    <div class="coach-card status-green">
+      <div class="coach-card-header">
+        <div class="coach-card-title">⚡ Último Entrenamiento</div>
+        <div class="coach-card-status">${lastRPE !== '-' ? lastRPE + '/10' : '-'}</div>
+      </div>
+      <div style="font-size: 14px; font-weight: 600; color: var(--text);">${lastExercise}</div>
+      <div class="coach-card-body">
+        <div class="coach-card-stat">
+          <span class="coach-card-stat-label">Ejercicio:</span>
+          <span class="coach-card-stat-value">${lastExercise}</span>
+        </div>
+        <div class="coach-card-stat">
+          <span class="coach-card-stat-label">Carga:</span>
+          <span class="coach-card-stat-value">${lastLoad}</span>
+        </div>
+        <div class="coach-card-stat">
+          <span class="coach-card-stat-label">RPE:</span>
+          <span class="coach-card-stat-value">${lastRPE}</span>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('coachDashboardCards').innerHTML = cardsHTML;
+  
+  // Agregar interactividad: click para expandir
+  document.querySelectorAll('.coach-card').forEach(card => {
+    card.addEventListener('click', function() {
+      this.classList.toggle('expanded');
+    });
+  });
+  
+  // ════════════════════════════════════════════════════════════════
+  // FASE 2: SISTEMA DE ALERTAS
+  // ════════════════════════════════════════════════════════════════
+  
+  const alerts = await checkAndUpdateAlerts(athleteId, data);
+  
+  if (alerts.length > 0) {
+    document.getElementById('alertsBoxCoach').style.display = 'block';
+    const alertsHTML = alerts.map(a => `
+      <div class="alert-item ${a.level}">
+        ${a.icon} <strong>${a.name}</strong>: ${a.message}
+      </div>
+    `).join('');
+    document.getElementById('alertsList').innerHTML = alertsHTML;
+  } else {
+    document.getElementById('alertsBoxCoach').style.display = 'none';
+  }
+  
+  // ════════════════════════════════════════════════════════════════
+  // RECOMENDACIÓN AUTOMÁTICA
+  // ════════════════════════════════════════════════════════════════
+  
+  let recommendation = '';
+  if (st.status === 'red') {
+    if (st.hasInjury) {
+      recommendation = {
+        title: '🔴 MODO PROTECCIÓN',
+        reason: 'Lesión reportada. Salud es prioridad.',
+        actions: [
+          'Pausar entrenamientos de fuerza por 7 días',
+          'Enfoque en movilidad y recuperación',
+          'Revisar técnica cuando vuelva'
+        ]
+      };
+    } else if (st.adherence < 75) {
+      recommendation = {
+        title: '🔴 NO ESCALAR',
+        reason: `Adherencia crítica (${st.adherence}%). Investigar barreras.`,
+        actions: [
+          'Llamar hoy: ¿Cuál es el obstáculo principal?',
+          'Simplificar plan temporalmente',
+          'Reagendar chequeo en 3 días'
+        ]
+      };
+    } else if (st.sleepHours < 6) {
+      recommendation = {
+        title: '🔴 SUEÑO CRÍTICO',
+        reason: `Solo ${st.sleepHours}h de sueño. Afecta TODO.`,
+        actions: [
+          'Investigar causa del insomnio',
+          'Reducir entrenamientos 30%',
+          'Revisar cafeína después de las 14:00'
+        ]
+      };
+    }
+  } else if (st.status === 'yellow') {
+    recommendation = {
+      title: '🟡 MANTENER + MONITOREAR',
+      reason: 'Mejorando pero no óptimo aún. Vigilar.',
+      actions: [
+        'NO aumentar intensidad esta semana',
+        'Enfoque: recuperación y sueño',
+        'Re-evaluar en 7 días'
+      ]
+    };
+  } else {
+    recommendation = {
+      title: '🟢 LISTO PARA ESCALAR',
+      reason: 'Excelente adherencia y recuperación. ¡Optimiza!',
+      actions: [
+        'Aumentar cargas: +5% esta semana',
+        'Agregar volumen: +2 series por ejercicio',
+        'Considera técnica avanzada'
+      ]
+    };
+  }
+  
+  const recHTML = `
+    <div class="coach-recommendation">
+      <div class="coach-rec-title">${recommendation.title}</div>
+      <div class="coach-rec-reason">${recommendation.reason}</div>
+      <div class="coach-rec-actions">
+        ${recommendation.actions.map(a => `<div class="coach-rec-action">${a}</div>`).join('')}
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('coachRecommendation').innerHTML = recHTML;
+}
+
+async function loadCoachDashboard() {
+  const buttons = ATLETAS.map(a => `
+    <button class="ath-btn" onclick="renderCoachDashboard('${a.id}')">
+      ${a.nombre}
+    </button>
+  `).join('');
+  document.getElementById('coachAthleteSelector').innerHTML = buttons;
+  
+  if (ATLETAS.length > 0) {
+    renderCoachDashboard(ATLETAS[0].id);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// FASE 2: ALERT ENGINE
+// ════════════════════════════════════════════════════════════════
+
+async function checkAndUpdateAlerts(athleteId, data) {
+  const days7 = [...Array(7)].map((_,i)=>{ 
+    const dt=new Date(); dt.setDate(dt.getDate()-i); 
+    return dt.toISOString().slice(0,10); 
+  });
+  
+  const trainPct = Math.round(days7.reduce((s,day) => 
+    s + Math.min(Object.keys(data.trainingChecks||{})
+      .filter(k => k.startsWith(day) && data.trainingChecks[k]).length / 6, 1), 0) / 7 * 100);
+  
+  const mealPct = Math.round(days7.reduce((s,day) => 
+    s + Math.min(Object.keys(data.mealChecks||{})
+      .filter(k => k.startsWith(day) && data.mealChecks[k]).length / 4, 1), 0) / 7 * 100);
+  
+  const adherence = Math.round((trainPct + mealPct) / 2);
+  const sleep = data.plan?.sleepHours || 7;
+  const stress = data.plan?.stress || 5;
+  const hasInjury = data.plan?.injury || false;
+  
+  const alerts = [];
+  
+  if (hasInjury) {
+    alerts.push({
+      id: 'INJURY',
+      name: 'Lesión Reportada',
+      level: 'emergencia',
+      icon: '🔴',
+      message: `Lesión: ${data.plan?.injuryLocation || 'ubicación no especificada'}`
+    });
+  }
+  
+  if (sleep < 5) {
+    alerts.push({
+      id: 'SLEEP_CRITICAL',
+      name: 'Sueño Crítico',
+      level: 'emergencia',
+      icon: '🔴',
+      message: `Solo ${sleep}h. Necesita intervención inmediata.`
+    });
+  } else if (sleep < 6.5) {
+    alerts.push({
+      id: 'SLEEP_LOW',
+      name: 'Sueño Bajo',
+      level: 'importante',
+      icon: '🟡',
+      message: `${sleep}h promedio. Monitorear.`
+    });
+  }
+  
+  if (adherence < 75) {
+    alerts.push({
+      id: 'ADHERENCE_CRITICAL',
+      name: 'Adherencia Crítica',
+      level: 'emergencia',
+      icon: '🔴',
+      message: `${adherence}%. Investigar barreras.`
+    });
+  } else if (adherence < 85) {
+    alerts.push({
+      id: 'ADHERENCE_MEDIUM',
+      name: 'Adherencia Media',
+      level: 'importante',
+      icon: '🟡',
+      message: `${adherence}%. Revisar plan.`
+    });
+  }
+  
+  if (stress > 7.5) {
+    alerts.push({
+      id: 'STRESS_HIGH',
+      name: 'Estrés Elevado',
+      level: 'importante',
+      icon: '🟡',
+      message: `${stress}/10. Afecta recuperación.`
+    });
+  }
+  
+  if (adherence >= 90 && sleep >= 7.5 && stress < 5) {
+    alerts.push({
+      id: 'EXCELLENT',
+      name: 'Progreso Excelente',
+      level: 'info',
+      icon: '✅',
+      message: `Todo en verde. Excelente adherencia y recuperación.`
+    });
+  }
+  
+  // Guardar alertas en Firebase
+  await db.collection('athletes').doc(athleteId).update({
+    alerts: alerts,
+    alertsUpdatedAt: new Date()
+  });
+  
+  return alerts;
+}
+
+async function updateAlerts() {
+  for (const athlete of ATLETAS) {
+    const doc = await db.collection('athletes').doc(athlete.id).get();
+    const data = doc.exists ? doc.data() : null;
+    if (data) {
+      await checkAndUpdateAlerts(athlete.id, data);
+    }
+  }
+  console.log('✓ Alertas actualizadas');
+}
+
+// ════════════════════════════════════════════════════════════════
+// FASE 3: CHECK-IN INTELIGENTE
+// ════════════════════════════════════════════════════════════════
+
+const QUESTION_SETS = {
+  SLEEP: [
+    {
+      id: 'sleep_hours',
+      q: '¿Cuántas horas dormiste anoche?',
+      type: 'slider',
+      min: 0, max: 12, step: 0.5
+    },
+    {
+      id: 'sleep_issue',
+      q: '¿Cuál es el problema principal?',
+      type: 'radio',
+      options: ['Me cuesta dormir', 'Me despierto a mitad', 'Sueño muy ligero']
+    },
+    {
+      id: 'sleep_factors',
+      q: '¿Factores que afectan?',
+      type: 'checkbox',
+      options: ['Estrés', 'Luz', 'Ruido', 'Calor', 'Cafeína']
+    }
+  ],
+  
+  ADHERENCE: [
+    {
+      id: 'adherence_barrier',
+      q: '¿Cuál fue el obstáculo esta semana?',
+      type: 'radio',
+      options: ['Trabajo', 'Cansancio', 'Sin ganas', 'Enfermedad', 'Otro']
+    },
+    {
+      id: 'nutrition',
+      q: '¿Nutrición, cómo estuvo?',
+      type: 'radio',
+      options: ['Perfecta', 'Bien', 'Media', 'Mal']
+    }
+  ],
+  
+  GENERAL: [
+    {
+      id: 'general_mood',
+      q: '¿Cómo te sientes hoy? (1-10)',
+      type: 'slider',
+      min: 1, max: 10
+    },
+    {
+      id: 'general_comment',
+      q: 'Algo que quieras comentar?',
+      type: 'text'
+    }
+  ],
+  
+  POST_TRAINING: [
+    {
+      id: 'rpe',
+      q: '¿RPE de la sesión? (1-10)',
+      type: 'slider',
+      min: 1, max: 10
+    },
+    {
+      id: 'felt_strong',
+      q: '¿Te sentías fuerte?',
+      type: 'radio',
+      options: ['Sí', 'Normal', 'No']
+    }
+  ]
+};
+
+function selectQuestionSet(data) {
+  const sleep = data.plan?.sleepHours || 7;
+  const adherence = calculateAthleteStatus(data).adherence || 80;
+  
+  if (sleep < 6.5) return QUESTION_SETS.SLEEP;
+  if (adherence < 85) return QUESTION_SETS.ADHERENCE;
+  return QUESTION_SETS.GENERAL;
+}
+
+// ── DASHBOARD GENERAL (ORIGINAL) ──────────────────────────────
+function planField(data, key){
+  return (data.plan && data.plan[key] !== undefined) ? data.plan[key] : data['plan.'+key];
+}
+
+function daysBetween(a, b){ return Math.round((b - a) / 86400000); }
+
+async function loadDashboard(){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const docs = {};
+  await Promise.all(ATLETAS.map(async a=>{
+    try{ const d = await db.collection('athletes').doc(a.id).get(); if(d.exists) docs[a.id] = d.data(); }
+    catch(e){}
+  }));
+
+  let activos = 0, chequeosProx = 0;
+  const alerts = [];
+  ATLETAS.forEach(a=>{
+    const d = docs[a.id];
+    if(!d){ alerts.push({sev:'red', txt:`${a.nombre} — sin documento en Firebase (app nunca abierta)`}); return; }
+    activos++;
+
+    if(d.updatedAt && d.updatedAt.toDate){
+      const dias = daysBetween(d.updatedAt.toDate(), new Date());
+      if(dias >= 3) alerts.push({sev: dias>=7?'red':'yellow', txt:`${a.nombre} — sin actividad hace ${dias} días`});
+    } else {
+      alerts.push({sev:'yellow', txt:`${a.nombre} — sin registro de actividad todavía`});
+    }
+
+    const chk = planField(d, 'checkDate');
+    if(chk){
+      const diff = daysBetween(today, new Date(chk+'T00:00:00'));
+      if(diff < 0) alerts.push({sev:'red', txt:`${a.nombre} — chequeo vencido (${chk})`});
+      else if(diff <= 7){ chequeosProx++; if(diff<=2) alerts.push({sev:'yellow', txt:`${a.nombre} — chequeo en ${diff===0?'HOY':diff+' días'} (${chk})`}); }
+    }
+
+    const exp = planField(d, 'accessExpiresAt');
+    if(exp){
+      const diff = daysBetween(today, new Date(exp+'T00:00:00'));
+      if(diff < 0) alerts.push({sev:'red', txt:`${a.nombre} — acceso VENCIDO (${exp})`});
+      else if(diff <= 7) alerts.push({sev:'yellow', txt:`${a.nombre} — acceso vence en ${diff} días (${exp})`});
+    }
+  });
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="athlete-card" style="cursor:default;text-align:center;"><div style="font-family:var(--font-mono);font-size:26px;font-weight:700;color:var(--accent)">${activos}</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">👥 Atletas activos</div></div>
+    <div class="athlete-card" style="cursor:default;text-align:center;"><div style="font-family:var(--font-mono);font-size:26px;font-weight:700;color:#E0C23D">${chequeosProx}</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">⏳ Chequeos próximos 7d</div></div>
+    <div class="athlete-card" style="cursor:default;text-align:center;"><div style="font-family:var(--font-mono);font-size:26px;font-weight:700;color:${alerts.length?'#E05B5B':'#4CAF7D'}">${alerts.length}</div><div style="font-size:11px;color:var(--text-muted);margin-top:4px;">🔔 Alertas</div></div>
+  `;
+
+  document.getElementById('alertsBox').innerHTML = alerts.length
+    ? alerts.map(x=>`<div style="padding:8px 10px;margin-bottom:6px;border-radius:8px;font-size:12.5px;background:${x.sev==='red'?'#3a1010':'#3a2e10'};color:${x.sev==='red'?'#ffb3b3':'#E0C23D'};">${x.txt}</div>`).join('')
+    : '<div style="color:#4CAF7D;font-size:13px;font-family:var(--font-mono);">✓ Todo en orden — sin alertas</div>';
+
+  const seriesArr = [];
+  ATLETAS.forEach(a=>{
+    const d = docs[a.id]; if(!d) return;
+    const log = (d.progressLog||[]).filter(e=>e.weight && e.date).sort((x,y)=>new Date(x.date)-new Date(y.date));
+    if(log.length >= 1) seriesArr.push({a, log});
+  });
+
+  if(seriesArr.length){
+    const allDates = seriesArr.flatMap(s=>s.log.map(e=>new Date(e.date).getTime()));
+    const allW = seriesArr.flatMap(s=>s.log.map(e=>e.weight));
+    const minT = Math.min(...allDates), maxT = Math.max(...allDates);
+    const minW = Math.min(...allW)-2, maxW = Math.max(...allW)+2;
+    const W=640, H=220, PL=38, PB=22, PT=8, PR=8;
+    const X = t => minT===maxT ? PL+(W-PL-PR)/2 : PL + (t-minT)/(maxT-minT)*(W-PL-PR);
+    const Y = w => PT + (1-(w-minW)/(maxW-minW))*(H-PT-PB);
+    let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;">`;
+    for(let i=0;i<=4;i++){
+      const w = minW + (maxW-minW)*i/4, y = Y(w);
+      svg += `<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="#2E333A" stroke-width="1"/>`;
+      svg += `<text x="${PL-6}" y="${y+4}" fill="#666B73" font-size="10" text-anchor="end" font-family="monospace">${w.toFixed(0)}</text>`;
+    }
+    seriesArr.forEach(s=>{
+      const pts = s.log.map(e=>`${X(new Date(e.date).getTime())},${Y(e.weight)}`).join(' ');
+      if(s.log.length>1) svg += `<polyline points="${pts}" fill="none" stroke="${s.a.accent}" stroke-width="2.5" stroke-linejoin="round"/>`;
+      s.log.forEach(e=> svg += `<circle cx="${X(new Date(e.date).getTime())}" cy="${Y(e.weight)}" r="3.5" fill="${s.a.accent}"/>`);
+    });
+    svg += '</svg>';
+    const legend = seriesArr.map(s=>{
+      const last = s.log[s.log.length-1];
+      return `<span style="display:inline-flex;align-items:center;gap:5px;margin-right:14px;font-size:11.5px;color:var(--text-muted);"><span style="width:9px;height:9px;border-radius:50%;background:${s.a.accent};display:inline-block;"></span>${s.a.nombre} <b style="color:var(--text)">${last.weight} kg</b></span>`;
+    }).join('');
+    document.getElementById('weightChartBox').innerHTML = svg + `<div style="margin-top:10px">${legend}</div>`;
+  } else {
+    document.getElementById('weightChartBox').innerHTML = '<div style="color:var(--text-faint);font-size:13px;">Sin registros de peso todavía.</div>';
+  }
+
+  const rows = ATLETAS.map(a=>{
+    const d = docs[a.id]; if(!d) return '';
+    const days7 = [...Array(7)].map((_,i)=>{ const dt=new Date(); dt.setDate(dt.getDate()-i); return dt.toISOString().slice(0,10); });
+    const pct = (checks, perDay) => {
+      const done = days7.reduce((s,day)=> s + Math.min(Object.keys(checks||{}).filter(k=>k.startsWith(day) && checks[k]).length/perDay, 1), 0);
+      return Math.round(done/7*100);
+    };
+    const mealPct = pct(d.mealChecks, 4);
+    const trainPct = pct(d.trainingChecks, 6);
+    const bar = (p,color)=>`<div style="flex:1;background:var(--surface-2);border-radius:6px;height:16px;overflow:hidden;"><div style="width:${p}%;height:100%;background:${color};"></div></div>`;
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:9px;">
+      <div style="width:110px;font-size:11.5px;color:var(--text);font-family:var(--font-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.nombre}</div>
+      <div style="width:38px;font-size:10px;color:var(--text-faint);text-align:right;">🥗 ${mealPct}%</div>${bar(mealPct, a.accent)}
+      <div style="width:38px;font-size:10px;color:var(--text-faint);text-align:right;">🏋️ ${trainPct}%</div>${bar(trainPct, '#4CAF7D')}
+    </div>`;
+  }).join('');
+  document.getElementById('complianceBox').innerHTML = rows || '<div style="color:var(--text-faint);font-size:13px;">Sin datos.</div>';
+}
+
+// ════════════════════════════════════════════════════════════════
+// FASE 3: CHECK-IN INTELIGENTE - FUNCIONES COMPLETAS
+// ════════════════════════════════════════════════════════════════
+
+async function loadCheckin() {
+  // Cargar selector de atleta
+  const buttons = ATLETAS.map(a => `
+    <button class="ath-btn" onclick="renderCheckinForm('${a.id}')">
+      ${a.nombre}
+    </button>
+  `).join('');
+  document.getElementById('checkinAthleteSelector').innerHTML = buttons;
+  
+  if (ATLETAS.length > 0) {
+    renderCheckinForm(ATLETAS[0].id);
+  } else {
+    document.getElementById('checkinContainer').innerHTML = 
+      '<div style="color: var(--text-faint); padding: 20px; text-align: center;">No hay atletas creados.</div>';
+  }
+}
+
+async function renderCheckinForm(athleteId) {
+  const doc = await db.collection('athletes').doc(athleteId).get();
+  const data = doc.exists ? doc.data() : {};
+  const athleteName = ATLETAS.find(a => a.id === athleteId)?.nombre || 'Atleta';
+  
+  // Seleccionar qué preguntas mostrar
+  const questions = selectQuestionSet(data);
+  
+  let html = `
+    <div class="section" style="margin-bottom: 16px; background: var(--surface-2); border: 1px solid var(--accent);">
+      <div class="section-body" style="text-align: center; padding: 12px;">
+        <div style="font-family: var(--font-mono); font-size: 13px; color: var(--accent); font-weight: 700;">
+          Tipo: ${questions === QUESTION_SETS.SLEEP ? '💤 SUEÑO' : 
+                  questions === QUESTION_SETS.ADHERENCE ? '📋 ADHERENCIA' :
+                  questions === QUESTION_SETS.POST_TRAINING ? '⚡ POST-ENTRENAMIENTO' : '✨ GENERAL'}
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+          Preguntas adaptadas según tu estado actual
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Renderizar cada pregunta
+  questions.forEach((q, idx) => {
+    html += `
+      <div class="section" style="margin-bottom: 12px;">
+        <div class="section-head">
+          <div class="section-title">Pregunta ${idx + 1}/${questions.length}</div>
+        </div>
+        <div class="section-body">
+          <div class="checkin-question-text">${q.q}</div>
+    `;
+    
+    if (q.type === 'slider') {
+      const value = q.min || 1;
+      html += `
+        <div class="checkin-question">
+          <input type="range" id="${q.id}" class="checkin-slider" 
+                 min="${q.min}" max="${q.max}" step="${q.step || 1}" value="${value}">
+          <div class="checkin-slider-value">
+            <span id="${q.id}_val">${value}</span> ${q.max === 12 ? 'horas' : q.max === 10 ? '/10' : ''}
+          </div>
+        </div>
+      `;
+      html += `
+        <script>
+          document.getElementById('${q.id}').addEventListener('input', function() {
+            document.getElementById('${q.id}_val').textContent = this.value;
+          });
+        </script>
+      `;
+    } 
+    else if (q.type === 'radio') {
+      html += '<div class="checkin-radio-group">';
+      q.options.forEach(opt => {
+        html += `
+          <label class="checkin-option">
+            <input type="radio" name="${q.id}" value="${opt}">
+            <span>${opt}</span>
+          </label>
+        `;
+      });
+      html += '</div>';
+    } 
+    else if (q.type === 'checkbox') {
+      html += '<div class="checkin-checkbox-group">';
+      q.options.forEach(opt => {
+        html += `
+          <label class="checkin-option">
+            <input type="checkbox" name="${q.id}" value="${opt}">
+            <span>${opt}</span>
+          </label>
+        `;
+      });
+      html += '</div>';
+    } 
+    else if (q.type === 'text') {
+      html += `
+        <input type="text" id="${q.id}" placeholder="${q.q}" style="width: 100%; 
+               background: var(--surface-2); border: 1px solid var(--border); 
+               border-radius: 8px; color: var(--text); padding: 10px;
+               font-family: var(--font-body); font-size: 13px;">
+      `;
+    }
+    
+    html += '</div></div>'; // cierra section-body y section
+  });
+  
+  // Botones de acción
+  html += `
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="switchView('atletas')">
+        ← Volver
+      </button>
+      <button class="btn btn-primary" onclick="saveCheckin('${athleteId}')">
+        ✓ Guardar Check-in
+      </button>
+    </div>
+  `;
+  
+  document.getElementById('checkinContainer').innerHTML = html;
+}
+
+async function saveCheckin(athleteId) {
+  // Obtener datos de la app actual
+  const doc = await db.collection('athletes').doc(athleteId).get();
+  const data = doc.exists ? doc.data() : {};
+  
+  // Seleccionar preguntas que se respondieron
+  const questions = selectQuestionSet(data);
+  const responses = {};
+  
+  // Recolectar respuestas
+  questions.forEach(q => {
+    if (q.type === 'slider') {
+      responses[q.id] = parseFloat(document.getElementById(q.id)?.value || 0);
+    } 
+    else if (q.type === 'radio') {
+      responses[q.id] = document.querySelector(`input[name="${q.id}"]:checked`)?.value;
+    } 
+    else if (q.type === 'checkbox') {
+      responses[q.id] = Array.from(document.querySelectorAll(`input[name="${q.id}"]:checked`))
+        .map(el => el.value);
+    } 
+    else if (q.type === 'text') {
+      responses[q.id] = document.getElementById(q.id)?.value || '';
+    }
+  });
+  
+  try {
+    // Actualizar datos basado en respuestas
+    const updateData = {
+      lastCheckin: {
+        timestamp: new Date(),
+        responses,
+        questionSet: selectQuestionSet(data) === QUESTION_SETS.SLEEP ? 'SLEEP' :
+                     selectQuestionSet(data) === QUESTION_SETS.ADHERENCE ? 'ADHERENCE' :
+                     selectQuestionSet(data) === QUESTION_SETS.POST_TRAINING ? 'POST_TRAINING' : 'GENERAL'
+      }
+    };
+    
+    // Si hay respuesta de sueño, actualizar el plan
+    if (responses.sleep_hours !== undefined) {
+      updateData['plan.sleepHours'] = responses.sleep_hours;
+    }
+    
+    // Si hay respuesta de estrés, actualizar
+    if (responses.stress !== undefined) {
+      updateData['plan.stress'] = responses.stress;
+    }
+    
+    // Guardar en Firestore
+    await db.collection('athletes').doc(athleteId).update(updateData);
+    
+    // Re-chequear alertas después de guardar
+    const updatedDoc = await db.collection('athletes').doc(athleteId).get();
+    if (updatedDoc.exists) {
+      await checkAndUpdateAlerts(athleteId, updatedDoc.data());
+    }
+    
+    toast('✓ Check-in guardado correctamente');
+    
+    // Mostrar mensaje de éxito
+    showCheckinSuccess(responses);
+    
+    // Limpiar formulario después de 3 segundos
+    setTimeout(() => {
+      switchView('atletas');
+      loadAthletes();
+    }, 3000);
+    
+  } catch(err) {
+    toast('❌ Error: ' + err.message, true);
+    console.error('Error saving checkin:', err);
+  }
+}
+
+function showCheckinSuccess(responses) {
+  const successHTML = `
+    <div class="section" style="border: 2px solid var(--accent); background: var(--surface); margin-top: 20px;">
+      <div class="section-body" style="text-align: center; padding: 24px;">
+        <div style="font-size: 48px; margin-bottom: 12px;">✅</div>
+        <div style="font-family: var(--font-display); font-size: 20px; font-weight: 700; 
+                    text-transform: uppercase; margin-bottom: 8px; color: var(--accent);">
+          ¡Listo!
+        </div>
+        <div style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px;">
+          Check-in guardado correctamente. Coach revisará esto en breve.
+        </div>
+        
+        <div style="background: var(--surface-2); border-radius: 8px; padding: 12px; 
+                    margin-bottom: 16px; text-align: left; font-size: 12px;">
+          <div style="font-weight: 600; color: var(--accent); margin-bottom: 8px;">📊 Resumen:</div>
+          ${Object.entries(responses).slice(0, 3).map(([k, v]) => 
+            `<div style="color: var(--text-muted); margin-bottom: 4px;">
+              <strong>${k}:</strong> ${Array.isArray(v) ? v.join(', ') : v}
+            </div>`
+          ).join('')}
+        </div>
+        
+        <div style="font-size: 11px; color: var(--text-faint);">
+          Redirigiendo en 3 segundos...
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('checkinContainer').innerHTML = successHTML;
+}
+
+// ── NAV HANDLING ──────────────────────────────────
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', function() {
+    const view = this.getAttribute('data-view');
+    switchView(view);
+    if(view==='dashboard') loadDashboard();
+    if(view==='coach-dashboard') loadCoachDashboard();
+    if(view==='atletas') loadAthletes();
+    if(view==='progreso') loadProgreso();
+    if(view==='checkin') loadCheckin();
+  });
+});
+
+// ── INIT ──────────────────────────────────────────────────────
+(async ()=>{
+  await loadRoster();
+  loadDashboard();
+  loadAthletes();
+  
+  // Ejecutar check de alertas cada 6 horas
+  setInterval(() => {
+    console.log('🔄 Actualizando alertas...');
+    updateAlerts();
+  }, 6 * 60 * 60 * 1000);
+  
+  // Verificar alertas al inicio
+  updateAlerts();
+})();
+</script>
+</body>
+</html>
