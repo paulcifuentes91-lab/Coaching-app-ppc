@@ -1,0 +1,152 @@
+{
+  "improvements": {
+    "sandy-gaete": {
+      "improvements": {
+        "menstrualCycle": {
+          "enabled": true,
+          "cycleLength": 28,
+          "lastPeriodStart": "2026-07-19",
+          "notes": "Folicular: +10% vol, -10% carbs | Luteal: -15% vol, +250 kcal"
+        }
+      }
+    },
+    "nicole-jerez": {
+      "improvements": {
+        "menstrualCycle": {
+          "enabled": true,
+          "cycleLength": 26
+        },
+        "timezone": {
+          "location": "Pacific/Auckland",
+          "offset": "+17:00",
+          "notes": "Jet lag management critical"
+        }
+      }
+    },
+    "paul-cifuentes": {
+      "improvements": {
+        "deficitMonitoring": {
+          "percentage": 20,
+          "alert": "If below 20%",
+          "recovery": "CRITICAL PRIORITY"
+        }
+      }
+    },
+    "diego-valdebenito": {
+      "improvements": {
+        "hypertrophy": {
+          "monthlyGoal": "2kg",
+          "volumeProfile": "HIGH",
+          "prTracking": true
+        }
+      }
+    },
+    "sebastian-guinart": {
+      "improvements": {
+        "maintenance": {
+          "fluctuation": "\u00b11kg",
+          "strengthFocus": "Peaking cycles",
+          "prCheck": "Every 4 weeks"
+        }
+      }
+    },
+    "maria-jose-amezaga": {
+      "improvements": {
+        "menstrualCycle": {
+          "enabled": true,
+          "cycleLength": 28
+        },
+        "groupClass": {
+          "adaptationByCycle": true,
+          "frequency": 4
+        }
+      }
+    },
+    "nelson-diaz": {
+      "improvements": {
+        "flexibility": {
+          "deficitOrSurplus": "NONE",
+          "adaptabilitySpeed": "FAST"
+        }
+      }
+    },
+    "andrea-gonzalez": {
+      "improvements": {
+        "menstrualCycle": {
+          "enabled": true,
+          "cycleLength": 29
+        },
+        "tonification": {
+          "volumeProgression": "+10% monthly",
+          "visualMonitoring": "Photos every 4 weeks"
+        }
+      }
+    },
+    "elizabeth-ellmen": {
+      "improvements": {
+        "menstrualCycle": {
+          "enabled": true,
+          "cycleLength": 30
+        },
+        "strengthPerformance": {
+          "heavySessions": "3x/week",
+          "technicalSessions": "2x/week",
+          "priorInjury": "Shoulder"
+        }
+      }
+    },
+    "ivan-de-la-cerda": {
+      "improvements": {
+        "armSpecialization": {
+          "duration": 12,
+          "targetBicep": 16,
+          "currentBicep": 14,
+          "phase": 1,
+          "measurementCheckIn": "Every 2 weeks"
+        }
+      }
+    },
+    "rosa-perez": {
+      "improvements": {
+        "longevity": {
+          "age": 80,
+          "rpeMax": 6,
+          "recoveryDays": 2,
+          "sessionDuration": 45,
+          "frequency": 2,
+          "focus": [
+            "falls_prevention",
+            "mobility",
+            "strength"
+          ]
+        }
+      }
+    }
+  },
+  "monitoring": {
+    "daily": [
+      "weight",
+      "energy",
+      "sleep",
+      "mood"
+    ],
+    "weekly": [
+      "photos",
+      "measurements",
+      "prs",
+      "whatsapp_check_in"
+    ],
+    "monthly": [
+      "calorie_adjustment",
+      "exercise_rotation",
+      "proposal_review"
+    ],
+    "annual": [
+      "complete_review",
+      "cycle_change",
+      "plan_renewal"
+    ]
+  },
+  "timestamp": "2026-07-19T12:08:10.053534",
+  "version": "4.0-Complete-Implementations"
+}
