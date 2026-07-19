@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pro Performance Coach — Iván De La Cerda</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #0f0f0f;
+      color: #e0e0e0;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    :root {
+      --primary: #ff6b35;
+      --secondary: #004e89;
+      --accent: #f7931e;
+      --success: #4caf50;
+      --warning: #ffc107;
+      --danger: #f44336;
+      --bg: #0f0f0f;
+      --surface: #1a1a1a;
+      --surface-2: #252525;
+      --border: #333;
+      --text: #e0e0e0;
+      --text-muted: #999;
+      --text-faint: #666;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .header {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      padding: 30px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .header h1 { font-size: 32px; margin-bottom: 10px; }
+    .header p { font-size: 14px; color: rgba(255,255,255,0.8); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+    .card-title { font-size: 14px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
+    .card-content { font-size: 13px; color: var(--text); line-height: 1.8; }
+    .kpi { font-size: 24px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+    .section { margin-bottom: 40px; }
+    .section-title { font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid var(--border); }
+    .subsection { margin-bottom: 24px; }
+    .subsection-title { font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .meal-card {
+      background: var(--surface-2);
+      border-left: 3px solid var(--primary);
+      padding: 16px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+    }
+    .meal-time { font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; }
+    .meal-items { font-size: 13px; color: var(--text); margin-top: 8px; line-height: 1.6; }
+    .meal-items li { margin-left: 20px; }
+    .workout-day {
+      background: var(--surface-2);
+      border-left: 3px solid var(--secondary);
+      padding: 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+    }
+    .workout-title { font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase; }
+    .workout-section { margin-top: 12px; margin-bottom: 12px; }
+    .workout-section-title { font-size: 11px; font-weight: 700; color: var(--primary); text-transform: uppercase; margin-bottom: 8px; }
+    .exercise { font-size: 12px; color: var(--text); margin-left: 16px; margin-bottom: 6px; }
+    .hydration { background: rgba(0,78,137,0.1); border-left: 3px solid var(--secondary); padding: 14px; border-radius: 6px; margin-bottom: 12px; }
+    .hydration-title { font-size: 12px; font-weight: 700; color: var(--secondary); text-transform: uppercase; }
+    .hydration-content { font-size: 13px; color: var(--text); margin-top: 8px; }
+    .check-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .check-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .check-item:last-child { border-bottom: none; }
+    .check-box {
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--primary);
+      border-radius: 4px;
+      margin-right: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .check-box:hover { background: rgba(255,107,53,0.1); }
+    .check-box.checked { background: var(--primary); }
+    .check-box.checked::after { content: "✓"; color: white; font-weight: 700; font-size: 12px; }
+    .check-label { font-size: 13px; color: var(--text); cursor: pointer; }
+    .warning-banner {
+      background: rgba(255,152,0,0.1);
+      border-left: 3px solid var(--warning);
+      padding: 14px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+    .warning-banner-title { font-size: 12px; font-weight: 700; color: var(--warning); text-transform: uppercase; }
+    .warning-banner-content { font-size: 13px; color: var(--text); margin-top: 6px; }
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+    button:hover { background: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(255,107,53,0.3); }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--surface);
+      border-left: 3px solid var(--primary);
+      padding: 14px 20px;
+      border-radius: 6px;
+      z-index: 1000;
+      animation: slideIn 0.3s ease-out;
+    }
+    @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <div class="header">
+    <h1>Iván De La Cerda</h1>
+    <p>Mesociclo Julio — Hipertrofia + Fuerza Dinámica</p>
+  </div>
+
+  <!-- INFORMACIÓN GENERAL -->
+  <div class="grid">
+    <div class="card">
+      <div class="card-title">🗓️ Inicio Plan</div>
+      <div class="kpi">06-07-26</div>
+      <div class="card-content">Semana 1-2</div>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Chequeo Próximo</div>
+      <div class="kpi">19-07-26</div>
+      <div class="card-content">En 1 día</div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔄 Renovación</div>
+      <div class="kpi">06-09-26</div>
+      <div class="card-content">En 51 días</div>
+    </div>
+    <div class="card">
+      <div class="card-title">⚖️ Peso Actual</div>
+      <div class="kpi">78 kg</div>
+      <div class="card-content">Medido 18-07-26</div>
+    </div>
+  </div>
+
+  <!-- HIDRATACIÓN Y SALUD -->
+  <div class="section">
+    <div class="section-title">💧 Hidratación y Protocolo</div>
+    
+    <div class="hydration">
+      <div class="hydration-title">Consumo Diario de Agua</div>
+      <div class="hydration-content">
+        🎯 <strong>4 a 5 litros diarios</strong>
+        <br>Distribuir a lo largo del día
+        <br>Durante entrenamientos: + 1 litro
+      </div>
+    </div>
+
+    <div class="hydration">
+      <div class="hydration-title">Consumo de Sal</div>
+      <div class="hydration-content">
+        🎯 <strong>1 g adicional por comida</strong>
+        <br>Sal marina en desayuno
+        <br>Distribuir en comidas principales
+      </div>
+    </div>
+
+    <div class="warning-banner">
+      <div class="warning-banner-title">⚠️ Protocolo Especial</div>
+      <div class="warning-banner-content">
+        ✓ Gaseosas y jugos ZERO con moderación (permitidos)
+        <br>✓ 1 comida libre cada 2 SEMANAS (no semanal)
+        <br>✓ Focus: Pérdida de grasa + Ganancia muscular (brazos)
+      </div>
+    </div>
+  </div>
+
+  <!-- PLAN NUTRICIONAL -->
+  <div class="section">
+    <div class="section-title">🍽️ Plan Nutricional — Lunes a Domingo</div>
+    
+    <div class="subsection">
+      <div class="subsection-title">COMIDA 1 (Desayuno — Proteína Alta)</div>
+      <div class="meal-card">
+        <ul class="meal-items">
+          <li>5 Huevos + Sal Marina + 100 g Verduras a Elección (Omelet)</li>
+          <li>50 g Palta (1/2)</li>
+          <li>1 Yogurt Griego + 15 g Frutos Secos o Semillas</li>
+          <li>Café + Shot Leche Descremada (Opcional)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">COMIDA 2 (Almuerzo Principal)</div>
+      <div class="meal-card">
+        <ul class="meal-items">
+          <li>180 g Pechuga de Pollo</li>
+          <li>300 g Arroz Blanco, Integral, Quinoa O 4 Rebanadas Molde</li>
+          <li>Ensalada Libre Consumo + Aderezos a Gusto</li>
+          <li><em>Infusión: Té Verde + Té Negro</em></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">COMIDA 3 (Almuerzo Alternativo)</div>
+      <div class="meal-card">
+        <ul class="meal-items">
+          <li>180 g Pechuga de Pollo o Carne Roja Magra</li>
+          <li>300 g Arroz Blanco, Integral, Quinoa O 4 Rebanadas Molde</li>
+          <li>1 Fruta a Elección O Barrita Cereal</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">COMIDA 4 (Cena Principal)</div>
+      <div class="meal-card">
+        <ul class="meal-items">
+          <li>180 g Pescado Blanco, Pechuga de Pollo O Pavo</li>
+          <li>150 g Papa, Camote O Zapallo Horneado</li>
+          <li>50 g Palta (1/2)</li>
+          <li>100 g Verduras Cocidas a Elección</li>
+          <li><em>200 cc Té Manzanilla + Té Verde</em></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">POST ENTRENO (Batido Anabólico)</div>
+      <div class="meal-card">
+        <div class="meal-time">Dentro de 30 min post-entrenamiento</div>
+        <ul class="meal-items">
+          <li>50 g Whey Protein</li>
+          <li>80 g Avena</li>
+          <li>10 g Creatina</li>
+          <li>1 Yogurt Griego</li>
+          <li>100 g Plátano</li>
+          <li>Agua a Gusto (hidratar bien)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- PARÁMETROS DE ENTRENAMIENTO -->
+  <div class="section">
+    <div class="section-title">🏋️ Parámetros de Entrenamiento</div>
+    
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">Objetivo</div>
+        <div class="card-content"><strong>HIPERTROFIA</strong></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Intensidad</div>
+        <div class="card-content"><strong>MEDIA-ALTA</strong></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Volumen</div>
+        <div class="card-content"><strong>MEDIO-ALTO</strong></div>
+      </div>
+      <div class="card">
+        <div class="card-title">RIR</div>
+        <div class="card-content"><strong>0 (A Fallo)</strong></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Descanso</div>
+        <div class="card-content"><strong>3 MINUTOS</strong></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Tempo</div>
+        <div class="card-content"><strong>MEDIO CONSCIENTE</strong></div>
+      </div>
+    </div>
+
+    <div style="margin-top: 20px; padding: 16px; background: var(--surface-2); border-radius: 6px; border-left: 3px solid var(--primary);">
+      <div style="font-size: 13px; color: var(--text); line-height: 1.8;">
+        <strong>Nota Importante:</strong>
+        <br>• Series EFECTIVAS, no series "basura"
+        <br>• Fallo solo en ejercicios señalados
+        <br>• Movilidad y stretching a diario (pre o post)
+        <br>• Sauna según sea necesario
+        <br>• Kinesiología/automasajes según sea necesario
+      </div>
+    </div>
+  </div>
+
+  <!-- PROTOCOLO AERÓBICO -->
+  <div class="section">
+    <div class="section-title">🚴 Protocolo Aeróbico Semanal (Post-Entreno)</div>
+    
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background: var(--surface-2);">
+            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 700; color: var(--accent); border-bottom: 1px solid var(--border);">Día</th>
+            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 700; color: var(--accent); border-bottom: 1px solid var(--border);">Momento</th>
+            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 700; color: var(--accent); border-bottom: 1px solid var(--border);">Tipo</th>
+            <th style="padding: 12px; text-align: left; font-size: 12px; font-weight: 700; color: var(--accent); border-bottom: 1px solid var(--border);">Duración</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 12px; font-size: 12px;">Lunes</td>
+            <td style="padding: 12px; font-size: 12px;">Ayunas O Post-Entreno</td>
+            <td style="padding: 12px; font-size: 12px;">Caminata O Bicicleta</td>
+            <td style="padding: 12px; font-size: 12px;"><strong>40 min</strong></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 12px; font-size: 12px;">Martes - Domingo</td>
+            <td style="padding: 12px; font-size: 12px;">Según necesidad</td>
+            <td style="padding: 12px; font-size: 12px;">Activo/Recuperativo</td>
+            <td style="padding: 12px; font-size: 12px;">Flexible</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top: 16px; padding: 12px; background: rgba(76,175,80,0.1); border-left: 3px solid var(--success); border-radius: 6px;">
+      <div style="font-size: 12px; color: var(--success); font-weight: 700;">OBJETIVO: SALUD</div>
+      <div style="font-size: 12px; color: var(--text); margin-top: 6px;">Fase Actual: OFF SEASON / PRE-COMPETITIVO</div>
+    </div>
+  </div>
+
+  <!-- ENTRENAMIENTOS -->
+  <div class="section">
+    <div class="section-title">🏋️ Mesociclo Julio — Hipertrofia + Fuerza (Semana 1-4)</div>
+    
+    <div class="subsection">
+      <div class="subsection-title">DÍA 1: LUNES — Tren Superior A</div>
+      <div class="workout-day">
+        
+        <div class="workout-section">
+          <div class="workout-section-title">Calentamiento</div>
+          <div class="exercise">• Movilidad Tren Superior — 5-10 min (Dorsales, Pecho, Tríceps con Bastón/Bandas)</div>
+          <div class="exercise">• Reverencias con Barra — 3x12 (10-15 kgs)</div>
+          <div class="exercise">• Crunch en Polea Alta — 4x25 (Carga baja/media)</div>
+        </div>
+
+        <div class="workout-section">
+          <div class="workout-section-title">Entrenamiento</div>
+          <div class="exercise">• Pull Over con Cuerda — 3x20 (Carga media)</div>
+          <div class="exercise">• Remo Mancuernas en Banco — 5x10 (Pesado + 2 seg tensión c/rep)</div>
+          <div class="exercise">• Remo Supino Polea Baja — 4x8 + Fallo (2 seg tensión + Fallo normal)</div>
+          <div class="exercise">• Dominadas — 3x5-10 (Peso corporal)</div>
+          <div class="exercise">• Remo al Mentón Barra — 3x12 (Agarre cerrado)</div>
+          <div class="exercise">• Vuelos Laterales Mancuernas — 3x20-30 (Puedes pausar 5 seg dentro de la serie)</div>
+          <div class="exercise">• Vuelos Posteriores Máquina — 5x10 (Pesado)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">DÍA 2: MARTES — Tren Inferior A</div>
+      <div class="workout-day">
+        
+        <div class="workout-section">
+          <div class="workout-section-title">Calentamiento</div>
+          <div class="exercise">• Movilidad y Elongación Tren Inferior — 10-20 min (Cadera, Flexores, Isquios)</div>
+          <div class="exercise">• Banco Romano — 3x12 (15-25 kgs)</div>
+          <div class="exercise">• Plancha Dinámica Fitball — 3x20 (10 giros izq + 10 giros der)</div>
+        </div>
+
+        <div class="workout-section">
+          <div class="workout-section-title">Entrenamiento</div>
+          <div class="exercise">• Leg Curl Mancuerna — 3x12 (Acostado en colchoneta O Step)</div>
+          <div class="exercise">• Leg Curl Sentado — 4x10 (Tronco adelante)</div>
+          <div class="exercise">• Hip Thrust — 4x10 (Pesado + 2 seg tensión c/rep)</div>
+          <div class="exercise">• Peso Muerto Rumano — 3x6 (Pesado, bajadas en 4 seg)</div>
+          <div class="exercise">• Búlgaras con Mancuernas — 3x12-15 (Con 2 mancuernas)</div>
+          <div class="exercise">• Soleos en Máquina — 3x20 (Pesado)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">DÍA 3: MIÉRCOLES — Tren Superior B (Pecho + Tríceps)</div>
+      <div class="workout-day">
+        
+        <div class="workout-section">
+          <div class="workout-section-title">Calentamiento</div>
+          <div class="exercise">• Movilidad y Elongación Tren Superior — 2x20 seg (Usar Bandas O Bastón)</div>
+          <div class="exercise">• Abdominal Soviético — 3x20 (Sentado en colchoneta)</div>
+          <div class="exercise">• Crunch en Banco Declinado — 3x20 (Tocar espalda y subir)</div>
+        </div>
+
+        <div class="workout-section">
+          <div class="workout-section-title">Entrenamiento</div>
+          <div class="exercise">• Dips Machine — 3x20 (Tronco atrás)</div>
+          <div class="exercise">• Fondos en Paralelas — 5x4-6 (Peso corporal)</div>
+          <div class="exercise">• Press Inclinado Máquina — 5x8 (Usar muñequeras)</div>
+          <div class="exercise">• Pec Fly — 4x12 (2 seg tensión c/rep)</div>
+          <div class="exercise">• Cruce de Poleas — 3x15 (Poleas altas)</div>
+          <div class="exercise">• Tríceps a la Frente con Barra Z — 3x12 (Carga media)</div>
+          <div class="exercise">• Tríceps Polea Alta — 4x10 + Fallo (Pesado + 2 seg tensión + Fallo normal)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">DÍA 4: JUEVES — Tren Superior C (Brazos - Focus Especial)</div>
+      <div class="workout-day">
+        <div style="padding: 12px; background: rgba(255,152,0,0.1); border-radius: 6px; margin-bottom: 12px;">
+          <strong style="color: var(--warning); font-size: 12px;">⭐ ENFOQUE ESPECIAL: BRAZOS</strong>
+        </div>
+        
+        <div class="workout-section">
+          <div class="workout-section-title">Calentamiento</div>
+          <div class="exercise">• Movilidad Tren Superior — 5 min (Hombro, Dorsal, Antebrazo)</div>
+          <div class="exercise">• Rueda Abdominal — 4x10 (De rodillas en colchoneta)</div>
+          <div class="exercise">• Plancha Lateral — 3x30 seg (Codo apoyado)</div>
+        </div>
+
+        <div class="workout-section">
+          <div class="workout-section-title">Entrenamiento — Bíceps + Back Width</div>
+          <div class="exercise">• Bíceps Prono Barra — 3x20 (Agarre cerrado, carga media)</div>
+          <div class="exercise">• Bíceps Scott Máquina — 4x8-12 (Pesado)</div>
+          <div class="exercise">• Bíceps Spider Barra Z — 4x10 (Carga media + 2 seg tensión c/rep)</div>
+          <div class="exercise">• Pulldown Neutro Abierto — 5x10 (Pesado)</div>
+          <div class="exercise">• Pull Down Supino Cerrado — 3x8 (Pesado + DROPSET final)</div>
+          <div class="exercise">• Pull Over Cuerda — 4x10 (2 seg tensión c/rep)</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 20px; padding: 16px; background: var(--surface-2); border-radius: 6px; border-left: 3px solid var(--primary);">
+      <div style="font-size: 13px; color: var(--text-muted);">
+        <strong>Notas Finales:</strong>
+        <br>✓ Días 5-6 flexible: Activo/Recuperativo según respuesta
+        <br>✓ Domingo: Descanso total o movilidad suave
+        <br>✓ Ajustar cargas según progreso semanal
+        <br>✓ Chequeo: 19-07-26 (cambios posibles después)
+      </div>
+    </div>
+  </div>
+
+  <!-- CHECK-IN DIARIO -->
+  <div class="section">
+    <div class="section-title">✅ Check-In Diario</div>
+    
+    <div class="check-section">
+      <div style="margin-bottom: 16px; font-size: 12px; color: var(--text-muted);">
+        Marca los ítems completados hoy
+      </div>
+      
+      <div class="check-item">
+        <div class="check-box" onclick="toggleCheck(this)"></div>
+        <label class="check-label">Consumo de agua: 4-5 litros</label>
+      </div>
+      
+      <div class="check-item">
+        <div class="check-box" onclick="toggleCheck(this)"></div>
+        <label class="check-label">Comida 1: Desayuno proteínico</label>
+      </div>
+      
+      <div class="check-item">
+        <div class="check-box" onclick="toggleCheck(this)"></div>
+        <label class="check-label">Comida 2: Almuerzo principal</label>
+      </div>
+      
+      <div class="check-item">
+        <div class="check-box" onclick="toggleCheck(this)"></div>
+        <label class="check-label">Comida 3: Almuerzo alternativo</label>
+      </div>
+      
+      <div class="check-item">
+        <div class="check-box" onclick="toggleCheck(this)"></div>
+        <label class="check-label">Comida 4: Cena</label>
+      </div>
+      
+      <div class="check-item">
+        <div class="check-box" onclick="toggleCheck(this)"></div>
+        <label class="check-label">Post-entreno: Batido anabólico</label>
+      </div>
+      
+      <div class="check-item">
+        <div class="check-box" onclick="toggleCheck(this)"></div>
+        <label class="check-label">Entrenamiento completado</label>
+      </div>
+      
+      <div class="check-item">
+        <div class="check-box" onclick="toggleCheck(this)"></div>
+        <label class="check-label">Cardio: 40 min (lunes) O Activo</label>
+      </div>
+
+      <div class="check-item">
+        <div class="check-box" onclick="toggleCheck(this)"></div>
+        <label class="check-label">Movilidad/stretching realizado</label>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Configuración
+const ATHLETE_ID = 'ivan-de-la-cerda-julio-2026';
+const firebaseConfig = {
+  apiKey: "AIzaSyAzEoEkLO7sTVwJnvdxaFSvnqZpqH2j7XU",
+  authDomain: "pro-performance-coach.firebaseapp.com",
+  projectId: "pro-performance-coach",
+  storageBucket: "pro-performance-coach.appspot.com",
+  messagingSenderId: "1023659854951",
+  appId: "1.0"
+};
+
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ── Timezone (America/Santiago - Chile) ──────────────────
+function todayStr() {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'America/Santiago'
+  });
+  return formatter.format(new Date());
+}
+
+function lastNDates(n) {
+  const out = [];
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'America/Santiago'
+  });
+  for(let i=n-1; i>=0; i--){
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() - i);
+    out.push(formatter.format(d));
+  }
+  return out;
+}
+
+function computeCurrentWeek(){
+  const planStartDate = '2026-07-06';
+  if(!planStartDate) return null;
+  const start = new Date(planStartDate + 'T00:00:00');
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'America/Santiago'
+  });
+  const localToday = formatter.format(new Date());
+  const now = new Date(localToday + 'T00:00:00');
+  const diffDays = Math.floor((now - start) / 86400000);
+  if(diffDays < 0) return null;
+  const week = Math.floor(diffDays / 7) + 1;
+  return Math.min(Math.max(week,1), 4);
+}
+
+function todayTrainingDayId(){
+  const weeklyOrder = ['day1', 'day2', 'day3', 'day4', 'day5'];
+  if(!weeklyOrder || !weeklyOrder.length) return null;
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    timeZone: 'America/Santiago'
+  });
+  const dayName = formatter.format(new Date());
+  const dayMap = {Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6};
+  const jsDay = dayMap[dayName] || 0;
+  const mondayIdx = (jsDay + 6) % 7;
+  return weeklyOrder[mondayIdx] || null;
+}
+
+// ── Check-in y almacenamiento ─────────────────────────────
+let checkData = {};
+let activeMealDate = null;
+
+async function loadCheckData(){
+  activeMealDate = todayStr();
+  try {
+    const doc = await db.collection('athletes').doc(ATHLETE_ID).get();
+    if(doc.exists) {
+      checkData = (doc.data().checkData || {});
+    }
+  } catch(e) {
+    console.error('Error cargando datos:', e);
+  }
+}
+
+function toggleCheck(el){
+  el.classList.toggle('checked');
+  saveCheckData();
+}
+
+async function saveCheckData(){
+  try {
+    const today = todayStr();
+    const checks = {};
+    document.querySelectorAll('.check-item').forEach((item, idx)=>{
+      const isChecked = item.querySelector('.check-box').classList.contains('checked');
+      checks[`item_${idx}`] = isChecked;
+    });
+    checkData[today] = checks;
+    await db.collection('athletes').doc(ATHLETE_ID).set({
+      checkData: checkData,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, {merge: true});
+    showToast('✓ Datos guardados');
+  } catch(e) {
+    showToast('Error guardando: '+e.message, true);
+  }
+}
+
+function showToast(msg, isError=false){
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  toast.style.borderLeftColor = isError ? 'var(--danger)' : 'var(--primary)';
+  document.body.appendChild(toast);
+  setTimeout(()=> toast.remove(), 3000);
+}
+
+// Inicializar
+window.addEventListener('load', ()=> loadCheckData());
+</script>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+</body>
+</html>
