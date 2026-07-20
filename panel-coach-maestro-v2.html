@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Coach Maestro v2 - Pro Performance Coach</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --bg: #14171B;
+            --surface: #1D2126;
+            --surface-2: #262B31;
+            --border: #2E333A;
+            --text: #F3F2EE;
+            --text-muted: #9BA1AA;
+            --text-faint: #666B73;
+            --pink: #FF7FAE;
+            --green: #4caf50;
+            --radius: 16px;
+            --font-display: 'Oswald', sans-serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-family: var(--font-body); }
+        
+        .main { display: flex; min-height: 100vh; }
+        
+        .sidebar {
+            width: 300px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar-title {
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            color: var(--pink);
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .nav-tabs {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 30px;
+        }
+
+        .nav-tab {
+            padding: 12px 15px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-weight: 600;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .nav-tab:hover { border-color: var(--pink); color: var(--pink); }
+        .nav-tab.active { background: var(--pink); color: var(--bg); }
+
+        .athletes-list {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .athlete-item {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .athlete-item:hover { background: var(--surface); border-left: 3px solid var(--pink); }
+        .athlete-item.active { background: var(--pink); color: var(--bg); }
+
+        .athlete-name { font-weight: 600; font-size: 0.9rem; }
+        .athlete-plan { font-size: 0.75rem; color: var(--text-faint); }
+
+        .content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .view { display: none; }
+        .view.active { display: block; }
+
+        h1 {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            color: var(--pink);
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            color: var(--pink);
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal.active { display: flex; align-items: flex-start; justify-content: center; }
+
+        .modal-content {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 95%;
+            max-width: 1000px;
+            max-height: 95vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            background: var(--surface-2);
+            border-bottom: 1px solid var(--border);
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 15px 20px;
+            background: var(--surface-2);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            position: sticky;
+            top: 60px;
+            z-index: 99;
+        }
+
+        .modal-tab {
+            padding: 8px 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .modal-tab.active {
+            background: var(--pink);
+            color: var(--bg);
+            border-color: var(--pink);
+        }
+
+        .modal-section {
+            display: none;
+            padding: 20px;
+        }
+
+        .modal-section.active { display: block; }
+
+        .form-group { margin-bottom: 15px; }
+
+        label {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-faint);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 6px;
+            font-family: var(--font-body);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--pink);
+        }
+
+        textarea { min-height: 80px; }
+
+        .btn {
+            padding: 10px 15px;
+            background: var(--pink);
+            color: var(--bg);
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .btn:hover { background: #FFB6D0; }
+
+        .btn-secondary {
+            background: var(--surface-2);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--pink);
+            color: var(--bg);
+        }
+
+        .btn-danger {
+            background: #ff5252;
+            color: white;
+        }
+
+        .btn-danger:hover { background: #ff1744; }
+
+        /* GRID PARA ANAMNESIS */
+        .anamnesis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .anamnesis-field {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+        }
+
+        .anamnesis-label {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-faint);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .anamnesis-value {
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+
+        /* BLOQUEOS DIARIOS */
+        .daily-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .checkbox-item input { width: auto; margin: 0; }
+
+        /* EDITOR DE ENTRENAMIENTOS */
+        .training-item {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .training-info { flex: 1; }
+
+        /* TABLA */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--surface-2);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        th {
+            background: var(--surface);
+            color: var(--text-muted);
+            padding: 10px;
+            text-align: left;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:hover { background: var(--surface); }
+
+        @media (max-width: 768px) {
+            .main { flex-direction: column; }
+            .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); max-height: 150px; }
+            .anamnesis-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="main">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="sidebar-title">🏋️ Panel Coach</div>
+            
+            <div class="nav-tabs">
+                <div class="nav-tab active" onclick="switchView('dashboard')">📊 Dashboard</div>
+                <div class="nav-tab" onclick="switchView('presenciales')">🏃 Presenciales</div>
+                <div class="nav-tab" onclick="switchView('online')">💻 Online</div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <div style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-faint); text-transform: uppercase; margin-bottom: 10px;">👥 Atletas</div>
+                <div class="athletes-list" id="athletesList"></div>
+            </div>
+        </div>
+
+        <!-- CONTENIDO -->
+        <div class="content">
+            <!-- DASHBOARD -->
+            <div id="dashboard" class="view active">
+                <h1>📊 Dashboard</h1>
+                <div class="card">
+                    <table id="dashboardTable">
+                        <thead>
+                            <tr>
+                                <th>Atleta</th>
+                                <th>Plan</th>
+                                <th>Tipo</th>
+                                <th>Precio</th>
+                                <th>Estado</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboardList"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PRESENCIALES -->
+            <div id="presenciales" class="view">
+                <h1>🏃 Atletas Presenciales</h1>
+                <div id="presencialesList"></div>
+            </div>
+
+            <!-- ONLINE -->
+            <div id="online" class="view">
+                <h1>💻 Atletas Online</h1>
+                <div id="onlineList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDITOR -->
+    <div id="editorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle" style="color: var(--pink); font-family: var(--font-display); text-transform: uppercase;"></h2>
+                <button class="close-btn" onclick="closeModal()">×</button>
+            </div>
+
+            <div class="modal-tabs">
+                <div class="modal-tab active" onclick="switchModalTab('datos')">📋 Datos</div>
+                <div class="modal-tab" onclick="switchModalTab('anamnesis')">📝 Anamnesis</div>
+                <div class="modal-tab" onclick="switchModalTab('bloqueos')">📅 Bloqueos</div>
+                <div class="modal-tab" onclick="switchModalTab('entrenamientos')">💪 Entrenamientos</div>
+                <div class="modal-tab" onclick="switchModalTab('nutricion')">🥗 Nutrición</div>
+                <div class="modal-tab" id="protocolosTab" style="display:none;" onclick="switchModalTab('protocolos')">💊 Protocolos</div>
+            </div>
+
+            <!-- DATOS -->
+            <div id="datos" class="modal-section active">
+                <h3 class="card-title">Información Básica</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Nombre</label>
+                        <input type="text" id="editName" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Plan</label>
+                        <input type="text" id="editPlan" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Precio ($)</label>
+                        <input type="number" id="editPrice">
+                    </div>
+                    <div class="form-group">
+                        <label>Vencimiento</label>
+                        <input type="date" id="editExpiry">
+                    </div>
+                    <div class="form-group">
+                        <label>Monto a Cobrar ($)</label>
+                        <input type="number" id="editAmountDue">
+                    </div>
+                    <div class="form-group">
+                        <label>Estado de Pago</label>
+                        <select id="editStatus">
+                            <option value="pagado">✅ Pagado</option>
+                            <option value="pendiente">⏳ Pendiente</option>
+                            <option value="congelado">❄️ Congelado</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn" onclick="saveDatos()" style="width: 100%; margin-top: 15px;">💾 Guardar Datos</button>
+            </div>
+
+            <!-- ANAMNESIS -->
+            <div id="anamnesis" class="modal-section">
+                <h3 class="card-title">📝 Evaluación Completa</h3>
+                <div class="anamnesis-grid" id="anamnesisGrid"></div>
+                <button class="btn btn-secondary" onclick="editarAnamnesis()" style="width: 100%;">✏️ Editar Anamnesis</button>
+            </div>
+
+            <!-- BLOQUEOS DIARIOS -->
+            <div id="bloqueos" class="modal-section">
+                <h3 class="card-title">📅 Bloqueos Diarios (Resetea 00:00 Zona Horaria)</h3>
+                
+                <div class="form-group">
+                    <label>Feeling/Estado de Ánimo Hoy</label>
+                    <select id="dailyFeeling">
+                        <option value="">Seleccionar...</option>
+                        <option value="excelente">🟢 Excelente</option>
+                        <option value="bueno">🟢 Bueno</option>
+                        <option value="normal">🟡 Normal</option>
+                        <option value="bajo">🔴 Bajo</option>
+                        <option value="muy_bajo">🔴 Muy Bajo</option>
+                    </select>
+                </div>
+
+                <h4 style="color: var(--pink); margin: 20px 0 10px; font-weight: 600;">💪 Entrenamientos Hoy</h4>
+                <div class="daily-checkboxes" id="dailyTrainings"></div>
+
+                <h4 style="color: var(--pink); margin: 20px 0 10px; font-weight: 600;">🥗 Comidas Hoy</h4>
+                <div class="daily-checkboxes" id="dailyMeals"></div>
+
+                <button class="btn" onclick="saveDailyBloqueos()" style="width: 100%; margin-top: 20px;">💾 Guardar Día</button>
+            </div>
+
+            <!-- ENTRENAMIENTOS -->
+            <div id="entrenamientos" class="modal-section">
+                <h3 class="card-title">💪 Editor de Entrenamientos</h3>
+                <button class="btn" onclick="addTraining()" style="margin-bottom: 15px;">➕ Agregar Sesión</button>
+                <div id="trainingsList"></div>
+            </div>
+
+            <!-- NUTRICIÓN -->
+            <div id="nutricion" class="modal-section">
+                <h3 class="card-title">🥗 Editor de Nutrición</h3>
+                <button class="btn" onclick="addMeal()" style="margin-bottom: 15px;">➕ Agregar Comida</button>
+                <table id="nutritionTable">
+                    <thead>
+                        <tr>
+                            <th>Comida</th>
+                            <th>Proteína (g)</th>
+                            <th>Carbs (g)</th>
+                            <th>Grasas (g)</th>
+                            <th>Calorías</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="nutritionList"></tbody>
+                </table>
+            </div>
+
+            <!-- PROTOCOLOS (solo online) -->
+            <div id="protocolos" class="modal-section">
+                <h3 class="card-title">💊 Protocolos Farmacológicos</h3>
+                <div class="form-group">
+                    <label>Suplementación / Protocolos</label>
+                    <textarea id="protocolosText" placeholder="Detalla protocolos, suplementos, dosis..."></textarea>
+                </div>
+                <button class="btn" onclick="saveProtocolos()" style="width: 100%;">💾 Guardar Protocolos</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBPY3MwFy-vKvL7sQzlPn9K5zL6qvW8",
+            authDomain: "pro-performance-e811e.firebaseapp.com",
+            projectId: "pro-performance-e811e",
+            storageBucket: "pro-performance-e811e.appspot.com",
+            messagingSenderId: "859088259827",
+            appId: "1:859088259827:web:8a9e4c2b7f1d3e5a6b9c"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let athletes = [];
+        let currentAthleteId = null;
+        let currentAthlete = null;
+
+        async function loadAthletes() {
+            try {
+                const snapshot = await db.collection('athletes').get();
+                athletes = [];
+
+                snapshot.forEach(doc => {
+                    athletes.push({ id: doc.id, ...doc.data() });
+                });
+
+                renderAthletesList();
+                renderDashboard();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function renderAthletesList() {
+            let html = '';
+            athletes.forEach(athlete => {
+                html += `
+                    <div class="athlete-item" onclick="selectAthlete('${athlete.id}')">
+                        <div class="athlete-name">${athlete.nombre}</div>
+                        <div class="athlete-plan">${athlete.plan}</div>
+                    </div>
+                `;
+            });
+            document.getElementById('athletesList').innerHTML = html;
+        }
+
+        function selectAthlete(id) {
+            currentAthleteId = id;
+            currentAthlete = athletes.find(a => a.id === id);
+            openEditor(id);
+        }
+
+        function renderDashboard() {
+            let html = '';
+            athletes.forEach(athlete => {
+                html += `
+                    <tr>
+                        <td><strong>${athlete.nombre}</strong></td>
+                        <td>${athlete.plan}</td>
+                        <td>${athlete.type === 'presencial' ? '🏃 Presencial' : '💻 Online'}</td>
+                        <td>$${(athlete.price || 0).toLocaleString()}</td>
+                        <td>${getStatusBadge(athlete.paymentStatus)}</td>
+                        <td><button class="btn btn-secondary" onclick="selectAthlete('${athlete.id}')">Abrir</button></td>
+                    </tr>
+                `;
+            });
+            document.getElementById('dashboardList').innerHTML = html;
+        }
+
+        function renderByType(type) {
+            const filtered = athletes.filter(a => a.type === type);
+            let html = '';
+
+            filtered.forEach(athlete => {
+                html += `
+                    <div class="card" style="cursor: pointer;" onclick="selectAthlete('${athlete.id}')">
+                        <div style="font-size: 1.1rem; font-weight: 600; color: var(--pink); margin-bottom: 8px;">${athlete.nombre}</div>
+                        <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 4px;"><strong>Plan:</strong> ${athlete.plan}</div>
+                        <div style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 4px;"><strong>Precio:</strong> $${(athlete.price || 0).toLocaleString()}</div>
+                        <div style="font-size: 0.9rem; color: var(--text-muted);"><strong>Vencimiento:</strong> ${athlete.expiryDate || '-'}</div>
+                        <button class="btn" style="width: 100%; margin-top: 12px;">Editar Plan</button>
+                    </div>
+                `;
+            });
+
+            const containerId = type === 'presencial' ? 'presencialesList' : 'onlineList';
+            document.getElementById(containerId).innerHTML = html || '<p style="color: var(--text-muted);">Sin atletas</p>';
+        }
+
+        function switchView(viewName) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            
+            document.getElementById(viewName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (viewName === 'presenciales') renderByType('presencial');
+            if (viewName === 'online') renderByType('online');
+        }
+
+        async function openEditor(id) {
+            currentAthleteId = id;
+            currentAthlete = athletes.find(a => a.id === id);
+
+            document.getElementById('modalTitle').textContent = currentAthlete.nombre;
+            document.getElementById('editName').value = currentAthlete.nombre;
+            document.getElementById('editPlan').value = currentAthlete.plan;
+            document.getElementById('editPrice').value = currentAthlete.price || 0;
+            document.getElementById('editExpiry').value = currentAthlete.expiryDate || '';
+            document.getElementById('editAmountDue').value = currentAthlete.amountDue || 0;
+            document.getElementById('editStatus').value = currentAthlete.paymentStatus || 'pendiente';
+
+            // Mostrar tab protocolos solo si es online
+            document.getElementById('protocolosTab').style.display = currentAthlete.type === 'online' ? 'block' : 'none';
+
+            // Cargar datos
+            await loadAnamnesis(id);
+            await loadDailyBloqueos(id);
+            await loadTrainings(id);
+            await loadNutrition(id);
+            await loadProtocolos(id);
+
+            document.getElementById('editorModal').classList.add('active');
+        }
+
+        async function loadAnamnesis(id) {
+            try {
+                const anamDoc = await db.collection('athletes').doc(id).collection('evaluacion').doc('anamnesis').get();
+                let html = '';
+
+                if (anamDoc.exists) {
+                    const data = anamDoc.data();
+                    
+                    // Psicología
+                    html += `
+                        <div class="anamnesis-field">
+                            <div class="anamnesis-label">🧠 Estrés</div>
+                            <div class="anamnesis-value">${data.estres || '-'}</div>
+                        </div>
+                        <div class="anamnesis-field">
+                            <div class="anamnesis-label">😴 Sueño</div>
+                            <div class="anamnesis-value">${data.sueno || '-'} horas</div>
+                        </div>
+                        <div class="anamnesis-field">
+                            <div class="anamnesis-label">📚 Experiencia</div>
+                            <div class="anamnesis-value">${data.experiencia || '-'}</div>
+                        </div>
+                        <div class="anamnesis-field">
+                            <div class="anamnesis-label">🎯 Objetivo Principal</div>
+                            <div class="anamnesis-value">${data.objetivoPrincipal || '-'}</div>
+                        </div>
+                    `;
+                } else {
+                    html = '<p style="color: var(--text-muted); grid-column: 1/-1;">Sin anamnesis registrada - Completa primero</p>';
+                }
+
+                document.getElementById('anamnesisGrid').innerHTML = html;
+            } catch (error) {
+                document.getElementById('anamnesisGrid').innerHTML = '<p>Error cargando anamnesis</p>';
+            }
+        }
+
+        async function loadDailyBloqueos(id) {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const bloqueosDoc = await db.collection('athletes').doc(id).collection('bloqueos_diarios').doc(today).get();
+
+                if (bloqueosDoc.exists) {
+                    const data = bloqueosDoc.data();
+                    document.getElementById('dailyFeeling').value = data.feeling || '';
+                    
+                    // Renderizar entrenamientos del día
+                    let trainingsHtml = '<label class="checkbox-item"><input type="checkbox" id="training1"> Sesión 1</label>';
+                    trainingsHtml += '<label class="checkbox-item"><input type="checkbox" id="training2"> Sesión 2</label>';
+                    document.getElementById('dailyTrainings').innerHTML = trainingsHtml;
+
+                    // Renderizar comidas del día
+                    let mealsHtml = '';
+                    const meals = ['Desayuno', 'Almuerzo', 'Merienda', 'Cena'];
+                    meals.forEach((meal, i) => {
+                        mealsHtml += `<label class="checkbox-item"><input type="checkbox" id="meal${i}"> ${meal}</label>`;
+                    });
+                    document.getElementById('dailyMeals').innerHTML = mealsHtml;
+                } else {
+                    document.getElementById('dailyFeeling').value = '';
+                    let trainingsHtml = '<label class="checkbox-item"><input type="checkbox" id="training1"> Sesión 1</label>';
+                    trainingsHtml += '<label class="checkbox-item"><input type="checkbox" id="training2"> Sesión 2</label>';
+                    document.getElementById('dailyTrainings').innerHTML = trainingsHtml;
+
+                    let mealsHtml = '';
+                    const meals = ['Desayuno', 'Almuerzo', 'Merienda', 'Cena'];
+                    meals.forEach((meal, i) => {
+                        mealsHtml += `<label class="checkbox-item"><input type="checkbox" id="meal${i}"> ${meal}</label>`;
+                    });
+                    document.getElementById('dailyMeals').innerHTML = mealsHtml;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadTrainings(id) {
+            try {
+                const snapshot = await db.collection('athletes').doc(id).collection('entrenamientos').get();
+                let html = '';
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    html += `
+                        <div class="training-item">
+                            <div class="training-info">
+                                <strong>${data.sesion}</strong> - ${data.ejercicio} (${data.sets}x${data.reps} @ ${data.peso}kg)
+                            </div>
+                            <button class="btn btn-danger" onclick="deleteTraining('${doc.id}')">🗑️</button>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('trainingsList').innerHTML = html || '<p style="color: var(--text-muted);">Sin entrenamientos</p>';
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadNutrition(id) {
+            try {
+                const snapshot = await db.collection('athletes').doc(id).collection('nutricion').get();
+                let html = '';
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const cals = (data.proteina * 4) + (data.carbs * 4) + (data.grasas * 9);
+                    html += `
+                        <tr>
+                            <td>${data.comida}</td>
+                            <td>${data.proteina}g</td>
+                            <td>${data.carbs}g</td>
+                            <td>${data.grasas}g</td>
+                            <td>${Math.round(cals)}</td>
+                            <td><button class="btn btn-danger" onclick="deleteNutrition('${doc.id}')">🗑️</button></td>
+                        </tr>
+                    `;
+                });
+
+                document.getElementById('nutritionList').innerHTML = html || '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Sin comidas registradas</td></tr>';
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadProtocolos(id) {
+            try {
+                const protDoc = await db.collection('athletes').doc(id).get();
+                document.getElementById('protocolosText').value = protDoc.data().protocolos || '';
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function saveDatos() {
+            try {
+                await db.collection('athletes').doc(currentAthleteId).update({
+                    price: parseInt(document.getElementById('editPrice').value) || 0,
+                    expiryDate: document.getElementById('editExpiry').value,
+                    amountDue: parseInt(document.getElementById('editAmountDue').value) || 0,
+                    paymentStatus: document.getElementById('editStatus').value,
+                    updatedAt: new Date()
+                });
+                alert('✅ Datos guardados');
+                loadAthletes();
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        async function saveDailyBloqueos() {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                
+                await db.collection('athletes').doc(currentAthleteId).collection('bloqueos_diarios').doc(today).set({
+                    feeling: document.getElementById('dailyFeeling').value,
+                    date: today,
+                    createdAt: new Date()
+                });
+
+                alert('✅ Bloqueos guardados');
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        function addTraining() {
+            alert('➕ Agregar entrenamiento - Se implementará');
+        }
+
+        function addMeal() {
+            alert('➕ Agregar comida - Se implementará');
+        }
+
+        async function saveProtocolos() {
+            try {
+                await db.collection('athletes').doc(currentAthleteId).update({
+                    protocolos: document.getElementById('protocolosText').value,
+                    updatedAt: new Date()
+                });
+                alert('✅ Protocolos guardados');
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        function switchModalTab(tabName) {
+            document.querySelectorAll('.modal-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function getStatusBadge(status) {
+            switch(status) {
+                case 'pagado': return '✅ Pagado';
+                case 'congelado': return '❄️ Congelado';
+                default: return '⏳ Pendiente';
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('editorModal').classList.remove('active');
+        }
+
+        function editarAnamnesis() {
+            alert('✏️ Editar anamnesis - Redirigir a anamnesis-form.html');
+        }
+
+        async function deleteTraining(docId) {
+            if (!confirm('¿Eliminar entrenamiento?')) return;
+            try {
+                await db.collection('athletes').doc(currentAthleteId).collection('entrenamientos').doc(docId).delete();
+                loadTrainings(currentAthleteId);
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function deleteNutrition(docId) {
+            if (!confirm('¿Eliminar comida?')) return;
+            try {
+                await db.collection('athletes').doc(currentAthleteId).collection('nutricion').doc(docId).delete();
+                loadNutrition(currentAthleteId);
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        loadAthletes();
+    </script>
+</body>
+</html>
