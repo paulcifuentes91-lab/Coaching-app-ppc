@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mesociclo Julio — Iván De La Cerda</title>
+<title>Mesociclo Julio — María José Amezaga</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
@@ -186,7 +186,7 @@
 
   <header>
     <div class="eyebrow" id="headerEyebrow">Mesociclo Julio · Fuerza + Performance · Semana 1 a 4</div>
-    <h1 id="headerName">Iván De La Cerda</h1>
+    <h1 id="headerName">María José Amezaga</h1>
     <p class="athlete-sub" id="headerMeta"><b>Fuerza + Performance</b> · 4 sesiones semanales · Salud y rendimiento</p>
     <div id="expiryBanner"></div>
     <div id="checkBanner"></div>
@@ -200,36 +200,17 @@
     <div class="card" id="anamnesisCard" style="margin-top:12px;display:none"></div>
   </div>
 
-  <div id="trainingView">
-    <div class="stat-strip" id="statStrip"></div>
+  <div 
+<div id="trainingView" style="display: none;">
+    <div style="padding: 20px;">
+        <div style="text-align: center; color: var(--text-muted); padding: 40px;">
+            <div style="font-size: 3rem; margin-bottom: 10px;">📝</div>
+            <div style="font-size: 1.2rem; font-weight: 600;">Entrenamiento vacío</div>
+            <div style="font-size: 0.9rem; margin-top: 10px; color: var(--text-faint);">Los detalles de entrenamiento se cargarán próximamente</div>
+        </div>
+    </div>
+</div>
 
-    <details class="accordion">
-      <summary>Parámetros de entrenamiento</summary>
-      <div class="content" id="paramsContent"></div>
-    </details>
-
-    <div class="week-row" id="weekRow"></div>
-    <div class="week-banner" id="weekBanner"></div>
-
-    <nav class="tabs" id="tabs"></nav>
-
-    <main class="card" id="card"></main>
-
-    <div class="card" id="trainHistoryCard" style="margin-top:12px;display:none"></div>
-  </div>
-
-  <div id="nutritionView" style="display:none">
-    <div class="week-banner" id="nutritionNotesBanner"></div>
-    <div class="card" id="macroCard" style="margin-top:12px"></div>
-    <div class="week-row" id="mealWindowRow"></div>
-
-    <main class="card" id="mealCard"></main>
-
-    <div class="card" id="mealHistoryCard" style="margin-top:12px"></div>
-
-    <details class="accordion" style="margin-top:14px">
-      <summary>Suplementación</summary>
-      <div class="content" id="supplementContent"></div>
     </details>
   </div>
 
@@ -275,7 +256,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7
    volver a tocar este código. */
 const DEFAULT_PLAN = {
   eyebrow: 'Mesociclo Julio · Fuerza + Performance · Semana 1 a 4',
-  nombre: 'Iván De La Cerda',
+  nombre: 'María José Amezaga',
   meta: '<b>Fuerza + Performance</b> · 4 sesiones semanales · Salud y rendimiento',
   accessExpiresAt: null,
   startDate: '2026-07-13',

@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Coach Integrado - Pro Performance Coach v5.0</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --bg: #14171B;
+            --surface: #1D2126;
+            --surface-2: #262B31;
+            --border: #2E333A;
+            --text: #F3F2EE;
+            --text-muted: #9BA1AA;
+            --text-faint: #666B73;
+            --pink: #FF7FAE;
+            --radius: 16px;
+            --font-display: 'Oswald', sans-serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-family: var(--font-body); padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+
+        header {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 30px;
+            margin-bottom: 30px;
+            border-top: 3px solid var(--pink);
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-size: 2.5rem;
+            color: var(--pink);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .subtitle { color: var(--text-muted); margin-bottom: 20px; }
+
+        .header-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .stat-chip {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-value { font-size: 1.8rem; color: var(--pink); font-weight: 700; margin-bottom: 4px; }
+        .stat-label { font-size: 0.8rem; color: var(--text-faint); text-transform: uppercase; }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 10px 18px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-weight: 600;
+            font-family: var(--font-mono);
+            transition: all 0.2s;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .tab:hover { border-color: var(--pink); color: var(--pink); }
+        .tab.active { background: var(--pink); color: var(--bg); border-color: var(--pink); }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        .section-title {
+            font-family: var(--font-display);
+            font-size: 1.4rem;
+            color: var(--text);
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        th {
+            background: var(--surface-2);
+            color: var(--text-muted);
+            padding: 12px;
+            text-align: left;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        tr:hover { background: var(--surface-2); }
+
+        .athlete-name { color: var(--pink); font-weight: 600; }
+        .athlete-plan { color: var(--text-muted); }
+        .athlete-price { color: var(--text); font-family: var(--font-mono); font-weight: 600; }
+
+        .btn {
+            padding: 8px 12px;
+            background: var(--pink);
+            color: var(--bg);
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .btn:hover { background: #FFB6D0; }
+
+        .btn-secondary {
+            background: var(--surface-2);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--pink);
+            color: var(--bg);
+            border-color: var(--pink);
+        }
+
+        .athletes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .athlete-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .athlete-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--pink), #FFB6D0);
+        }
+
+        .athlete-card:hover {
+            border-color: var(--pink);
+            transform: translateY(-4px);
+        }
+
+        .athlete-name {
+            font-family: var(--font-display);
+            font-size: 1.2rem;
+            color: var(--text);
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .info-row strong { color: var(--text); }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-top: 8px;
+        }
+
+        .status-active { background: rgba(76, 175, 80, 0.2); color: #4caf50; border: 1px solid #4caf50; }
+        .status-frozen { background: rgba(255, 152, 0, 0.2); color: #FFA500; border: 1px solid #FFA500; }
+
+        .loading { text-align: center; color: var(--text-muted); padding: 40px; }
+        .spinner { border: 3px solid var(--surface-2); border-top: 3px solid var(--pink); border-radius: 50%; width: 30px; height: 30px; animation: spin 0.8s linear infinite; margin: 0 auto 15px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 2rem;
+            cursor: pointer;
+        }
+
+        .form-group { margin-bottom: 15px; }
+
+        label {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-faint);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 6px;
+            font-family: var(--font-body);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--pink);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔧 Panel Coach Integrado</h1>
+            <p class="subtitle">Admin + Precios + Gestión de Atletas</p>
+            
+            <div class="header-stats">
+                <div class="stat-chip">
+                    <div class="stat-value" id="totalAthletes">-</div>
+                    <div class="stat-label">Atletas</div>
+                </div>
+                <div class="stat-chip">
+                    <div class="stat-value" id="presencialesCount">-</div>
+                    <div class="stat-label">Presenciales</div>
+                </div>
+                <div class="stat-chip">
+                    <div class="stat-value" id="onlineCount">-</div>
+                    <div class="stat-label">Online</div>
+                </div>
+                <div class="stat-chip">
+                    <div class="stat-value" id="totalIncome">-</div>
+                    <div class="stat-label">Ingresos/Mes</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('dashboard', event)">📊 Dashboard</div>
+            <div class="tab" onclick="switchTab('presenciales', event)">🏃 Presenciales</div>
+            <div class="tab" onclick="switchTab('online', event)">💻 Online</div>
+            <div class="tab" onclick="switchTab('precios', event)">💰 Precios</div>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div id="dashboard" class="section active">
+            <div class="section-title">📊 Dashboard Principal</div>
+            <table id="dashboardTable">
+                <thead>
+                    <tr>
+                        <th>Atleta</th>
+                        <th>Plan</th>
+                        <th>Precio</th>
+                        <th>Vencimiento</th>
+                        <th>A Cobrar</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="dashboardList">
+                    <tr><td colspan="7" class="loading"><div class="spinner"></div>Cargando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PRESENCIALES -->
+        <div id="presenciales" class="section">
+            <div class="section-title">🏃 Atletas Presenciales</div>
+            <div id="presencialesList" class="athletes-grid">
+                <div class="loading"><div class="spinner"></div>Cargando...</div>
+            </div>
+        </div>
+
+        <!-- ONLINE -->
+        <div id="online" class="section">
+            <div class="section-title">💻 Atletas Online</div>
+            <div id="onlineList" class="athletes-grid">
+                <div class="loading"><div class="spinner"></div>Cargando...</div>
+            </div>
+        </div>
+
+        <!-- PRECIOS -->
+        <div id="precios" class="section">
+            <div class="section-title">💰 Planes y Precios</div>
+            <table id="preciosTable">
+                <thead>
+                    <tr>
+                        <th>Plan</th>
+                        <th>Precio</th>
+                        <th>Ciclo</th>
+                        <th>Atletas</th>
+                        <th>Ingresos Totales</th>
+                    </tr>
+                </thead>
+                <tbody id="preciosList">
+                    <tr><td colspan="5" class="loading"><div class="spinner"></div>Cargando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()">×</button>
+            <h2 style="color: var(--pink); margin-bottom: 20px; text-transform: uppercase;">Editar Atleta</h2>
+            
+            <div class="form-group">
+                <label>Nombre</label>
+                <input type="text" id="editName" disabled>
+            </div>
+            <div class="form-group">
+                <label>Plan</label>
+                <select id="editPlan">
+                    <option value="BÁSICO">BÁSICO</option>
+                    <option value="FULL">FULL</option>
+                    <option value="FULL+4">FULL+4</option>
+                    <option value="FULL+12">FULL+12</option>
+                    <option value="TERCERA EDAD">TERCERA EDAD</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Precio ($)</label>
+                <input type="number" id="editPrice">
+            </div>
+            <div class="form-group">
+                <label>Vencimiento</label>
+                <input type="date" id="editExpiryDate">
+            </div>
+            <div class="form-group">
+                <label>Monto a Cobrar ($)</label>
+                <input type="number" id="editAmountDue">
+            </div>
+            <div class="form-group">
+                <label>Estado Pago</label>
+                <select id="editStatus">
+                    <option value="pagado">✅ Pagado</option>
+                    <option value="pendiente">⏳ Pendiente</option>
+                    <option value="congelado">❄️ Congelado</option>
+                </select>
+            </div>
+            <button class="btn" onclick="saveAthlete()" style="width: 100%; margin-top: 20px;">💾 Guardar</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBPY3MwFy-vKvL7sQzlPn9K5zL6qvW8",
+            authDomain: "pro-performance-e811e.firebaseapp.com",
+            projectId: "pro-performance-e811e",
+            storageBucket: "pro-performance-e811e.appspot.com",
+            messagingSenderId: "859088259827",
+            appId: "1:859088259827:web:8a9e4c2b7f1d3e5a6b9c"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let athletes = [];
+        let currentEditId = null;
+
+        async function loadAthletes() {
+            try {
+                const snapshot = await db.collection('athletes').get();
+                athletes = [];
+
+                snapshot.forEach(doc => {
+                    athletes.push({ id: doc.id, ...doc.data() });
+                });
+
+                renderAllSections();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function renderAllSections() {
+            const presenciales = athletes.filter(a => a.type === 'presencial');
+            const online = athletes.filter(a => a.type === 'online');
+
+            renderDashboard(athletes);
+            renderAthletes(presenciales, 'presenciales');
+            renderAthletes(online, 'online');
+            renderPrices(athletes);
+            updateStats(athletes, presenciales, online);
+        }
+
+        function renderDashboard(list) {
+            let html = '';
+            list.forEach(athlete => {
+                html += `
+                    <tr>
+                        <td><span class="athlete-name">${athlete.nombre}</span></td>
+                        <td><span class="athlete-plan">${athlete.plan}</span></td>
+                        <td><span class="athlete-price">$${(athlete.price || 0).toLocaleString()}</span></td>
+                        <td>${athlete.expiryDate || '-'}</td>
+                        <td>$${(athlete.amountDue || 0).toLocaleString()}</td>
+                        <td>${getStatusBadge(athlete.paymentStatus)}</td>
+                        <td><button class="btn btn-secondary" onclick="editAthlete('${athlete.id}')">Editar</button></td>
+                    </tr>
+                `;
+            });
+            document.getElementById('dashboardList').innerHTML = html || '<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">Sin atletas</td></tr>';
+        }
+
+        function renderAthletes(list, type) {
+            let html = '';
+            list.forEach(athlete => {
+                const planSlug = athlete.nombre.toLowerCase().replace(/\s+/g, '-');
+                html += `
+                    <div class="athlete-card">
+                        <div class="athlete-name">${athlete.nombre}</div>
+                        <div class="info-row"><strong>Plan:</strong> <span>${athlete.plan}</span></div>
+                        <div class="info-row"><strong>Precio:</strong> <span>$${(athlete.price || 0).toLocaleString()}</span></div>
+                        <div class="info-row"><strong>Vencimiento:</strong> <span>${athlete.expiryDate || '-'}</span></div>
+                        <div class="status-badge ${athlete.paymentStatus === 'pagado' ? 'status-active' : 'status-frozen'}">${getStatusBadgeText(athlete.paymentStatus)}</div>
+                        <button class="btn btn-secondary" onclick="editAthlete('${athlete.id}')" style="width: 100%; margin-top: 12px;">Editar</button>
+                    </div>
+                `;
+            });
+            document.getElementById(type + 'List').innerHTML = html || '<p style="color: var(--text-muted); text-align: center;">Sin atletas</p>';
+        }
+
+        function renderPrices(list) {
+            const priceMap = {};
+            list.forEach(athlete => {
+                if (!priceMap[athlete.plan]) {
+                    priceMap[athlete.plan] = { price: athlete.price, count: 0, total: 0 };
+                }
+                priceMap[athlete.plan].count++;
+                priceMap[athlete.plan].total += athlete.price || 0;
+            });
+
+            let html = '';
+            Object.entries(priceMap).forEach(([plan, data]) => {
+                const cycle = plan === 'TERCERA EDAD' ? '10 semanas' : 'Mensual';
+                html += `
+                    <tr>
+                        <td><strong>${plan}</strong></td>
+                        <td>$${(data.price || 0).toLocaleString()}</td>
+                        <td>${cycle}</td>
+                        <td>${data.count}</td>
+                        <td>$${(data.total || 0).toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('preciosList').innerHTML = html;
+        }
+
+        function getStatusBadge(status) {
+            switch(status) {
+                case 'pagado': return '<span class="status-badge status-active">✅ Pagado</span>';
+                case 'congelado': return '<span class="status-badge status-frozen">❄️ Congelado</span>';
+                default: return '<span class="status-badge">⏳ Pendiente</span>';
+            }
+        }
+
+        function getStatusBadgeText(status) {
+            switch(status) {
+                case 'pagado': return '✅ Pagado';
+                case 'congelado': return '❄️ Congelado';
+                default: return '⏳ Pendiente';
+            }
+        }
+
+        function updateStats(all, presenciales, online) {
+            const totalIncome = all.reduce((sum, a) => sum + (a.price || 0), 0);
+            document.getElementById('totalAthletes').textContent = all.length;
+            document.getElementById('presencialesCount').textContent = presenciales.length;
+            document.getElementById('onlineCount').textContent = online.length;
+            document.getElementById('totalIncome').textContent = `$${totalIncome.toLocaleString()}`;
+        }
+
+        function switchTab(tabName, event) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function editAthlete(id) {
+            const athlete = athletes.find(a => a.id === id);
+            if (!athlete) return;
+
+            currentEditId = id;
+            document.getElementById('editName').value = athlete.nombre;
+            document.getElementById('editPlan').value = athlete.plan;
+            document.getElementById('editPrice').value = athlete.price || 0;
+            document.getElementById('editExpiryDate').value = athlete.expiryDate || '';
+            document.getElementById('editAmountDue').value = athlete.amountDue || 0;
+            document.getElementById('editStatus').value = athlete.paymentStatus || 'pendiente';
+
+            document.getElementById('editModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('active');
+            currentEditId = null;
+        }
+
+        async function saveAthlete() {
+            if (!currentEditId) return;
+
+            const updates = {
+                plan: document.getElementById('editPlan').value,
+                price: parseInt(document.getElementById('editPrice').value) || 0,
+                expiryDate: document.getElementById('editExpiryDate').value,
+                amountDue: parseInt(document.getElementById('editAmountDue').value) || 0,
+                paymentStatus: document.getElementById('editStatus').value,
+                updatedAt: new Date()
+            };
+
+            try {
+                await db.collection('athletes').doc(currentEditId).update(updates);
+                closeModal();
+                loadAthletes();
+                alert('✅ Atleta actualizado');
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        loadAthletes();
+    </script>
+</body>
+</html>
