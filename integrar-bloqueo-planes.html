@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Bloqueos - Pro Performance Coach</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --bg: #14171B;
+            --surface: #1D2126;
+            --surface-2: #262B31;
+            --border: #2E333A;
+            --text: #F3F2EE;
+            --text-muted: #9BA1AA;
+            --text-faint: #666B73;
+            --pink: #FF7FAE;
+            --radius: 16px;
+            --font-display: 'Oswald', sans-serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-family: var(--font-body); padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+
+        header {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 30px;
+            margin-bottom: 30px;
+            border-top: 3px solid var(--pink);
+        }
+
+        h1 {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            color: var(--pink);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+        }
+
+        .card-title {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            color: var(--pink);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .form-group { margin-bottom: 15px; }
+
+        label {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-faint);
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 10px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 6px;
+            font-family: var(--font-body);
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--pink);
+        }
+
+        .sessions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .session-btn {
+            padding: 10px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-weight: 600;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .session-btn:hover { border-color: var(--pink); color: var(--pink); }
+        .session-btn.locked { background: #4caf50; color: var(--bg); border-color: #4caf50; }
+
+        .btn {
+            padding: 10px 15px;
+            background: var(--pink);
+            color: var(--bg);
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .btn:hover { background: #FFB6D0; }
+
+        .status-list {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        .status-item:last-child { border-bottom: none; }
+
+        .locked-badge { color: #4caf50; font-weight: 600; }
+        .unlocked-badge { color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔒 Gestor de Bloqueos de Sesiones</h1>
+            <p style="color: var(--text-muted);">Marca sesiones como completadas para bloquear ediciones</p>
+        </header>
+
+        <div class="grid">
+            <!-- MARCAR COMPLETADAS -->
+            <div class="card">
+                <div class="card-title">✅ Marcar Completadas</div>
+                
+                <div class="form-group">
+                    <label>Atleta</label>
+                    <select id="athleteSelect" onchange="loadSessionesAthleta()">
+                        <option value="">-- Seleccionar --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Sesiones Completadas</label>
+                    <div class="sessions-grid" id="sessionsGrid"></div>
+                </div>
+
+                <button class="btn" onclick="marcarCompletadas()" style="width: 100%;">💾 Guardar Cambios</button>
+            </div>
+
+            <!-- ESTADO DE SESIONES -->
+            <div class="card">
+                <div class="card-title">📊 Estado de Sesiones</div>
+                <div class="status-list" id="statusList">
+                    <p style="text-align: center; color: var(--text-muted);">Selecciona un atleta</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- DESBLOQUEAR (ADMIN) -->
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-title">🔓 Panel de Administrador (Desbloquear)</div>
+            
+            <div class="grid">
+                <div class="form-group">
+                    <label>Atleta</label>
+                    <select id="athleteSelectAdmin">
+                        <option value="">-- Seleccionar --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Número de Sesión a Desbloquear</label>
+                    <input type="number" id="sessionToUnlock" min="1" placeholder="1">
+                </div>
+
+                <div class="form-group">
+                    <label>Contraseña Admin</label>
+                    <input type="password" id="adminPassword" placeholder="••••••">
+                </div>
+
+                <button class="btn" onclick="desbloquearSesion()" style="width: 100%; grid-column: 1/-1;">🔓 Desbloquear</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBPY3MwFy-vKvL7sQzlPn9K5zL6qvW8",
+            authDomain: "pro-performance-e811e.firebaseapp.com",
+            projectId: "pro-performance-e811e",
+            storageBucket: "pro-performance-e811e.appspot.com",
+            messagingSenderId: "859088259827",
+            appId: "1:859088259827:web:8a9e4c2b7f1d3e5a6b9c"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let athletes = [];
+        let currentAthleteId = null;
+        let sesionesCompletadas = [];
+
+        async function loadAthletes() {
+            try {
+                const snapshot = await db.collection('athletes').get();
+                athletes = [];
+
+                snapshot.forEach(doc => {
+                    athletes.push({ id: doc.id, ...doc.data() });
+                });
+
+                // Llenar ambos selects
+                [document.getElementById('athleteSelect'), document.getElementById('athleteSelectAdmin')].forEach(select => {
+                    athletes.forEach(athlete => {
+                        const option = document.createElement('option');
+                        option.value = athlete.id;
+                        option.textContent = athlete.nombre;
+                        select.appendChild(option);
+                    });
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function loadSesionesAthleta() {
+            const id = document.getElementById('athleteSelect').value;
+            if (!id) return;
+
+            currentAthleteId = id;
+            const athlete = athletes.find(a => a.id === id);
+
+            // Determinar cantidad de sesiones
+            let totalSesiones = 0;
+            if (athlete.plan === 'TERCERA EDAD') totalSesiones = 20;
+            else if (athlete.plan === 'FULL+12') totalSesiones = 16;
+            else if (athlete.plan === 'FULL+4' || athlete.plan === 'FULL') totalSesiones = 12;
+            else totalSesiones = 8;
+
+            // Cargar sesiones completadas
+            try {
+                const snapshot = await db.collection('athletes').doc(id).collection('sesiones').where('locked', '==', true).get();
+                sesionesCompletadas = [];
+                snapshot.forEach(doc => {
+                    sesionesCompletadas.push(doc.data().sessionNumber);
+                });
+            } catch (error) {
+                sesionesCompletadas = [];
+            }
+
+            // Generar botones
+            let html = '';
+            for (let i = 1; i <= totalSesiones; i++) {
+                const isCompleted = sesionesCompletadas.includes(i);
+                html += `<button type="button" class="session-btn ${isCompleted ? 'locked' : ''}" onclick="toggleSesion(${i})" id="sesion-${i}">S${i}</button>`;
+            }
+            document.getElementById('sessionsGrid').innerHTML = html;
+
+            // Mostrar estado
+            mostrarEstado();
+        }
+
+        function toggleSesion(number) {
+            const btn = document.getElementById(`sesion-${number}`);
+            if (sesionesCompletadas.includes(number)) {
+                sesionesCompletadas = sesionesCompletadas.filter(s => s !== number);
+                btn.classList.remove('locked');
+            } else {
+                sesionesCompletadas.push(number);
+                btn.classList.add('locked');
+            }
+        }
+
+        async function marcarCompletadas() {
+            if (!currentAthleteId) return;
+
+            try {
+                // Limpiar sesiones desbloqueadas
+                const snapshot = await db.collection('athletes').doc(currentAthleteId).collection('sesiones').get();
+                for (const doc of snapshot.docs) {
+                    if (!sesionesCompletadas.includes(doc.data().sessionNumber)) {
+                        await doc.ref.delete();
+                    }
+                }
+
+                // Agregar nuevas completadas
+                for (const number of sesionesCompletadas) {
+                    await db.collection('athletes').doc(currentAthleteId).collection('sesiones').doc(`sesion-${number}`).set({
+                        sessionNumber: number,
+                        locked: true,
+                        completedAt: new Date()
+                    });
+                }
+
+                alert('✅ Sesiones actualizadas');
+                mostrarEstado();
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        async function mostrarEstado() {
+            if (!currentAthleteId) return;
+
+            try {
+                const snapshot = await db.collection('athletes').doc(currentAthleteId).collection('sesiones').get();
+                let html = '';
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    html += `
+                        <div class="status-item">
+                            <span>Sesión ${data.sessionNumber}</span>
+                            <span class="locked-badge">🔒 Bloqueada</span>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('statusList').innerHTML = html || '<p style="text-align: center; color: var(--text-muted);">Sin sesiones completadas</p>';
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        async function desbloquearSesion() {
+            const athleteId = document.getElementById('athleteSelectAdmin').value;
+            const sessionNum = parseInt(document.getElementById('sessionToUnlock').value);
+            const password = document.getElementById('adminPassword').value;
+
+            if (!athleteId || !sessionNum) {
+                alert('⚠️ Completa todos los campos');
+                return;
+            }
+
+            if (password !== 'PPC2026Admin') {
+                alert('❌ Contraseña incorrecta');
+                return;
+            }
+
+            try {
+                await db.collection('athletes').doc(athleteId).collection('sesiones').doc(`sesion-${sessionNum}`).delete();
+                alert(`✅ Sesión ${sessionNum} desbloqueada`);
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            }
+        }
+
+        loadAthletes();
+    </script>
+</body>
+</html>
