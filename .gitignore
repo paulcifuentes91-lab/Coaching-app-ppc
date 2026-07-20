@@ -1,0 +1,9 @@
+node_modules/
+firebase-key.json
+*.VIEJO.html
+create-*.py
+generar-*.py
+init-*.js
+package-lock.json
+preview-*.html
+panel-admin-v1.html
