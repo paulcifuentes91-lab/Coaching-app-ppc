@@ -48,7 +48,7 @@
   .accordion .content{padding:0 14px 14px;}
   .param-row{display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
   .param-row:last-child{border-bottom:none;}
-  .param-label{color:var(--text-faint);font-weight:600;flex:0 0 38%;}
+  .param-label{color:#9BA1AA;font-weight:600;flex:0 0 38%;}
   .param-value{color:var(--text);text-align:right;flex:1;line-height:1.4;}
 
   .week-row{display:flex;gap:8px;margin-top:16px;}
@@ -86,7 +86,7 @@
   .ring-fill{fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset .3s ease;}
   .ring-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text);}
 
-  .section-label{display:flex;align-items:center;gap:8px;margin:16px 0 8px;font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-faint);}
+  .section-label{display:flex;align-items:center;gap:8px;margin:16px 0 8px;font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#9BA1AA;}
   .section-label::before{content:"";width:3px;height:12px;background:var(--accent);border-radius:2px;}
 
   .row{display:flex;align-items:flex-start;gap:12px;padding:10px 2px;border-bottom:1px solid var(--border);}
@@ -100,7 +100,7 @@
   .ex-info{flex:1;min-width:0;cursor:pointer;}
   .ex-name{font-size:14.5px;font-weight:600;color:var(--text);transition:all .15s ease;}
   .ex-name.done{color:var(--text-faint);text-decoration:line-through;}
-  .ex-tip{font-size:11.5px;color:var(--text-faint);margin-top:2px;line-height:1.4;}
+  .ex-tip{font-size:12px;color:#B4BAC3;margin-top:4px;line-height:1.45;padding-left:9px;border-left:2px solid var(--accent);opacity:.95;}
   .vid-link{display:inline-block;margin-top:5px;font-size:10.5px;color:var(--accent);text-decoration:none;font-weight:700;letter-spacing:.01em;}
   .vid-link:active{opacity:.65;}
 
@@ -115,7 +115,7 @@
 
   .p-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;}
   .p-form .full{grid-column:1 / -1;}
-  .p-subhead{grid-column:1 / -1;font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);margin-top:6px;padding-top:8px;border-top:1px solid var(--border);}
+  .p-subhead{grid-column:1 / -1;font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#9BA1AA;margin-top:6px;padding-top:8px;border-top:1px solid var(--border);}
   .p-field label{display:block;font-family:var(--font-mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint);margin-bottom:4px;}
   .p-field input,.p-field textarea{width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:8px 9px;font-family:var(--font-body);font-size:13px;}
   .p-field textarea{resize:vertical;min-height:38px;font-family:var(--font-body);}
@@ -125,11 +125,11 @@
   .p-entry{padding:12px 2px;border-bottom:1px solid var(--border);}
   .p-entry:last-child{border-bottom:none;}
   .p-entry-top{display:flex;justify-content:space-between;align-items:baseline;}
-  .p-entry-date{font-family:var(--font-mono);font-size:11px;color:var(--text-faint);}
+  .p-entry-date{font-family:var(--font-mono);font-size:11px;color:#9BA1AA;}
   .p-entry-weight{font-family:var(--font-mono);font-size:17px;font-weight:700;color:var(--text);}
   .p-entry-delta{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-left:6px;}
   .p-entry-meas{font-size:11.5px;color:var(--text-muted);margin-top:3px;}
-  .p-entry-notes{font-size:11.5px;color:var(--text-faint);margin-top:3px;font-style:italic;line-height:1.4;}
+  .p-entry-notes{font-size:11.5px;color:#9BA1AA;margin-top:3px;font-style:italic;line-height:1.4;}
   .p-del{background:none;border:none;color:var(--text-faint);font-size:16px;cursor:pointer;padding:0 4px;}
   .p-empty{text-align:center;color:var(--text-faint);font-size:12.5px;padding:20px 0;}
 
@@ -137,7 +137,7 @@
   .macro-chip{flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 4px;text-align:center;}
   .macro-chip .v{font-family:var(--font-mono);font-weight:700;font-size:16px;color:var(--text);}
   .macro-chip .l{font-size:9px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
-  .macro-note{font-size:11px;color:var(--text-faint);margin-top:10px;line-height:1.5;}
+  .macro-note{font-size:11px;color:#9BA1AA;margin-top:10px;line-height:1.5;}
 
   .adherence-strip{display:flex;gap:8px;margin-top:12px;}
   .adherence-chip{flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 6px;text-align:center;}
@@ -350,7 +350,7 @@ const DEFAULT_PLAN = {
   ]
  ],
  "weekMeta": [{"n": 1, "label": "Semana 1 · Acumulación", "desc": "Volumen base. Fija tus cargas de referencia con técnica sólida y RIR 2-3 (deja repeticiones en reserva). Registra los kg de cada ejercicio."}, {"n": 2, "label": "Semana 2 · Progresión", "desc": "Sube el volumen en los ejercicios principales (+1 serie) y aumenta carga donde la técnica fue estable. RIR 1-2."}, {"n": 3, "label": "Semana 3 · Intensificación", "desc": "Semana de mayor volumen e intensidad: principales +2 series, accesorios +1, dropset de cierre. Máximo esfuerzo con técnica (RIR 0-1)."}, {"n": 4, "label": "Semana 4 · Descarga (deload)", "desc": "Reducción planificada del volumen (~40% menos series) para recuperar y supercompensar. Cargas cómodas, sin fallo. Prepara el cuerpo para el próximo bloque."}],
- "days": [{"id": "dia-1", "dayTag": "Día 1", "name": "Tren Superior A", "accent": "#5B8DEF", "sections": [{"name": "Calentamiento", "items": [{"name": "Elongación y movilidad cuerpo completo", "reps": "10 a 30 min", "tip": ""}, {"name": "Hiperextensiones", "reps": "3 X 20", "tip": "20 kgs"}, {"name": "Crunch en polea alta", "reps": "4 X 12", "tip": "Pesado"}]}, {"name": "Entrenamiento", "items": [{"name": "Encogimientos", "reps": "5 X 8", "tip": "2 seg tensión en cada rep", "tier": "accesorio"}, {"name": "Vuelos posteriores", "reps": "5 X 10", "tip": "En banco inclinado, pesado", "tier": "accesorio"}, {"name": "Remo supino en máquina LifeFitness", "reps": "3 X 12", "tip": "Pesado", "tier": "principal"}, {"name": "Remo unilateral en máquina", "reps": "3 X 8", "tip": "Pesado", "tier": "principal"}, {"name": "Pull over con mancuerna", "reps": "3 X 12", "tip": "Pesado", "tier": "accesorio"}, {"name": "Vuelos laterales", "reps": "3 X 30", "tip": "Carga media", "tier": "accesorio"}]}]}, {"id": "dia-2", "dayTag": "Día 2", "name": "Tren Superior B", "accent": "#E0C23D", "sections": [{"name": "Calentamiento", "items": [{"name": "Movilidad de tren superior", "reps": "5 a 15 min", "tip": ""}, {"name": "Plancha dinámica", "reps": "3 X 10 c/lado", "tip": "Movimiento izquierda a derecha"}, {"name": "Rueda abdominal", "reps": "4 X 10", "tip": "De rodillas"}]}, {"name": "Entrenamiento", "items": [{"name": "Aperturas en máquina", "reps": "4 X 10", "tip": "Tempo normal + 2 seg tensión en cada rep", "tier": "principal"}, {"name": "Press en máquina", "reps": "3 X 10", "tip": "Pesado", "tier": "principal"}, {"name": "Press inclinado en máquina", "reps": "4 X 8", "tip": "Pesado", "tier": "principal"}, {"name": "Fondos en paralelas", "reps": "3 X 15", "tip": "Peso corporal", "tier": "accesorio"}, {"name": "Tríceps con barra en polea alta", "reps": "4 X 15", "tip": "De espalda a la polea · 1 seg tensión en cada rep", "tier": "accesorio"}, {"name": "Extensión de tríceps unilateral con cuerda", "reps": "4 X 8", "tip": "Pesado, sobre la cabeza", "tier": "accesorio"}]}]}, {"id": "dia-3", "dayTag": "Día 3", "name": "Tren Inferior A", "accent": "#E08A3D", "sections": [{"name": "Calentamiento", "items": [{"name": "Movilidad de tren inferior", "reps": "5 minutos", "tip": ""}, {"name": "Crunch abdominal", "reps": "3 X 20", "tip": "Autocarga"}, {"name": "Hiperextensiones", "reps": "4 X 20", "tip": "Autocarga"}]}, {"name": "Entrenamiento", "items": [{"name": "Extensión de cuádriceps", "reps": "5 X 10", "tip": "Pesado", "tier": "accesorio"}, {"name": "Abductor en máquina", "reps": "4 X 8", "tip": "Pesado", "tier": "accesorio"}, {"name": "Femoral acostado", "reps": "4 X 8", "tip": "Pesado", "tier": "accesorio"}, {"name": "Peso muerto rumano", "reps": "3 X 8", "tip": "Pesado", "tier": "principal"}, {"name": "Prensa 45", "reps": "5 X 10", "tip": "Tempo normal, pies en sumo", "tier": "principal"}, {"name": "Pantorrillas sentado", "reps": "4 X 20", "tip": "Pesado", "tier": "accesorio"}]}]}, {"id": "dia-4", "dayTag": "Día 4", "name": "Tren Superior C", "accent": "#B892FF", "sections": [{"name": "Calentamiento", "items": [{"name": "Movilidad y elongación cuerpo completo", "reps": "10 a 20 min", "tip": ""}, {"name": "Plancha boca abajo", "reps": "3 X 1 min", "tip": "Isométrico"}, {"name": "Elevación de piernas colgado", "reps": "3 X 12", "tip": "Rodillas al pecho en aparato o colgado"}]}, {"name": "Entrenamiento", "items": [{"name": "Curl invertido", "reps": "2 X 20", "tip": "Agarre cerrado, carga media", "tier": "principal"}, {"name": "Curl predicador", "reps": "4 X 15", "tip": "Pesado", "tier": "principal"}, {"name": "Bíceps spider mancuerna", "reps": "4 X 10", "tip": "2 seg tensión en cada rep", "tier": "accesorio"}, {"name": "Press hombro en máquina", "reps": "3 X 15", "tip": "Agarre neutro", "tier": "principal"}, {"name": "Vuelo lateral máquina", "reps": "3 X 20", "tip": "2 seg tensión en cada rep + fallo normal", "tier": "accesorio"}, {"name": "Vuelos posteriores en máquina", "reps": "3 X 15", "tip": "Pesado, bloque azul en el pecho", "tier": "accesorio"}]}]}, {"id": "dia-5", "dayTag": "Día 5", "name": "Tren Superior D", "accent": "#FF8C69", "sections": [{"name": "Calentamiento", "items": [{"name": "Movilidad de tren superior", "reps": "5 a 10 min", "tip": ""}, {"name": "Crunch en polea alta", "reps": "4 X 12", "tip": "Pesado"}, {"name": "Hiperextensiones", "reps": "4 X 8", "tip": "40 kgs"}]}, {"name": "Entrenamiento", "items": [{"name": "Pull over en polea", "reps": "3 X 12", "tip": "Pesado", "tier": "principal"}, {"name": "Dominadas", "reps": "3 X 12", "tip": "Peso corporal", "tier": "principal"}, {"name": "Pulldown supino unilateral", "reps": "4 X 6", "tip": "Pesados", "tier": "principal"}, {"name": "Extensión de tríceps unilateral con cuerda", "reps": "3 X 12", "tip": "Sobre la cabeza", "tier": "accesorio"}, {"name": "Fondos en máquina", "reps": "5 X 8", "tip": "Enfoque pecho", "tier": "accesorio"}, {"name": "Tríceps copa", "reps": "3 X 13", "tip": "Pesado, con ambas manos", "tier": "accesorio"}]}]}],
+ "days": [{"id": "dia-1", "dayTag": "Día 1", "name": "Tren Superior A", "accent": "#5B8DEF", "sections": [{"name": "Calentamiento", "items": [{"name": "Elongación y movilidad cuerpo completo", "reps": "10 a 30 min", "tip": ""}, {"name": "Hiperextensiones", "reps": "3 X 20", "tip": "20 kgs"}, {"name": "Crunch en polea alta", "reps": "4 X 12", "tip": "Pesado"}]}, {"name": "Entrenamiento", "items": [{"name": "Encogimientos", "reps": "5 X 8", "tip": "2 seg tensión en cada rep", "tier": "accesorio"}, {"name": "Vuelos posteriores", "reps": "5 X 10", "tip": "En banco inclinado, pesado", "tier": "accesorio"}, {"name": "Remo supino en máquina LifeFitness", "reps": "3 X 12", "tip": "Pesado", "tier": "principal"}, {"name": "Remo unilateral en máquina", "reps": "3 X 8", "tip": "Pesado", "tier": "principal"}, {"name": "Pull over con mancuerna", "reps": "3 X 12", "tip": "Pesado", "tier": "accesorio"}, {"name": "Vuelos laterales", "reps": "3 X 30", "tip": "Carga media", "tier": "accesorio"}]}, {"name": "Posing", "items": [{"name": "Front Double Biceps", "reps": "4 X 20 seg", "tier": "accesorio", "tip": "Cintura ceñida · estética classic"}, {"name": "Side Chest", "reps": "3 X 20 seg", "tier": "accesorio", "tip": "Línea de pecho y brazo"}]}]}, {"id": "dia-2", "dayTag": "Día 2", "name": "Tren Superior B", "accent": "#E0C23D", "sections": [{"name": "Calentamiento", "items": [{"name": "Movilidad de tren superior", "reps": "5 a 15 min", "tip": ""}, {"name": "Plancha dinámica", "reps": "3 X 10 c/lado", "tip": "Movimiento izquierda a derecha"}, {"name": "Rueda abdominal", "reps": "4 X 10", "tip": "De rodillas"}]}, {"name": "Entrenamiento", "items": [{"name": "Aperturas en máquina", "reps": "4 X 10", "tip": "Tempo normal + 2 seg tensión en cada rep", "tier": "principal"}, {"name": "Press en máquina", "reps": "3 X 10", "tip": "Pesado", "tier": "principal"}, {"name": "Press inclinado en máquina", "reps": "4 X 8", "tip": "Pesado", "tier": "principal"}, {"name": "Fondos en paralelas", "reps": "3 X 15", "tip": "Peso corporal", "tier": "accesorio"}, {"name": "Tríceps con barra en polea alta", "reps": "4 X 15", "tip": "De espalda a la polea · 1 seg tensión en cada rep", "tier": "accesorio"}, {"name": "Extensión de tríceps unilateral con cuerda", "reps": "4 X 8", "tip": "Pesado, sobre la cabeza", "tier": "accesorio"}]}]}, {"id": "dia-3", "dayTag": "Día 3", "name": "Tren Inferior A", "accent": "#E08A3D", "sections": [{"name": "Calentamiento", "items": [{"name": "Movilidad de tren inferior", "reps": "5 minutos", "tip": ""}, {"name": "Crunch abdominal", "reps": "3 X 20", "tip": "Autocarga"}, {"name": "Hiperextensiones", "reps": "4 X 20", "tip": "Autocarga"}]}, {"name": "Entrenamiento", "items": [{"name": "Extensión de cuádriceps", "reps": "5 X 10", "tip": "Pesado", "tier": "accesorio"}, {"name": "Abductor en máquina", "reps": "4 X 8", "tip": "Pesado", "tier": "accesorio"}, {"name": "Femoral acostado", "reps": "4 X 8", "tip": "Pesado", "tier": "accesorio"}, {"name": "Peso muerto rumano", "reps": "3 X 8", "tip": "Pesado", "tier": "principal"}, {"name": "Prensa 45", "reps": "5 X 10", "tip": "Tempo normal, pies en sumo", "tier": "principal"}, {"name": "Pantorrillas sentado", "reps": "4 X 20", "tip": "Pesado", "tier": "accesorio"}]}, {"name": "Posing", "items": [{"name": "Abdominal & Thigh", "reps": "4 X 20 seg", "tier": "accesorio", "tip": "Con pierna bombeada · control de cintura"}, {"name": "Vacuum abdominal", "reps": "4 X 15 seg", "tier": "accesorio", "tip": "Sello del Classic · cintura mínima"}]}]}, {"id": "dia-4", "dayTag": "Día 4", "name": "Tren Superior C", "accent": "#B892FF", "sections": [{"name": "Calentamiento", "items": [{"name": "Movilidad y elongación cuerpo completo", "reps": "10 a 20 min", "tip": ""}, {"name": "Plancha boca abajo", "reps": "3 X 1 min", "tip": "Isométrico"}, {"name": "Elevación de piernas colgado", "reps": "3 X 12", "tip": "Rodillas al pecho en aparato o colgado"}]}, {"name": "Entrenamiento", "items": [{"name": "Curl invertido", "reps": "2 X 20", "tip": "Agarre cerrado, carga media", "tier": "principal"}, {"name": "Curl predicador", "reps": "4 X 15", "tip": "Pesado", "tier": "principal"}, {"name": "Bíceps spider mancuerna", "reps": "4 X 10", "tip": "2 seg tensión en cada rep", "tier": "accesorio"}, {"name": "Press hombro en máquina", "reps": "3 X 15", "tip": "Agarre neutro", "tier": "principal"}, {"name": "Vuelo lateral máquina", "reps": "3 X 20", "tip": "2 seg tensión en cada rep + fallo normal", "tier": "accesorio"}, {"name": "Vuelos posteriores en máquina", "reps": "3 X 15", "tip": "Pesado, bloque azul en el pecho", "tier": "accesorio"}]}]}, {"id": "dia-5", "dayTag": "Día 5", "name": "Tren Superior D", "accent": "#FF8C69", "sections": [{"name": "Calentamiento", "items": [{"name": "Movilidad de tren superior", "reps": "5 a 10 min", "tip": ""}, {"name": "Crunch en polea alta", "reps": "4 X 12", "tip": "Pesado"}, {"name": "Hiperextensiones", "reps": "4 X 8", "tip": "40 kgs"}]}, {"name": "Entrenamiento", "items": [{"name": "Pull over en polea", "reps": "3 X 12", "tip": "Pesado", "tier": "principal"}, {"name": "Dominadas", "reps": "3 X 12", "tip": "Peso corporal", "tier": "principal"}, {"name": "Pulldown supino unilateral", "reps": "4 X 6", "tip": "Pesados", "tier": "principal"}, {"name": "Extensión de tríceps unilateral con cuerda", "reps": "3 X 12", "tip": "Sobre la cabeza", "tier": "accesorio"}, {"name": "Fondos en máquina", "reps": "5 X 8", "tip": "Enfoque pecho", "tier": "accesorio"}, {"name": "Tríceps copa", "reps": "3 X 13", "tip": "Pesado, con ambas manos", "tier": "accesorio"}]}, {"name": "Posing", "items": [{"name": "Back Double Biceps", "reps": "4 X 20 seg", "tier": "accesorio", "tip": "Detalle de espalda"}, {"name": "Side Triceps", "reps": "3 X 20 seg", "tier": "accesorio", "tip": "Perfil"}, {"name": "Pose clásica a elección", "reps": "3 X 20 seg", "tier": "accesorio", "tip": "Tu pose de firma · elegancia por encima de tamaño"}]}]}],
  "nutritionInfo": [
   [
    "Agua",
@@ -700,6 +700,15 @@ athleteRef.onSnapshot((doc)=>{
       mesocicloLabel = p.mesocicloLabel || DEFAULT_PLAN.mesocicloLabel;
       params = p.params || DEFAULT_PLAN.params;
       weekMeta = p.weekMeta || DEFAULT_PLAN.weekMeta;
+      if(p.periodizacion){
+        if(p.periodizacion.maxSetsSession) MAX_SETS_SESSION = p.periodizacion.maxSetsSession;
+        PERIODIZACION = {
+          s2: p.periodizacion.s2 ?? PERIODIZACION.s2,
+          s3principal: p.periodizacion.s3principal ?? PERIODIZACION.s3principal,
+          s3accesorio: p.periodizacion.s3accesorio ?? PERIODIZACION.s3accesorio,
+          deload: p.periodizacion.deload ?? PERIODIZACION.deload
+        };
+      }
       days = p.days || DEFAULT_PLAN.days;
       nutritionInfo = p.nutritionInfo || DEFAULT_PLAN.nutritionInfo;
       mealWindows = p.mealWindows && p.mealWindows.length ? p.mealWindows : DEFAULT_PLAN.mealWindows;
@@ -961,7 +970,8 @@ function renderTrainHistory(){
   `;
 }
 
-const MAX_SETS_SESSION = 30;
+let PERIODIZACION = {s2:1,s3principal:2,s3accesorio:1,deload:0.7};
+let MAX_SETS_SESSION = 34;
 
 function dayVolumeProfile(){
   const day = (typeof currentDay==='function') ? currentDay() : null;
@@ -986,7 +996,7 @@ function dayVolumeProfile(){
 function peakBumps(){
   const p = dayVolumeProfile();
   const MAX = (typeof MAX_SETS_SESSION!=='undefined') ? MAX_SETS_SESSION : 30;
-  let bp = 2, ba = 1;                                  // incremento ideal en la intensificación
+  let bp = PERIODIZACION.s3principal, ba = PERIODIZACION.s3accesorio;   // incremento ideal en la intensificación
   if(p.base + p.nPrin*bp + p.nAcc*ba > MAX){ bp = 1; ba = 0; }   // sesión cargada: solo principales
   if(p.base + p.nPrin*bp > MAX){ bp = 0; ba = 0; }               // sesión al límite: progresa por CARGA
   return { bp, ba, capped: (bp<2) };
@@ -1011,7 +1021,7 @@ function computeReps(item, sectionName, isLast, week){
   const bumpAccesorio = _b.ba;
   const altoVolumen = _b.capped;
   // Descarga adaptativa: más profunda si el bloque progresó por intensidad (sesión capada)
-  const DELOAD = _b.capped ? 0.6 : 0.7;
+  const DELOAD = _b.capped ? Math.max(0.5, PERIODIZACION.deload-0.1) : PERIODIZACION.deload;
 
   let sets = baseSets;
   let phase = '';
@@ -1032,7 +1042,7 @@ function computeReps(item, sectionName, isLast, week){
     else { phase = 'Mantén el volumen, progresa solo en carga (foco en otro tren)'; }
   } else if(tier === 'principal'){
     if(week===1){ phase = 'Base: técnica sólida y RIR 2-3, deja reps en reserva'; }
-    else if(week===2){ sets = baseSets+1; phase = 'Sobrecarga: +1 serie, sube carga (RIR 1-2)'; }
+    else if(week===2){ sets = baseSets+PERIODIZACION.s2; phase = 'Sobrecarga: sube carga (RIR 1-2)'; }
     else if(week===3){
       sets = baseSets+bumpPrincipal;
       phase = altoVolumen
