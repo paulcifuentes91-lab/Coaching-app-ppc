@@ -786,6 +786,18 @@ const PAIS_CORTO={"Pacific/Auckland":"NZ","America/Argentina/Buenos_Aires":"AR",
 "Asia/Shanghai":"CN","Australia/Sydney":"AU","Australia/Perth":"AU","Pacific/Easter":"IPA"};
 const paisCorto=tz=>PAIS_CORTO[tz]||tz.split("/").pop().slice(0,3).toUpperCase();
 
+const APP_URL={"maria-jose":"plan-maria-jose-amezaga","ivan":"plan-ivan-de-la-cerda",
+"elizabeth":"plan-elizabeth-ellmen","francisca":"plan-francisca-perez","magdalena":"plan-magdalena-pinto",
+"rosa":"plan-rosa-perez","sandy":"plan-sandy-gaete","nicole":"plan-nicole-jerez","nelson":"plan-nelson-diaz",
+"andrea":"plan-andrea-gonzalez","sebastian":"plan-sebastian-guinart","diego":"plan-diego-valdebenito",
+"paul":"plan-paul-cifuentes"};
+const BASE_URL="https://paulcifuentes91-lab.github.io/Coaching-app-ppc/";
+function urlApp(a){ const f=APP_URL[a.id]; return f? BASE_URL+f+".html" : null; }
+function msgWhatsApp(a){
+ const chk = a.chk ? `Tu chequeo es el ${a.chk}. ` : "";
+ return encodeURIComponent(`Hola ${a.n.split(" ")[0]}, ${chk}Aquí tienes tu plan: ${urlApp(a)||""}`);
+}
+
 /* ═══════════ ESTADO ═══════════ */
 let act = ATLETAS.find(a=>a.id==="sandy");
 let plantillaSel = 0;
@@ -994,7 +1006,10 @@ $$(".tab").forEach(t=>t.addEventListener("click",()=>{
 
 document.addEventListener("click",e=>{
  const t=e.target;
- if(t.hasAttribute?.("data-save")){okAviso(t);toast("Cambios guardados en "+act.n);return;}
+ if(t.hasAttribute?.("data-save")){
+  okAviso(t);
+  toast("Cambios aplicados en pantalla · usa Exportar plan para llevarlos a la app");
+  return;}
  if(t.hasAttribute?.("data-delej")){t.closest(".ej").remove();recalcular();return;}
  if(t.hasAttribute?.("data-addej")){
   const cont=t.previousElementSibling;
@@ -1091,8 +1106,16 @@ document.addEventListener("click",e=>{
   pintarHist();["gPeso","gGrasa","gPli","gCin","gNota"].forEach(id=>$("#"+id).value="");
   toast("Chequeo añadido al historial de "+act.n);return;}
  /* acciones cabecera */
- if(t.id==="btnWa"){toast("Abriría WhatsApp con "+act.n);return;}
- if(t.id==="btnApp"){toast("Abriría la app de "+act.n);return;}
+ if(t.id==="btnWa"){
+  const tel=(act.wa||"").replace(/[^0-9]/g,"");
+  if(!tel){ toast("Falta el número de "+act.n+" en la pestaña Datos"); return; }
+  window.open("https://wa.me/"+tel+"?text="+msgWhatsApp(act),"_blank","noopener");
+  return;}
+ if(t.id==="btnApp"){
+  const u=urlApp(act);
+  if(u){ window.open(u,"_blank","noopener"); }
+  else { toast(act.n+" todavía no tiene app publicada"); }
+  return;}
  if(t.id==="btnJson"){exportar();return;}
  /* modal */
  if(t.id==="btnNuevo"){$("#modal").classList.add("on");return;}
