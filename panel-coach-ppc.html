@@ -380,6 +380,29 @@ text-transform:uppercase;text-align:center;padding-top:13px;margin-top:11px;bord
  .v7mrow{grid-template-columns:1fr 44px}
  .v7mbar{grid-column:1/-1}
 }
+.asgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(124px,1fr));gap:9px}
+.asb{background:var(--card2);border:1px solid var(--line);border-radius:11px;padding:13px;text-align:center}
+.asb.ashi{background:linear-gradient(155deg,var(--goldsoft),var(--card2));border-color:var(--gold2)}
+.asl{font-family:var(--mono);font-size:8.5px;letter-spacing:1px;text-transform:uppercase;color:var(--fa)}
+.asv{font-size:25px;font-weight:600;letter-spacing:-.8px;color:var(--gold);margin:4px 0 2px}
+.asv2{font-size:21px;font-weight:600;letter-spacing:-.5px;margin:4px 0 2px}
+.asb.ashi .asv2{color:var(--gold)}
+.asv3{font-family:var(--mono);font-size:13.5px;font-weight:600;margin:5px 0 2px}
+.ass{font-size:10.5px;color:var(--mu)}
+.assec{font-size:13px;color:var(--mu);line-height:1.6;padding:12px 0;border-top:1px solid var(--line);margin-top:12px}
+.assec b{color:var(--gold);font-weight:600;display:block;margin-bottom:5px}
+.assplit{display:grid;gap:6px;margin-top:9px}
+.asday{display:flex;align-items:center;gap:11px;background:var(--card2);border:1px solid var(--line);
+border-radius:9px;padding:9px 12px}
+.asdn{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--gold);width:18px;text-align:center;flex-shrink:0}
+.asdt{font-size:13.5px;font-weight:600;color:var(--tx)}
+.asdg{font-family:var(--mono);font-size:10px;color:var(--fa);margin-top:2px}
+.asnota{color:var(--tx);font-style:italic}
+.asavisos{margin-top:12px;display:grid;gap:6px}
+.asav{background:rgba(229,176,86,.09);border-left:2.5px solid var(--wa);border-radius:8px;
+padding:10px 13px;font-size:12.5px;color:var(--mu);line-height:1.5}
+.asdisc{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:11.5px;
+color:var(--fa);line-height:1.55}
 </style></head><body>
 <div class="app">
 <aside>
@@ -412,6 +435,7 @@ text-transform:uppercase;text-align:center;padding-top:13px;margin-top:11px;bord
     <button class="tab" data-p="p5">Progreso</button>
     <button class="tab" data-p="p6">Periodización</button>
     <button class="tab" data-p="p7">Chequeo V7.0</button>
+    <button class="tab" data-p="p8">Asistente</button>
   </div>
 
   <!-- DATOS -->
@@ -665,6 +689,40 @@ text-transform:uppercase;text-align:center;padding-top:13px;margin-top:11px;bord
     <div class="sec v7informe" id="v7informe" style="display:none"></div>
   </div>
 
+
+  <!-- ASISTENTE DE PLANIFICACIÓN -->
+  <div class="pane" id="p8">
+    <div class="sec"><div class="st">Datos del atleta <span class="aux">para calcular la propuesta</span></div>
+      <div class="campos">
+        <label><span class="lb">Edad</span><input class="in mono" id="asEdad" type="number" placeholder="34"></label>
+        <label><span class="lb">Sexo</span><select class="in" id="asSexo"><option value="m">Hombre</option><option value="f">Mujer</option></select></label>
+        <label><span class="lb">Peso kg</span><input class="in mono" id="asPeso" type="number" step="0.1" placeholder="97"></label>
+        <label><span class="lb">Estatura cm</span><input class="in mono" id="asAltura" type="number" placeholder="177"></label>
+        <label><span class="lb">Nivel</span><select class="in" id="asNivel">
+          <option value="principiante">Principiante · menos de 1 año</option>
+          <option value="intermedio" selected>Intermedio · 1 a 3 años</option>
+          <option value="avanzado">Avanzado · más de 3 años</option></select></label>
+        <label><span class="lb">Objetivo</span><select class="in" id="asObjetivo">
+          <option value="hipertrofia">Hipertrofia</option>
+          <option value="definicion">Definición / pérdida de grasa</option>
+          <option value="recomposicion">Recomposición</option>
+          <option value="fuerza">Fuerza</option>
+          <option value="competicion">Preparación competitiva</option>
+          <option value="salud">Salud y longevidad</option></select></label>
+        <label><span class="lb">Días disponibles</span><select class="in" id="asDias">
+          <option value="2">2 días</option><option value="3">3 días</option>
+          <option value="4" selected>4 días</option><option value="5">5 días</option><option value="6">6 días</option></select></label>
+        <label><span class="lb">Actividad diaria</span><select class="in" id="asAct">
+          <option value="sed">Sedentaria · trabajo de escritorio</option>
+          <option value="ligero">Ligera</option>
+          <option value="moderado" selected>Moderada</option>
+          <option value="intenso">Intensa · trabajo físico</option>
+          <option value="muy">Muy intensa</option></select></label>
+      </div>
+      <button class="add g" id="asGenerar">Generar propuesta</button>
+    </div>
+    <div class="sec" id="asRes" style="display:none"></div>
+  </div>
 </main>
 </div>
 
@@ -1002,7 +1060,24 @@ $("#lista").addEventListener("click",e=>{const it=e.target.closest(".item");
  if(it){const a=ATLETAS.find(x=>x.id===it.dataset.id); if(a) cargar(a);}});
 $$(".tab").forEach(t=>t.addEventListener("click",()=>{
  $$(".tab").forEach(x=>x.classList.remove("on"));t.classList.add("on");
- $$(".pane").forEach(p=>p.classList.remove("on"));$("#"+t.dataset.p).classList.add("on");}));
+ $$(".pane").forEach(p=>p.classList.remove("on"));$("#"+t.dataset.p).classList.add("on");
+ if(t.dataset.p==="p8") asisPrecargar();}));
+
+function asisPrecargar(){
+ if($("#asPeso").value) return;
+ const h=(act.hist||[])[0];
+ if(h) $("#asPeso").value = String(h[1]).replace(",",".");
+ const est=(act.est||"").match(/([\d,\.]+)/);
+ if(est) $("#asAltura").value = Math.round(parseFloat(est[1].replace(",","."))*100);
+ const cat=(act.cat||"").toLowerCase();
+ if(/open|classic|wellness|bikini|physique/.test(cat)) $("#asObjetivo").value="competicion";
+ else if(/definici|fitness/.test(cat)) $("#asObjetivo").value="definicion";
+ else if(/recompos/.test(cat)) $("#asObjetivo").value="recomposicion";
+ else if(/longevidad|tercera/.test(cat)) $("#asObjetivo").value="salud";
+ else if(/fuerza/.test(cat)) $("#asObjetivo").value="fuerza";
+ const nd=(act.dias||[]).length;
+ if(nd>=2&&nd<=6) $("#asDias").value=String(nd);
+}
 
 document.addEventListener("click",e=>{
  const t=e.target;
@@ -1498,6 +1573,169 @@ document.addEventListener("input",e=>{
   t.closest(".v7ivar").querySelector(".v7ibar i").style.width=val+"%";
   act._v7.idx[t.dataset.idx]=val;
   v7calcIndice(); }
+});
+
+/* ═══════════════ ASISTENTE DE PLANIFICACIÓN ═══════════════
+   Genera una PROPUESTA a partir de edad, sexo, objetivo, nivel y días disponibles.
+   Toda salida es una sugerencia de partida: el criterio del coach manda.
+   Referencias: volumen (Schoenfeld 2017, Israetel MEV/MAV/MRV), frecuencia 2x
+   (Schoenfeld 2016), proteína (Morton 2018), gasto (Mifflin-St Jeor 1990). */
+
+const ASIS = {
+ /* Volumen semanal base por grupo muscular · series efectivas */
+ volBase:{principiante:{min:8,max:12},intermedio:{min:12,max:18},avanzado:{min:16,max:22}},
+
+ /* Ajuste por edad — la capacidad de recuperación baja con los años */
+ edadFactor(e){ if(e<25)return 1.05; if(e<35)return 1.0; if(e<45)return .94; if(e<55)return .86;
+  if(e<65)return .76; return .65; },
+
+ /* Las mujeres toleran algo más de volumen y frecuencia, y recuperan mejor entre series */
+ sexoFactor(s){ return s==="f" ? 1.08 : 1.0; },
+
+ objetivos:{
+  hipertrofia:{lb:"Hipertrofia",kcal:1.10,prot:[1.8,2.2],rir:[1,2],reps:"6 a 12 en principales · 12 a 20 en accesorios",
+   cardio:"2 a 3 sesiones LISS de 20 a 30 min",vol:1.0,
+   nota:"Superávit moderado. El estímulo manda: progresar en carga o repeticiones cada semana."},
+  definicion:{lb:"Definición / pérdida de grasa",kcal:0.80,prot:[2.2,2.8],rir:[1,2],reps:"8 a 15 · mantener cargas altas",
+   cardio:"4 a 6 sesiones LISS de 30 a 45 min",vol:0.92,
+   nota:"Déficit de 15-20%. Volumen ligeramente menor pero cargas sostenidas: es lo que protege la masa."},
+  recomposicion:{lb:"Recomposición",kcal:0.95,prot:[2.0,2.4],rir:[1,3],reps:"8 a 12",
+   cardio:"3 a 4 sesiones LISS de 25 a 35 min",vol:0.96,
+   nota:"Déficit leve con proteína alta. Funciona mejor en principiantes o tras un parón."},
+  fuerza:{lb:"Fuerza",kcal:1.05,prot:[1.8,2.2],rir:[2,3],reps:"3 a 6 en básicos · 6 a 10 en accesorios",
+   cardio:"2 sesiones suaves de 20 min",vol:0.85,
+   nota:"Menos volumen, más intensidad. Descansos largos de 3 a 5 min en los básicos."},
+  competicion:{lb:"Preparación competitiva",kcal:0.82,prot:[2.4,3.0],rir:[1,2],reps:"8 a 15 · máxima tensión mecánica",
+   cardio:"5 a 6 sesiones LISS de 35 a 45 min",vol:0.95,
+   nota:"Déficit progresivo sin recortes agresivos. Priorizar fotos sobre báscula y sumar posing."},
+  salud:{lb:"Salud y longevidad",kcal:1.0,prot:[1.4,1.8],rir:[3,4],reps:"10 a 15 · sin llegar al fallo",
+   cardio:"150 min semanales de intensidad moderada",vol:0.78,
+   nota:"Prioridad en movilidad, equilibrio y fuerza funcional. Nunca al fallo."}
+ },
+
+ /* Reparto por días disponibles */
+ splits:{
+  2:[["Full body A","cuadriceps,espalda,pecho,core"],["Full body B","femoral,gluteo,hombro,core"]],
+  3:[["Full body A · empuje","pecho,hombro,triceps,cuadriceps"],["Full body B · tracción","espalda,biceps,femoral,gluteo"],
+     ["Full body C · mixto","cuadriceps,gluteo,hombro,core"]],
+  4:[["Tren superior A","pecho,hombro,triceps"],["Tren inferior A","cuadriceps,pantorrilla"],
+     ["Tren superior B","espalda,biceps"],["Tren inferior B","femoral,gluteo,core"]],
+  5:[["Espalda · Bíceps","espalda,biceps,core"],["Cadena posterior","femoral,gluteo,lumbar"],
+     ["Pecho · Hombro · Tríceps","pecho,hombro,triceps"],["Cuádriceps · Pantorrilla","cuadriceps,pantorrilla"],
+     ["Hombro · Brazos","hombro,biceps,triceps"]],
+  6:[["Espalda densidad · Bíceps","espalda,biceps"],["Cuádriceps · Pantorrilla","cuadriceps,pantorrilla"],
+     ["Pecho · Hombro · Tríceps","pecho,hombro,triceps"],["Espalda anchura · Femoral","espalda,femoral"],
+     ["Hombro · Brazos","hombro,biceps,triceps"],["Pierna posterior · Core","gluteo,femoral,core"]]
+ },
+
+ /* Gasto energético · Mifflin-St Jeor */
+ gasto(peso,altura,edad,sexo,act){
+  const bmr = 10*peso + 6.25*altura - 5*edad + (sexo==="m"?5:-161);
+  const f = {sed:1.2,ligero:1.375,moderado:1.55,intenso:1.725,muy:1.9}[act]||1.55;
+  return {bmr:Math.round(bmr), tdee:Math.round(bmr*f)};
+ },
+
+ /* El RIR depende del objetivo pero también del nivel: la técnica debe sostener la intensidad */
+ rirNivel(base,nivel,edad){
+  let [a,b]=base;
+  if(nivel==="principiante"){ a+=2; b+=2; }
+  else if(nivel==="intermedio"){ a+=1; b+=1; }
+  if(edad>=60){ a=Math.max(a,3); b=Math.max(b,4); }
+  // Techo de 4: por encima de RIR 4 el estímulo deja de ser suficiente en cualquier perfil
+  return [Math.min(a,3), Math.min(b,4)];
+ },
+
+ generar(d){
+  const obj = this.objetivos[d.objetivo];
+  const base = this.volBase[d.nivel];
+  const f = this.edadFactor(d.edad) * this.sexoFactor(d.sexo) * obj.vol;
+  // Piso de seguridad: por debajo de 6 series semanales no hay estímulo suficiente en ningún perfil
+  const vmin = Math.max(6, Math.round(base.min*f)), vmax = Math.max(9, Math.round(base.max*f));
+  const split = this.splits[d.dias] || this.splits[4];
+  const g = this.gasto(d.peso,d.altura,d.edad,d.sexo,d.act);
+  const kcal = Math.round(g.tdee*obj.kcal);
+  const protG = Math.round(d.peso*((obj.prot[0]+obj.prot[1])/2));
+  const grasaG = Math.round(d.peso*(d.objetivo==="definicion"||d.objetivo==="competicion"?0.8:1.0));
+  const carbG = Math.max(0, Math.round((kcal - protG*4 - grasaG*9)/4));
+  const seriesSesion = Math.round((vmin+vmax)/2 * (d.dias>=5?2.2:d.dias===4?2.6:3.2) / 1);
+  const cap = d.edad>=60?22 : d.nivel==="avanzado"&&d.sexo==="m"?34 : d.nivel==="avanzado"?32 : 30;
+  const avisos = [];
+  if(d.edad>=55) avisos.push("A partir de los 55 conviene priorizar recuperación: 48 h entre sesiones del mismo grupo y trabajo de movilidad diario.");
+  if(d.objetivo==="definicion"&&protG/d.peso<2.2) avisos.push("En déficit, subir proteína hacia 2,4 g/kg protege mejor la masa.");
+  if(d.dias>=6&&d.nivel!=="avanzado") avisos.push("Seis días con nivel no avanzado suele acumular fatiga: con 4 o 5 días bien ejecutados se progresa igual o más.");
+  if(d.objetivo==="competicion") avisos.push("Añadir posing en los días donde el grupo trabajado queda bombeado.");
+  if(d.sexo==="f"&&["hipertrofia","recomposicion"].includes(d.objetivo)) avisos.push("Mayor tolerancia a frecuencia: glúteo y femoral responden bien a 2-3 estímulos semanales.");
+  if(d.peso>=90 && d.nivel==="avanzado") avisos.push("En atletas con masa magra alta la fórmula suele quedarse corta: si el peso no se mueve, subir 200-300 kcal y volver a medir en dos semanas. El gasto del InBody es mejor referencia.");
+  if(d.objetivo==="competicion"&&d.dias>=5) avisos.push("Con cinco o más sesiones más cardio diario, el gasto real supera lo que estima la fórmula. Ajustar según la báscula y las fotos, no al revés.");
+  if(kcal < g.bmr) avisos.push(`Las calorías objetivo (${kcal}) quedan por debajo del metabolismo basal (${g.bmr}). Revisar antes de aplicar.`);
+  return {obj,vmin,vmax,split,kcal,protG,carbG,grasaG,bmr:g.bmr,tdee:g.tdee,cap,avisos,
+   frecuencia: d.dias>=4?2:1,
+   rir: this.rirNivel(obj.rir, d.nivel, d.edad), reps:obj.reps, cardio:obj.cardio, nota:obj.nota};
+ }
+};
+
+function asisGenerar(){
+ const d = {
+  edad:+$("#asEdad").value||30, sexo:$("#asSexo").value, peso:+$("#asPeso").value||70,
+  altura:+$("#asAltura").value||170, nivel:$("#asNivel").value, objetivo:$("#asObjetivo").value,
+  dias:+$("#asDias").value, act:$("#asAct").value };
+ if(!$("#asEdad").value||!$("#asPeso").value){ toast("Necesito al menos edad y peso"); return; }
+ const r = ASIS.generar(d);
+ $("#asRes").style.display="block";
+ $("#asRes").innerHTML = `
+  <div class="st">Propuesta · ${r.obj.lb} <span class="aux">${d.dias} días · ${d.sexo==="m"?"hombre":"mujer"} de ${d.edad} años · nivel ${d.nivel}</span></div>
+
+  <div class="asgrid">
+   <div class="asb"><div class="asl">Volumen por grupo</div><div class="asv">${r.vmin}–${r.vmax}</div><div class="ass">series por semana</div></div>
+   <div class="asb"><div class="asl">Frecuencia</div><div class="asv">${r.frecuencia}×</div><div class="ass">por grupo muscular</div></div>
+   <div class="asb"><div class="asl">Tope por sesión</div><div class="asv">${r.cap}</div><div class="ass">series de trabajo</div></div>
+   <div class="asb"><div class="asl">RIR</div><div class="asv">${r.rir[0]}–${r.rir[1]}</div><div class="ass">reps en reserva</div></div>
+  </div>
+
+  <div class="assec"><b>Repeticiones</b> ${r.reps}</div>
+  <div class="assec"><b>Cardio</b> ${r.cardio}</div>
+
+  <div class="assec"><b>Reparto semanal sugerido</b>
+   <div class="assplit">${r.split.map((s,i)=>`<div class="asday"><span class="asdn">${i+1}</span>
+    <div><div class="asdt">${s[0]}</div><div class="asdg">${s[1].split(",").map(x=>GRUPO_LB[x]||x).join(" · ")}</div></div></div>`).join("")}</div></div>
+
+  <div class="assec"><b>Energía y macros</b>
+   <div class="asgrid" style="margin-top:9px">
+    <div class="asb"><div class="asl">Basal</div><div class="asv2">${r.bmr}</div><div class="ass">kcal</div></div>
+    <div class="asb"><div class="asl">Gasto total</div><div class="asv2">${r.tdee}</div><div class="ass">kcal</div></div>
+    <div class="asb ashi"><div class="asl">Objetivo</div><div class="asv2">${r.kcal}</div><div class="ass">kcal</div></div>
+    <div class="asb"><div class="asl">Macros</div><div class="asv3">${r.protG}P · ${r.carbG}C · ${r.grasaG}G</div>
+     <div class="ass">${(r.protG/d.peso).toFixed(1)} g proteína por kg</div></div>
+   </div></div>
+
+  <div class="assec asnota">${r.nota}</div>
+  ${r.avisos.length?`<div class="asavisos">${r.avisos.map(a=>`<div class="asav">${a}</div>`).join("")}</div>`:""}
+  <div class="asdisc">Punto de partida calculado con fórmulas estándar (Mifflin-St Jeor para el gasto, rangos de
+   volumen y proteína de la literatura de hipertrofia). No sustituye tu criterio: ajusta según la respuesta real del atleta.</div>
+  <div class="guardar" style="position:static">
+   <button class="sv" id="asAplicar">Crear los días en su plan</button>
+   <span class="ok">Días creados ✓</span>
+   <span class="hintx">Crea la estructura vacía · los ejercicios los eliges tú</span></div>`;
+ window._asis = {r,d};
+ $("#asRes").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+document.addEventListener("click",e=>{
+ if(e.target.id==="asGenerar"){ asisGenerar(); return; }
+ if(e.target.id==="asAplicar"){
+  const {r} = window._asis||{};
+  if(!r) return;
+  if(act.dias.length && !confirm("Esto reemplaza los días actuales de "+act.n+". ¿Continuar?")) return;
+  act.dias = r.split.map((s,i)=>({n:`Día ${i+1} · ${s[0]}`,
+   secs:[{n:"Entrenamiento",ej:[["","4 X 10","principal",""]]},
+         {n:"Cardio",ej:[["Caminata en cinta LISS","30 min","accesorio",r.cardio]]}]}));
+  pintarDias();
+  const cap = document.querySelector("#kMax"); if(cap){ cap.value = r.cap; }
+  recalcular();
+  okAviso(e.target);
+  toast("Estructura creada en "+act.n+" · ahora añade los ejercicios");
+  document.querySelector('.tab[data-p="p2"]').click();
+  return; }
 });
 
 /* ═══════════ INICIO ═══════════ */
