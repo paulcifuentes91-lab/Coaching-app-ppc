@@ -538,6 +538,10 @@ cursor:pointer;padding:4px 0 12px;letter-spacing:.5px}
 .volver:hover{color:var(--gold)}
 @media(max-width:700px){.hnums{width:100%;justify-content:space-between;gap:10px}
  .hadh{grid-template-columns:80px 1fr 62px}}
+.anfalta{background:var(--card2);border:1px solid var(--line);border-left:2.5px solid var(--wa);
+border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-height:1.6}
+.anfalta b{display:block;color:var(--tx);margin-bottom:5px}
+.anestado{font-family:var(--mono);font-size:10.5px;color:var(--ok);margin-top:9px}
 </style><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
@@ -908,6 +912,7 @@ cursor:pointer;padding:4px 0 12px;letter-spacing:.5px}
           <button class="b2" id="anAbrir">Abrir formulario</button>
         </div>
         <div class="anlink" id="anLink"></div>
+        <div class="anestado" id="anEnviado"></div>
       </div>
     </div>
     <div class="sec"><div class="st">Respuestas <span class="aux" id="anEstado">consulta si ya la completó</span></div>
@@ -1343,7 +1348,15 @@ $("#lista").addEventListener("click",e=>{const it=e.target.closest(".item");
 $$(".tab").forEach(t=>t.addEventListener("click",()=>{
  $$(".tab").forEach(x=>x.classList.remove("on"));t.classList.add("on");
  $$(".pane").forEach(p=>p.classList.remove("on"));$("#"+t.dataset.p).classList.add("on");
- if(t.dataset.p==="p8") asisPrecargar();}));
+ if(t.dataset.p==="p8") asisPrecargar();
+ if(t.dataset.p==="p9") anAuto();}));
+
+async function anAuto(){
+ const box=document.getElementById("anResp");
+ if(box && box.dataset.para===act.id) return;   // ya consultada para este atleta
+ if(box){ box.dataset.para=act.id; box.innerHTML='<div class="v7vacio">Consultando la nube...</div>'; }
+ document.getElementById("anTraer")?.click();
+}
 
 function asisPrecargar(){
  if($("#asPeso").value) return;
@@ -2978,11 +2991,13 @@ document.addEventListener("click", async e=>{
  }
  if(t.id==="anTraer"){
   t.disabled=true; const txt=t.textContent; t.textContent="Consultando...";
-  const d = await fbTraer(act);
+  const d = (HOME.datos && HOME.datos[act.id]) ? HOME.datos[act.id] : await fbTraer(act);
   t.disabled=false; t.textContent=txt;
   const box=document.getElementById("anResp");
   if(!d || !d.anamnesis){
-   box.innerHTML = '<div class="v7vacio">Todavía no la ha completado.</div>';
+   box.innerHTML = `<div class="anfalta">
+     <b>${act.n} todavía no ha completado su ficha.</b>
+     Envíasela con los botones de arriba. Cuando la responda, sus respuestas aparecen aquí solas.</div>`;
    document.getElementById("anEstado").textContent = "pendiente";
    return;
   }
