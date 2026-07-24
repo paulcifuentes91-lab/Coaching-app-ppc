@@ -459,6 +459,37 @@ border-radius:10px;padding:12px 14px;margin-bottom:10px;flex-wrap:wrap}
 .gencn{font-size:13px;font-weight:600;color:var(--tx);margin-bottom:5px}
 .genit{font-size:12.5px;color:var(--mu);padding:2px 0 2px 12px;position:relative}
 .genit::before{content:"·";position:absolute;left:3px;color:var(--gold2)}
+.ajactual{font-size:13.5px;color:var(--mu);padding-bottom:13px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.ajactual b{color:var(--gold)}
+.ajlab{font-family:var(--mono);font-size:9.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--fa);margin-bottom:8px}
+.ajbtns{display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:6px}
+.ajbtns button{background:var(--card2);border:1px solid var(--line);color:var(--tx);font-family:var(--mono);
+font-size:12px;padding:10px 4px;border-radius:8px;cursor:pointer;transition:all .14s}
+.ajbtns button:hover{border-color:var(--gold);color:var(--gold);background:var(--goldsoft)}
+.ajfila{display:grid;grid-template-columns:1fr auto;gap:7px}
+.ajcheck{display:flex;align-items:flex-start;gap:8px;margin-top:14px;font-size:12.5px;color:var(--mu);
+line-height:1.45;cursor:pointer}
+.ajcheck input{margin-top:2px;accent-color:var(--gold)}
+.ajprev{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.ajprevt{font-family:var(--mono);font-size:9.5px;letter-spacing:1.1px;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.ajgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.ajb{background:var(--card2);border:1px solid var(--line);border-radius:9px;padding:10px 8px;text-align:center}
+.ajl{font-family:var(--mono);font-size:8.5px;letter-spacing:.9px;text-transform:uppercase;color:var(--fa)}
+.ajv{font-size:19px;font-weight:600;margin:3px 0 1px;letter-spacing:-.4px}
+.ajd{font-family:var(--mono);font-size:10px;color:var(--mu)}
+.ajnota{font-size:12px;color:var(--mu);line-height:1.5;margin-top:11px}
+.anenv{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:15px 17px}
+.anenvt{font-size:14px;color:var(--mu);margin-bottom:12px}
+.anenvt b{color:var(--gold)}
+.anbtns{display:flex;gap:7px;flex-wrap:wrap}
+.anlink{font-family:var(--mono);font-size:10.5px;color:var(--fa);margin-top:11px;word-break:break-all;line-height:1.5}
+.ansec{margin-bottom:15px}
+.ansect{font-family:var(--mono);font-size:9.5px;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold);
+margin:14px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.anfila{display:grid;grid-template-columns:minmax(140px,38%) 1fr;gap:12px;padding:7px 0;font-size:13px;align-items:baseline}
+.anl{color:var(--fa);line-height:1.4}
+.anv{color:var(--tx);line-height:1.5}
+@media(max-width:640px){.anfila{grid-template-columns:1fr;gap:2px}.anl{font-size:11px}}
 </style><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
@@ -499,6 +530,7 @@ border-radius:10px;padding:12px 14px;margin-bottom:10px;flex-wrap:wrap}
     <button class="tab" data-p="p5">Progreso</button>
     <button class="tab" data-p="p6">Periodización</button>
     <button class="tab" data-p="p7">Chequeo V7.0</button>
+    <button class="tab" data-p="p9">Anamnesis</button>
   </div>
 
   <!-- DATOS -->
@@ -782,6 +814,26 @@ border-radius:10px;padding:12px 14px;margin-bottom:10px;flex-wrap:wrap}
   </div>
 
 
+
+  <!-- ANAMNESIS -->
+  <div class="pane" id="p9">
+    <div class="sec"><div class="st">Ficha inicial de 45 preguntas <span class="aux">se completa una sola vez</span></div>
+      <div class="anenv">
+        <div class="anenvt">Enviar el formulario a <b id="anNom">—</b></div>
+        <div class="anbtns">
+          <button class="b2 wa" id="anWa">Enviar por WhatsApp</button>
+          <button class="b2" id="anMail">Enviar por correo</button>
+          <button class="b2" id="anCopiar">Copiar enlace</button>
+          <button class="b2" id="anAbrir">Abrir formulario</button>
+        </div>
+        <div class="anlink" id="anLink"></div>
+      </div>
+    </div>
+    <div class="sec"><div class="st">Respuestas <span class="aux" id="anEstado">consulta si ya la completó</span></div>
+      <button class="add" id="anTraer">Traer respuestas de la nube</button>
+      <div id="anResp"></div>
+    </div>
+  </div>
 </main>
 </div>
 
@@ -1163,7 +1215,7 @@ function pintarBloques(){
    Sin plan de nutrición cargado. Añade el primer bloque abajo.</div>`;return;}
  $("#bloques").innerHTML=b.map((x,i)=>`
   <div class="bloque" data-b="${i}">
-   <div class="bh"><input class="bn" value="${x.n}" data-bnm><button class="dx" data-delbloq>Quitar bloque</button></div>
+   <div class="bh"><input class="bn" value="${x.n}" data-bnm><button class="dx" data-ajustar>Ajustar kcal</button><button class="dx" data-delbloq>Quitar</button></div>
    <div class="macros">
     <div class="mc2"><div class="ml">Proteína g</div><input class="mono" value="${x.p}" data-mp></div>
     <div class="mc2"><div class="ml">Carbos g</div><input class="mono" value="${x.c}" data-mc></div>
@@ -1287,7 +1339,7 @@ document.addEventListener("click",e=>{
   if(!act.nut.bloques.length)$("#bloques").innerHTML="";
   $("#bloques").insertAdjacentHTML("beforeend",`
    <div class="bloque"><div class="bh"><input class="bn" value="Nuevo bloque" data-bnm>
-    <button class="dx" data-delbloq>Quitar bloque</button></div>
+    <button class="dx" data-ajustar>Ajustar kcal</button><button class="dx" data-delbloq>Quitar</button></div>
     <div class="macros">
      <div class="mc2"><div class="ml">Proteína g</div><input class="mono" value="0" data-mp></div>
      <div class="mc2"><div class="ml">Carbos g</div><input class="mono" value="0" data-mc></div>
@@ -2613,6 +2665,258 @@ document.addEventListener("click", e=>{
  if(t && !$("#gnPeso").value){
   const h = (act.hist||[])[0];
   if(h) $("#gnPeso").value = String(h[1]).replace(",",".");
+ }
+});
+
+/* ═══════════════ AJUSTE RÁPIDO DE DIETA ═══════════════
+   Cambia las calorías de un bloque por porcentaje o valor directo y
+   reparte el ajuste entre los macros con criterio: la proteína se protege,
+   las grasas no bajan del mínimo y los carbohidratos absorben el resto.
+   Opcionalmente reescala los gramos de los alimentos en la misma proporción. */
+
+function pesoActual(){
+ const h = (act.hist||[])[0];
+ if(h && h[1]) return parseFloat(String(h[1]).replace(",","."))||0;
+ return 0;
+}
+
+function ajustarBloque(bloqueEl, opciones){
+ const pIn = bloqueEl.querySelector("[data-mp]");
+ const cIn = bloqueEl.querySelector("[data-mc]");
+ const gIn = bloqueEl.querySelector("[data-mg]");
+ const p0 = +pIn.value||0, c0 = +cIn.value||0, g0 = +gIn.value||0;
+ const kcal0 = p0*4 + c0*4 + g0*9;
+ if(!kcal0){ toast("Escribe primero los macros actuales"); return null; }
+
+ const kcalObj = opciones.kcal !== undefined
+   ? Math.round(opciones.kcal)
+   : Math.round(kcal0 * (1 + opciones.pct/100));
+
+ const peso = pesoActual();
+ /* Proteína: se mantiene. En déficit sube un poco para proteger la masa. */
+ let p1 = p0;
+ if(kcalObj < kcal0 && peso){
+  const objetivo = Math.round(peso*2.4);
+  if(p0 < objetivo) p1 = Math.min(objetivo, Math.round(p0*1.1));
+ }
+ /* Grasas: nunca por debajo de 0,7 g/kg (o del 20% de las calorías si no hay peso) */
+ const gMin = peso ? Math.round(peso*0.7) : Math.round(kcalObj*0.2/9);
+ let g1 = g0;
+ const restanteTrasP = kcalObj - p1*4;
+ /* Los carbohidratos absorben el ajuste */
+ let c1 = Math.round((restanteTrasP - g1*9)/4);
+ /* Si los carbos quedan demasiado bajos, se recorta grasa hasta el mínimo */
+ const cMin = peso ? Math.round(peso*1.0) : 60;
+ if(c1 < cMin && g1 > gMin){
+  const faltan = (cMin - c1)*4;
+  const bajarG = Math.min(g1 - gMin, Math.round(faltan/9));
+  g1 -= bajarG;
+  c1 = Math.round((kcalObj - p1*4 - g1*9)/4);
+ }
+ if(c1 < 0){ c1 = 0; }
+ const kcal1 = p1*4 + c1*4 + g1*9;
+
+ return {antes:{kcal:kcal0,p:p0,c:c0,g:g0}, despues:{kcal:kcal1,p:p1,c:c1,g:g1},
+         factor: kcal0? kcal1/kcal0 : 1, gMin, peso};
+}
+
+/* Reescala los gramos escritos en los alimentos según el factor.
+   No toca proteínas magras ni verduras: el ajuste recae en los carbohidratos y grasas. */
+const NO_ESCALAR = ["pollo","pechuga","pavo","clara","huevo","atun","lomitos","pescado","merluza",
+ "carne","vacuno","posta","whey","proteina","verduras","ensalada","brocoli","acelga","espinaca",
+ "lechuga","tomate","pepino","esparragos","creatina","agua","sal","te ","cafe","infusion"];
+
+function escalarAlimentos(bloqueEl, factor){
+ let cambiados = 0;
+ bloqueEl.querySelectorAll("[data-alis] input").forEach(inp=>{
+  const txt = inp.value;
+  const n = txt.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+  if(NO_ESCALAR.some(k=>n.includes(k))) return;
+  const nuevo = txt.replace(/(\d+)(\s*)(g|gr|grs|cc|ml)\b/gi, (m,num,esp,uni)=>{
+   const v = Math.round(parseInt(num)*factor/5)*5;   // redondea a múltiplos de 5
+   return (v>0? v : 5) + esp + uni;
+  });
+  if(nuevo !== txt){ inp.value = nuevo; cambiados++; }
+ });
+ return cambiados;
+}
+
+function abrirAjuste(bloqueEl){
+ document.getElementById("ajModal")?.remove();
+ const lb = bloqueEl.querySelector("[data-bnm]")?.value || "este bloque";
+ const p=+bloqueEl.querySelector("[data-mp]").value||0;
+ const c=+bloqueEl.querySelector("[data-mc]").value||0;
+ const g=+bloqueEl.querySelector("[data-mg]").value||0;
+ const kcal=p*4+c*4+g*9;
+ const peso = pesoActual();
+ const m = document.createElement("div");
+ m.id="ajModal"; m.className="modal on";
+ m.innerHTML = `
+  <div class="mbox" style="max-width:520px">
+   <div class="mtop2"><div><div class="t">Ajustar calorías</div>
+     <div class="s">${lb} · ${act.n}</div></div>
+     <button class="cerrar" id="ajCerrar">Cerrar</button></div>
+   <div class="mbody">
+    <div class="ajactual">Ahora: <b>${kcal} kcal</b> · ${p}P · ${c}C · ${g}G${peso?` · peso ${peso} kg`:""}</div>
+    <div class="ajlab">Aplicar un porcentaje</div>
+    <div class="ajbtns">
+     <button data-aj="-25">−25%</button><button data-aj="-20">−20%</button>
+     <button data-aj="-15">−15%</button><button data-aj="-10">−10%</button>
+     <button data-aj="-5">−5%</button><button data-aj="5">+5%</button>
+     <button data-aj="10">+10%</button><button data-aj="15">+15%</button>
+     <button data-aj="20">+20%</button>
+    </div>
+    <div class="ajlab" style="margin-top:14px">O escribir las calorías objetivo</div>
+    <div class="ajfila">
+     <input class="in mono" id="ajKcal" type="number" placeholder="${kcal}">
+     <button class="sv2" id="ajKcalBtn">Calcular</button>
+    </div>
+    <label class="ajcheck"><input type="checkbox" id="ajEscalar" checked>
+     <span>Reescalar también los gramos de los alimentos (carbohidratos y grasas)</span></label>
+    <div id="ajPrev"></div>
+   </div>
+  </div>`;
+ document.body.appendChild(m);
+ m._bloque = bloqueEl;
+}
+
+function previewAjuste(opciones){
+ const m = document.getElementById("ajModal");
+ const r = ajustarBloque(m._bloque, opciones);
+ if(!r) return;
+ window._ajResultado = r;
+ const d = r.despues, a = r.antes;
+ const dif = d.kcal - a.kcal;
+ document.getElementById("ajPrev").innerHTML = `
+  <div class="ajprev">
+   <div class="ajprevt">Quedaría así</div>
+   <div class="ajgrid">
+    <div class="ajb"><div class="ajl">Kcal</div><div class="ajv">${d.kcal}</div>
+      <div class="ajd">${dif>0?"+":""}${dif}</div></div>
+    <div class="ajb"><div class="ajl">Proteína</div><div class="ajv">${d.p}</div>
+      <div class="ajd">${d.p-a.p>0?"+":""}${d.p-a.p} g</div></div>
+    <div class="ajb"><div class="ajl">Carbos</div><div class="ajv">${d.c}</div>
+      <div class="ajd">${d.c-a.c>0?"+":""}${d.c-a.c} g</div></div>
+    <div class="ajb"><div class="ajl">Grasas</div><div class="ajv">${d.g}</div>
+      <div class="ajd">${d.g-a.g>0?"+":""}${d.g-a.g} g</div></div>
+   </div>
+   ${r.peso? `<div class="ajnota">Proteína ${(d.p/r.peso).toFixed(1)} g/kg · grasas ${(d.g/r.peso).toFixed(1)} g/kg (mínimo ${(r.gMin/r.peso).toFixed(1)})</div>`:""}
+   <div class="ajnota">${dif<0
+     ? "El recorte cae sobre los carbohidratos; la proteína se mantiene o sube para proteger la masa."
+     : dif>0 ? "El aumento va principalmente a carbohidratos."
+     : "Sin cambios."}</div>
+   <button class="sv" id="ajAplicar" style="width:100%;margin-top:13px">Aplicar a ${act.n}</button>
+  </div>`;
+}
+
+document.addEventListener("click", e=>{
+ const t = e.target;
+ if(t.hasAttribute?.("data-ajustar")){ abrirAjuste(t.closest(".bloque")); return; }
+ if(t.id==="ajCerrar" || t.id==="ajModal"){ document.getElementById("ajModal")?.remove(); return; }
+ if(t.hasAttribute?.("data-aj")){ previewAjuste({pct: +t.dataset.aj}); return; }
+ if(t.id==="ajKcalBtn"){
+  const v = +document.getElementById("ajKcal").value;
+  if(!v){ toast("Escribe las calorías objetivo"); return; }
+  previewAjuste({kcal: v}); return;
+ }
+ if(t.id==="ajAplicar"){
+  const m = document.getElementById("ajModal");
+  const r = window._ajResultado;
+  if(!r || !m) return;
+  const b = m._bloque;
+  b.querySelector("[data-mp]").value = r.despues.p;
+  b.querySelector("[data-mc]").value = r.despues.c;
+  b.querySelector("[data-mg]").value = r.despues.g;
+  b.querySelector("[data-kcal]").textContent = r.despues.kcal;
+  let esc = 0;
+  if(document.getElementById("ajEscalar")?.checked && Math.abs(r.factor-1) > 0.02){
+   esc = escalarAlimentos(b, r.factor);
+  }
+  m.remove();
+  verificarBloque(b);
+  toast(`Ajustado a ${r.despues.kcal} kcal${esc? ` · ${esc} alimentos reescalados`:""}`);
+  return;
+ }
+});
+
+
+/* ═══════════════ ANAMNESIS ═══════════════ */
+const AN_ETIQUETAS = {"nombre": "Nombre completo", "edad": "Edad", "peso": "Peso actual", "altura": "Estatura", "genero": "Género", "pais": "País de residencia", "ciudad": "Ciudad", "cp": "Código postal", "ocupacion": "¿En qué trabajas?", "horas_trabajo": "Horas de trabajo al día", "tipo_trabajo": "Tu trabajo es", "turnos": "Tipo de jornada", "actividad_fuera": "Actividad fuera del trabajo", "objetivo": "Tu objetivo principal", "fecha_objetivo": "¿Tienes una fecha objetivo?", "peso_objetivo": "Peso que buscas", "plazo": "Plazo que te das", "condiciones": "¿Condiciones médicas diagnosticadas?", "medicamentos": "¿Medicamentos habituales?", "lesiones": "Lesiones actuales o pasadas", "cirugias": "Cirugías previas", "alergias": "Alergias e intolerancias", "examenes": "Último examen de sangre", "grasa": "% de grasa (si lo sabes)", "historial_peso": "Tu mayor y menor peso alcanzado", "acumula_grasa": "¿Dónde acumulas grasa?", "horas_sueno": "Horas de sueño", "calidad_sueno": "Calidad del sueño", "estres": "Nivel de estrés", "alcohol": "Consumo de alcohol", "fuma": "¿Fumas?", "metabolismo": "Sientes que tu metabolismo es", "restricciones": "Restricciones dietéticas", "suplementos": "Suplementos que tomas", "relacion_comida": "Tu relación con la comida", "personalidad": "Te consideras", "motiva": "¿Qué te motiva?", "sabotaje": "¿Cómo te saboteas?", "miedo": "Tu mayor miedo", "fortaleza": "Tu fortaleza principal", "horarios": "Horarios en que puedes entrenar", "equipamiento": "Equipamiento disponible", "pasos": "Pasos al día", "apoyo": "Apoyo de tu entorno", "emocional": "¿Cómo te sientes hoy?", "extra": "¿Algo importante que no te preguntamos?"};
+const AN_SECS = [["Quién eres tú", ["nombre", "edad", "peso", "altura", "genero", "pais", "ciudad", "cp"]], ["Ocupación y contexto", ["ocupacion", "horas_trabajo", "tipo_trabajo", "turnos", "actividad_fuera"]], ["Objetivos", ["objetivo", "fecha_objetivo", "peso_objetivo", "plazo"]], ["Salud", ["condiciones", "medicamentos", "lesiones", "cirugias", "alergias", "examenes"]], ["Composición corporal", ["grasa", "historial_peso", "acumula_grasa"]], ["Hábitos y metabolismo", ["horas_sueno", "calidad_sueno", "estres", "alcohol", "fuma", "metabolismo"]], ["Nutrición", ["restricciones", "suplementos", "relacion_comida"]], ["Psicología y patrones", ["personalidad", "motiva", "sabotaje", "miedo", "fortaleza"]], ["Disponibilidad", ["horarios", "equipamiento", "pasos", "apoyo"]], ["Cómo te sientes", ["emocional"]], ["Algo más", ["extra"]]];
+const AN_URL = BASE_URL + "anamnesis.html";
+
+function anEnlace(a){
+ const id = FB_ID[a.id];
+ if(!id) return null;
+ return AN_URL + "?id=" + encodeURIComponent(id) + "&n=" + encodeURIComponent(a.n);
+}
+function anPintar(){
+ const el = document.getElementById("anNom"); if(!el) return;
+ el.textContent = act.n;
+ const u = anEnlace(act);
+ document.getElementById("anLink").textContent = u || "Este atleta todavía no tiene app publicada";
+}
+function anTexto(a){
+ return encodeURIComponent(`Hola ${a.n.split(" ")[0]}, antes de armar tu plan necesito que completes esta ficha. ` +
+  `Son 45 preguntas y toma unos 10 minutos. Se hace una sola vez: ${anEnlace(a)}`);
+}
+
+document.addEventListener("click", async e=>{
+ const t = e.target;
+ if(t.id==="anWa"){
+  const tel=(document.getElementById("fWa")?.value || act.wa || "").replace(/[^0-9]/g,"");
+  if(!tel){ toast("Falta el número de "+act.n); return; }
+  if(!anEnlace(act)){ toast(act.n+" todavía no tiene app publicada"); return; }
+  window.open("https://wa.me/"+tel+"?text="+anTexto(act),"_blank","noopener");
+  return;
+ }
+ if(t.id==="anMail"){
+  const u = anEnlace(act);
+  if(!u){ toast(act.n+" todavía no tiene app publicada"); return; }
+  const asunto = encodeURIComponent("Tu ficha inicial · Pro Performance Coach");
+  const cuerpo = encodeURIComponent(
+   `Hola ${act.n.split(" ")[0]},\n\n` +
+   `Antes de armar tu plan necesito que completes esta ficha inicial.\n` +
+   `Son 45 preguntas y toma unos 10 minutos. Se completa una sola vez.\n\n` +
+   `${u}\n\n` +
+   `Cualquier duda me escribes.\n\nPaul Cifuentes\nPro Performance Coach`);
+  window.location.href = "mailto:?subject="+asunto+"&body="+cuerpo;
+  return;
+ }
+ if(t.id==="anCopiar"){
+  const u = anEnlace(act);
+  if(!u){ toast("Sin enlace disponible"); return; }
+  navigator.clipboard.writeText(u).then(()=>toast("Enlace copiado")).catch(()=>toast("No se pudo copiar"));
+  return;
+ }
+ if(t.id==="anAbrir"){
+  const u = anEnlace(act);
+  if(u) window.open(u,"_blank","noopener"); else toast("Sin enlace disponible");
+  return;
+ }
+ if(t.id==="anTraer"){
+  t.disabled=true; const txt=t.textContent; t.textContent="Consultando...";
+  const d = await fbTraer(act);
+  t.disabled=false; t.textContent=txt;
+  const box=document.getElementById("anResp");
+  if(!d || !d.anamnesis){
+   box.innerHTML = '<div class="v7vacio">Todavía no la ha completado.</div>';
+   document.getElementById("anEstado").textContent = "pendiente";
+   return;
+  }
+  const an = d.anamnesis;
+  const fecha = (an._enviada||"").slice(0,10);
+  document.getElementById("anEstado").textContent = "completada el "+fecha+" · "+(an._completitud||0)+"%";
+  box.innerHTML = AN_SECS.map(([sec, campos])=>{
+   const filas = campos.filter(k=>{
+    const v=an[k]; return v && (Array.isArray(v)? v.length : String(v).trim());
+   }).map(k=>{
+    const v = Array.isArray(an[k]) ? an[k].join(" · ") : an[k];
+    return `<div class="anfila"><span class="anl">${AN_ETIQUETAS[k]||k}</span><span class="anv">${v}</span></div>`;
+   }).join("");
+   return filas ? `<div class="ansec"><div class="ansect">${sec}</div>${filas}</div>` : "";
+  }).join("") || '<div class="v7vacio">Sin respuestas registradas.</div>';
+  return;
  }
 });
 
