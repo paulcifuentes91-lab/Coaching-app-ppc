@@ -1854,7 +1854,9 @@ async function fbGuardarPlan(a){
   eyebrow: `Mesociclo · ${a.cat}`,
   days: dias.map(d=>{
    const [tag, ...resto] = d.n.split("·");
+   const _pal=['#E0C23D','#5B8DEF','#4CAF7D','#E07A72','#8C7BFF','#E08A3D','#63C295'];
    return { dayTag: tag.trim(), name: resto.join("·").trim() || tag.trim(), id: "dia-"+(dias.indexOf(d)+1),
+    accent: (act.dias[dias.indexOf(d)]||{}).accent || _pal[dias.indexOf(d) % _pal.length],
     sections: d.secs.map(s=>({ name:s.n,
       items: s.ej.filter(e=>e[0]).map(e=>({name:e[0],reps:e[1],tier:e[2],tip:e[3]||""})) })) };
   }),

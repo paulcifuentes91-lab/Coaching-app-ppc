@@ -632,7 +632,7 @@ athleteRef.onSnapshot((doc)=>{
           deload: p.periodizacion.deload ?? PERIODIZACION.deload
         };
       }
-      days = p.days || DEFAULT_PLAN.days;
+      days = asegurarColores(p.days || DEFAULT_PLAN.days);
       nutritionInfo = p.nutritionInfo || DEFAULT_PLAN.nutritionInfo;
       mealWindows = p.mealWindows && p.mealWindows.length ? p.mealWindows : DEFAULT_PLAN.mealWindows;
       MEAL_PLAN_MACROS = p.macros || DEFAULT_PLAN.macros;
@@ -893,6 +893,12 @@ function renderTrainHistory(){
   `;
 }
 
+const ACCENT_PALETA = ['#E0C23D','#5B8DEF','#4CAF7D','#E07A72','#8C7BFF','#E08A3D','#63C295'];
+const ACCENT_FALLBACK = '#E0C23D';
+function asegurarColores(ds){
+  (ds||[]).forEach((d,i)=>{ if(!d.accent) d.accent = ACCENT_PALETA[i % ACCENT_PALETA.length]; });
+  return ds;
+}
 let PERIODIZACION = {s2:1,s3principal:2,s3accesorio:1,deload:0.7};
 let MAX_SETS_SESSION = 30;
 
@@ -1236,7 +1242,7 @@ function renderCard(){
   const r = 24, circ = 2*Math.PI*r;
   const offset = circ * (1-pct);
 
-  document.documentElement.style.setProperty('--accent', day.accent);
+  document.documentElement.style.setProperty('--accent', day.accent || ACCENT_FALLBACK);
 
   let html = `
     <div class="card-top">
@@ -1424,7 +1430,7 @@ function renderMealCard(){
   const r = 24, circ = 2*Math.PI*r;
   const offset = circ * (1-pct);
 
-  document.documentElement.style.setProperty('--accent', mw.accent);
+  document.documentElement.style.setProperty('--accent', mw.accent || ACCENT_FALLBACK);
 
   let html = `
     <div class="card-top">
@@ -1949,7 +1955,7 @@ function renderAll(){
     renderAnalysis();
     renderFeelHistory();
   } else if(activeView==='training'){
-    document.documentElement.style.setProperty('--accent', currentDay().accent);
+    document.documentElement.style.setProperty('--accent', (currentDay()||{}).accent || ACCENT_FALLBACK);
     renderWeekRow();
     renderWeekBanner();
     renderTabs();
