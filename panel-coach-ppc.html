@@ -2108,8 +2108,21 @@ document.addEventListener("click",e=>{
   pintarDias();
   const cap = document.querySelector("#kMax"); if(cap){ cap.value = r.cap; }
   recalcular();
+  const nuevoBloque = { n:"Calculado automáticamente", kcal:r.kcal, p:r.protG, c:r.carbG, g:r.grasaG,
+    comidas: (act.nut && act.nut.bloques && act.nut.bloques[0] && act.nut.bloques[0].comidas) || [] };
+  if(!act.nut) act.nut = { agua:"", sal:"", libre:"", vig:"", bloques:[] };
+  act.nut.bloques = [nuevoBloque];
+  if(typeof pintarBloques === "function") pintarBloques();
+  const fbIdMacros = FB_ID[act.id];
+  if(fbIdMacros && FB.on){
+   FB.db.collection("athletes").doc(fbIdMacros).set({
+    "plan.macros": { kcal:r.kcal, p:r.protG, c:r.carbG, g:r.grasaG },
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+   }, { merge:true }).then(()=> toast("Macros guardados en la nube · "+act.n))
+     .catch(err=> toast("Estructura creada, pero no se pudo guardar macros en la nube: "+err.message));
+  }
   okAviso(e.target);
-  toast("Estructura creada en "+act.n+" · ahora añade los ejercicios");
+  toast("Estructura y macros creados en "+act.n+" · ahora añade los ejercicios");
   document.querySelector('.tab[data-p="p2"]').click();
   return; }
 });
