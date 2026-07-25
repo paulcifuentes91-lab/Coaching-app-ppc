@@ -2289,13 +2289,11 @@ async function fbGuardarPlan(a){
  };
 
  try{
-  const upd = {
-   "plan.eyebrow": plan.eyebrow, "plan.days": plan.days, "plan.weeklyOrder": plan.weeklyOrder,
-   "plan.startDate": plan.startDate, "plan.checkDate": plan.checkDate, "plan.accessExpiresAt": plan.accessExpiresAt,
-   "plan.periodizacion": plan.periodizacion, "plan.actualizado": plan.actualizado, "plan.porCoach": plan.porCoach,
-   contacto
-  };
-  await FB.db.collection("athletes").doc(id).set(upd, { merge:true });
+  const ref = FB.db.collection("athletes").doc(id);
+  const snap = await ref.get();
+  const planActual = (snap.exists && snap.data().plan) || {};
+  const planFinal = Object.assign({}, planActual, plan);
+  await ref.set({ plan: planFinal, contacto }, { merge:true });
   return true;
  }catch(e){ toast("No se pudo guardar: "+e.message); return false; }
 }
@@ -2319,10 +2317,11 @@ async function fbGuardarNutricion(a){
    label, accent:"#E8C15C", macros:{kcal:p*4+cb*4+g*9, proteinG:p, carbG:cb, fatG:g}, meals });
  });
  try{
-  await FB.db.collection("athletes").doc(id).set({
-   "plan.mealWindows": bloques,
-   "plan.actualizado": new Date().toISOString()
-  }, { merge:true });
+  const ref = FB.db.collection("athletes").doc(id);
+  const snap = await ref.get();
+  const planActual = (snap.exists && snap.data().plan) || {};
+  const planFinal = Object.assign({}, planActual, { mealWindows: bloques, actualizado: new Date().toISOString() });
+  await ref.set({ plan: planFinal }, { merge:true });
   return true;
  }catch(e){ toast("No se pudo guardar: "+e.message); return false; }
 }
