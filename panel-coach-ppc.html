@@ -2288,10 +2288,12 @@ async function fbGuardarPlan(a){
   zonaHoraria: document.getElementById("fTz")?.value || a.tz
  };
 
+ console.log("[DEBUG fbGuardarPlan] id=", id, "plan=", JSON.parse(JSON.stringify(plan)));
  try{
   await FB.db.collection("athletes").doc(id).set({ plan, contacto }, { merge:true });
+  console.log("[DEBUG fbGuardarPlan] escritura OK en doc:", id);
   return true;
- }catch(e){ toast("No se pudo guardar: "+e.message); return false; }
+ }catch(e){ console.log("[DEBUG fbGuardarPlan] ERROR:", e); toast("No se pudo guardar: "+e.message); return false; }
 }
 
 /* ── Guardar la nutrición ── */
@@ -2312,11 +2314,13 @@ async function fbGuardarNutricion(a){
   bloques.push({ id: label.toLowerCase().replace(/[^a-z0-9]/g,"-").slice(0,20) || "b"+bloques.length,
    label, accent:"#E8C15C", macros:{kcal:p*4+cb*4+g*9, proteinG:p, carbG:cb, fatG:g}, meals });
  });
+ console.log("[DEBUG fbGuardarNutricion] id=", id, "bloques=", JSON.parse(JSON.stringify(bloques)));
  try{
   await FB.db.collection("athletes").doc(id).set({
    plan:{ mealWindows: bloques, actualizado:new Date().toISOString() } }, { merge:true });
+  console.log("[DEBUG fbGuardarNutricion] escritura OK en doc:", id, "cantidad bloques:", bloques.length);
   return true;
- }catch(e){ toast("No se pudo guardar: "+e.message); return false; }
+ }catch(e){ console.log("[DEBUG fbGuardarNutricion] ERROR:", e); toast("No se pudo guardar: "+e.message); return false; }
 }
 
 /* ── Guardar un chequeo nuevo en el historial ── */
