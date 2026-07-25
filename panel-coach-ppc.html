@@ -1425,7 +1425,26 @@ function asisPrecargar(){
  else if(/fuerza/.test(cat)) $("#asObjetivo").value="fuerza";
  const nd=(act.dias||[]).length;
  if(nd>=2&&nd<=6) $("#asDias").value=String(nd);
+ if(!$("#gnPeso").value && h) $("#gnPeso").value = String(h[1]).replace(",",".");
+ gnActualizarTdee();
 }
+
+/* Calorías de mantenimiento automáticas: usa la misma fórmula del asistente (Mifflin-St Jeor),
+   tomando peso/altura/edad/sexo/actividad de los campos ya cargados en la ficha. */
+function gnActualizarTdee(){
+ const peso = +$("#gnPeso").value || +$("#asPeso").value || 0;
+ if(!peso) return;
+ const altura = +$("#asAltura").value || 170;
+ const edad = +$("#asEdad").value || 30;
+ const sexo = $("#asSexo").value || "m";
+ const actv = $("#asAct").value || "moderado";
+ const g = ASIS.gasto(peso, altura, edad, sexo, actv);
+ $("#gnTdee").value = g.tdee;
+}
+
+document.addEventListener("input", e=>{
+ if(["gnPeso","asAltura","asEdad","asSexo","asAct"].includes(e.target.id)) gnActualizarTdee();
+});
 
 document.addEventListener("click",e=>{
  const t=e.target;
@@ -1591,8 +1610,13 @@ function crear(){
   ini_f:$("#wIni").value,sem:+$("#wSem").value,chk:$("#wChk").value,vence:$("#wVence").value,
   estado:"activo",e:"ok",nota:"",
   dias: prop? prop.split.map((s,i)=>({n:`Día ${i+1} · ${s[0]}`,
-        secs:[{n:"Entrenamiento",ej:[["","4 X 10","principal",""]]},
-              {n:"Cardio",ej:[["Caminata en cinta LISS","30 min","accesorio",prop.cardio]]}]}))
+        secs:[
+         {n:"Calentamiento",ej:[["Movilidad articular general","5 a 10 min","accesorio",""],
+              ["Activación de "+s[1].split(",").map(x=>GRUPO_LB[x]||x).join(", "),"2 a 3 min","accesorio","Series livianas de aproximación"]]},
+         {n:"Entrenamiento",ej:[["","4 X 10","principal",""]]},
+         {n:"Estiramiento",ej:[["Elongación de "+s[1].split(",").map(x=>GRUPO_LB[x]||x).join(", "),"5 a 8 min","accesorio",""]]},
+         {n:"Cardio",ej:[["Caminata en cinta LISS","30 min","accesorio",prop.cardio]]}
+        ]}))
        : (src? JSON.parse(JSON.stringify(src.dias)) : []),
   nut: src? JSON.parse(JSON.stringify(src.nut)) : {agua:"",sal:"",libre:"",vig:"",bloques:[]},
   sup: src? JSON.parse(JSON.stringify(src.sup)) : [], hist:[]};
@@ -2103,8 +2127,13 @@ document.addEventListener("click",e=>{
   }
   if(act.dias.length && !confirm("Esto reemplaza los días actuales de "+act.n+". ¿Continuar?")) return;
   act.dias = r.split.map((s,i)=>({n:`Día ${i+1} · ${s[0]}`,
-   secs:[{n:"Entrenamiento",ej:[["","4 X 10","principal",""]]},
-         {n:"Cardio",ej:[["Caminata en cinta LISS","30 min","accesorio",r.cardio]]}]}));
+   secs:[
+    {n:"Calentamiento",ej:[["Movilidad articular general","5 a 10 min","accesorio",""],
+         ["Activación de "+s[1].split(",").map(x=>GRUPO_LB[x]||x).join(", "),"2 a 3 min","accesorio","Series livianas de aproximación"]]},
+    {n:"Entrenamiento",ej:[["","4 X 10","principal",""]]},
+    {n:"Estiramiento",ej:[["Elongación de "+s[1].split(",").map(x=>GRUPO_LB[x]||x).join(", "),"5 a 8 min","accesorio",""]]},
+    {n:"Cardio",ej:[["Caminata en cinta LISS","30 min","accesorio",r.cardio]]}
+   ]}));
   pintarDias();
   const cap = document.querySelector("#kMax"); if(cap){ cap.value = r.cap; }
   recalcular();
