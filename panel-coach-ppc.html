@@ -1599,13 +1599,23 @@ document.addEventListener("change",e=>{
 /* ═══════════ CREAR ATLETA ═══════════ */
 $("#plantillas").innerHTML=PLANTILLAS.map((p,i)=>`
  <div class="pl2 ${i===0?'sel':''}"><div class="t">${p.t}</div><div class="d">${p.d}</div><div class="q">${p.q}</div></div>`).join("");
+function slugificarId(nombre){
+ const limpio = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z]/g,"");
+ const partes = nombre.trim().split(/\s+/);
+ let base = limpio(partes[0]) || "atleta";
+ if(ATLETAS.some(a=>a.id===base) && partes[1]) base += "-" + limpio(partes[1]);
+ let id = base, n2 = 2;
+ while(ATLETAS.some(a=>a.id===id)){ id = base + n2; n2++; }
+ return id;
+}
+
 function crear(){
  const n=$("#wNombre").value.trim();
  if(!n){toast("Escribe el nombre del atleta");$("#wNombre").focus();return;}
  const prop = window._asisAplicada;
  const base=PLANTILLAS[plantillaSel].src;
  const src=(!prop && base)? ATLETAS.find(a=>a.id===base) : null;
- const nuevo={id:"a"+Date.now(),ini:n.split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase(),
+ const nuevo={id:slugificarId(n),ini:n.split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase(),
   n,cat:$("#wCat").value||"Sin categoría",fed:$("#wFed").value,tz:$("#wTz").value,est:"",wa:"+56957285767",
   ini_f:$("#wIni").value,sem:+$("#wSem").value,chk:$("#wChk").value,vence:$("#wVence").value,
   estado:"activo",e:"ok",nota:"",
