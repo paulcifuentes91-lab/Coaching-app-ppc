@@ -2659,27 +2659,31 @@ const GEN_ALIM = {
  libre:{ "ensalada verde":[20,1,3,0.2], "verduras cocidas":[35,2,6,0.4] }
 };
 const SUSTITUTOS = {
- "pechuga de pollo":"pavo", "pavo":"pechuga de pollo",
- "carne roja magra":"pescado blanco", "pescado blanco":"salmón",
- "salmón":"atún en agua", "atún en agua":"salmón",
- "claras de huevo":"pescado blanco", "tofu":"legumbres cocidas",
- "arroz blanco cocido":"papa cocida", "papa cocida":"camote cocido",
- "camote cocido":"papa cocida", "avena":"quinoa cocida",
- "pasta cocida":"arroz blanco cocido", "pan":"avena",
- "quinoa cocida":"arroz blanco cocido", "legumbres cocidas":"quinoa cocida",
- "aceite de oliva":"palta", "palta":"frutos secos",
- "frutos secos":"mantequilla de maní", "mantequilla de maní":"frutos secos"
+ "pechuga de pollo":["pavo","pescado blanco"], "pavo":["pechuga de pollo","pescado blanco"],
+ "carne roja magra":["pescado blanco","salmón"], "pescado blanco":["salmón","pechuga de pollo"],
+ "salmón":["atún en agua","pescado blanco"], "atún en agua":["salmón","pescado blanco"],
+ "claras de huevo":["pescado blanco","pechuga de pollo"], "tofu":["legumbres cocidas","pescado blanco"],
+ "arroz blanco cocido":["pasta cocida","quinoa cocida"], "papa cocida":["camote cocido","quinoa cocida"],
+ "camote cocido":["papa cocida","quinoa cocida"], "avena":["quinoa cocida","pan"],
+ "pasta cocida":["arroz blanco cocido","quinoa cocida"], "pan":["avena","arroz blanco cocido"],
+ "quinoa cocida":["arroz blanco cocido","legumbres cocidas"], "legumbres cocidas":["quinoa cocida","pasta cocida"],
+ "aceite de oliva":["palta","frutos secos"], "palta":["frutos secos","aceite de oliva"],
+ "frutos secos":["mantequilla de maní","palta"], "mantequilla de maní":["frutos secos","aceite de oliva"]
 };
 
 function sugerirSustituto(nombre, categoria, objetivoGramoMacro){
- const sust = SUSTITUTOS[nombre];
- if(!sust) return "";
+ const lista = SUSTITUTOS[nombre];
+ if(!lista || !lista.length) return "";
  const tabla = categoria==="p" ? GEN_ALIM.prot : categoria==="c" ? GEN_ALIM.carbo : GEN_ALIM.grasa;
- const datosSust = tabla[sust];
- if(!datosSust) return "";
- const gSust = gramosPara(datosSust, categoria, objetivoGramoMacro);
- if(!gSust) return "";
- return ` (o ${gSust} g ${sust})`;
+ const opciones = lista.map(sust=>{
+  const datosSust = tabla[sust];
+  if(!datosSust) return null;
+  const gSust = gramosPara(datosSust, categoria, objetivoGramoMacro);
+  if(!gSust) return null;
+  return `${gSust} g ${sust}`;
+ }).filter(Boolean);
+ if(!opciones.length) return "";
+ return ` (o ${opciones.join(", o ")})`;
 }
 
 /* Plantillas de comida: qué lleva cada una y qué porcentaje de los macros del día */
@@ -2784,7 +2788,7 @@ function armarComida(plan, macros, opciones){
  usado[0] += gp*P[kp][1]/100; usado[1] += gp*P[kp][2]/100; usado[2] += gp*P[kp][3]/100;
 
  if(macros.c - usado[1] > 5){
-  const rapidos = ["arroz blanco cocido","papa cocida","camote cocido","pasta cocida"];
+  const rapidos = ["arroz blanco cocido","pasta cocida","quinoa cocida","papa cocida","camote cocido","legumbres cocidas"];
   const dispo = rapidos.filter(k=>!opciones.excluir.some(x=>k.includes(x)));
   const kc = dispo.length ? dispo[opciones.sem % dispo.length] : elegir(C, opciones.sem + 1);
   const objetivoC = macros.c - usado[1];
