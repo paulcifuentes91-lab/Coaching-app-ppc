@@ -2644,31 +2644,53 @@ const GEN_ALIM = {
   "pechuga de pollo":[165,31,0,3.6], "carne roja magra":[250,26,0,15],
   "pescado blanco":[105,23,0,1.5], "salmón":[208,20,0,13],
   "atún en agua":[116,26,0,1], "pavo":[135,29,0,1.7],
-  "claras de huevo":[52,11,0.7,0.2], "tofu":[144,15,3,9]
+  "claras de huevo":[52,11,0.7,0.2], "tofu":[144,15,3,9],
+  "huevo entero":[143,12.6,0.7,9.5], "camarones":[99,24,0.2,0.3],
+  "lomo de cerdo":[143,26,0,4]
  },
  carbo:{
   "arroz blanco cocido":[130,2.7,28,0.3], "papa cocida":[87,2,20,0.1],
   "camote cocido":[86,1.6,20,0.1], "avena":[389,17,66,7],
   "pasta cocida":[158,6,31,0.9], "pan":[265,9,49,3.2],
-  "quinoa cocida":[120,4.4,21,1.9], "legumbres cocidas":[116,8,20,0.5]
+  "quinoa cocida":[120,4.4,21,1.9], "legumbres cocidas":[116,8,20,0.5],
+  "zapallo":[34,1,8,0.1], "choclo":[96,3.4,21,1.5],
+  "arroz integral cocido":[112,2.3,24,0.9], "galletas de arroz":[387,8,81,3]
  },
  grasa:{
   "aceite de oliva":[884,0,0,100], "palta":[160,2,9,15],
-  "frutos secos":[607,20,21,54], "mantequilla de maní":[588,25,20,50]
+  "frutos secos":[607,20,21,54], "mantequilla de maní":[588,25,20,50],
+  "almendras":[579,21,22,50], "nueces":[654,15,14,65]
  },
- libre:{ "ensalada verde":[20,1,3,0.2], "verduras cocidas":[35,2,6,0.4] }
+ lacteos:{
+  "yogurt griego":[59,10,3.6,0.4], "queso":[320,25,2,24],
+  "kefir":[41,3.3,4.5,1], "leche descremada":[35,3.4,5,0.2]
+ },
+ frutas:{
+  "plátano":[89,1.1,23,0.3], "frutos rojos":[52,0.7,12,0.3],
+  "manzana":[52,0.3,14,0.2], "naranja":[47,0.9,12,0.1],
+  "kiwi":[61,1.1,15,0.5], "piña":[50,0.5,13,0.1]
+ },
+ libre:{ "ensalada verde":[20,1,3,0.2], "verduras cocidas":[35,2,6,0.4],
+  "brócoli":[34,2.8,7,0.4], "espinaca":[23,2.9,3.6,0.4],
+  "tomate":[18,0.9,3.9,0.2], "pepino":[15,0.7,3.6,0.1],
+  "zanahoria":[41,0.9,10,0.2], "champiñón":[22,3.1,3.3,0.3] }
 };
 const SUSTITUTOS = {
  "pechuga de pollo":["pavo","pescado blanco"], "pavo":["pechuga de pollo","pescado blanco"],
  "carne roja magra":["pescado blanco","salmón"], "pescado blanco":["salmón","pechuga de pollo"],
  "salmón":["atún en agua","pescado blanco"], "atún en agua":["salmón","pescado blanco"],
  "claras de huevo":["pescado blanco","pechuga de pollo"], "tofu":["legumbres cocidas","pescado blanco"],
+ "huevo entero":["claras de huevo","pescado blanco"], "camarones":["pescado blanco","salmón"],
+ "lomo de cerdo":["pechuga de pollo","pavo"],
  "arroz blanco cocido":["pasta cocida","quinoa cocida"], "papa cocida":["camote cocido","quinoa cocida"],
  "camote cocido":["papa cocida","quinoa cocida"], "avena":["quinoa cocida","pan"],
  "pasta cocida":["arroz blanco cocido","quinoa cocida"], "pan":["avena","arroz blanco cocido"],
  "quinoa cocida":["arroz blanco cocido","legumbres cocidas"], "legumbres cocidas":["quinoa cocida","pasta cocida"],
+ "zapallo":["camote cocido","papa cocida"], "choclo":["arroz blanco cocido","papa cocida"],
+ "arroz integral cocido":["quinoa cocida","arroz blanco cocido"], "galletas de arroz":["pan","avena"],
  "aceite de oliva":["palta","frutos secos"], "palta":["frutos secos","aceite de oliva"],
- "frutos secos":["mantequilla de maní","palta"], "mantequilla de maní":["frutos secos","aceite de oliva"]
+ "frutos secos":["mantequilla de maní","almendras"], "mantequilla de maní":["frutos secos","almendras"],
+ "almendras":["nueces","frutos secos"], "nueces":["almendras","frutos secos"]
 };
 
 function sugerirSustituto(nombre, categoria, objetivoGramoMacro){
@@ -2788,7 +2810,7 @@ function armarComida(plan, macros, opciones){
  usado[0] += gp*P[kp][1]/100; usado[1] += gp*P[kp][2]/100; usado[2] += gp*P[kp][3]/100;
 
  if(macros.c - usado[1] > 5){
-  const rapidos = ["arroz blanco cocido","pasta cocida","quinoa cocida","papa cocida","camote cocido","legumbres cocidas"];
+  const rapidos = ["arroz blanco cocido","pasta cocida","quinoa cocida","papa cocida","camote cocido","legumbres cocidas","arroz integral cocido","choclo","zapallo"];
   const dispo = rapidos.filter(k=>!opciones.excluir.some(x=>k.includes(x)));
   const kc = dispo.length ? dispo[opciones.sem % dispo.length] : elegir(C, opciones.sem + 1);
   const objetivoC = macros.c - usado[1];
@@ -2803,7 +2825,8 @@ function armarComida(plan, macros, opciones){
   items.push(`${gg} g ${kg}${sugerirSustituto(kg,"g",faltaG)}`);
   usado[2] += gg*G[kg][3]/100; usado[1] += gg*G[kg][2]/100;
  }
- items.push(plan.tipo === "cena" ? "Verduras cocidas · consumo libre" : "Ensalada verde · consumo libre");
+ const verdurasLibres = ["Verduras cocidas","Ensalada verde","Brócoli al vapor","Espinaca salteada","Tomate y pepino","Zanahoria rallada"];
+ items.push(`${verdurasLibres[opciones.sem % verdurasLibres.length]} · consumo libre`);
  return {items, usado};
 }
 
