@@ -2174,10 +2174,12 @@ document.addEventListener("click",e=>{
   if(typeof pintarBloques === "function") pintarBloques();
   const fbIdMacros = FB_ID[act.id];
   if(fbIdMacros && FB.on){
-   FB.db.collection("athletes").doc(fbIdMacros).set({
-    "plan.macros": { kcal:r.kcal, p:r.protG, c:r.carbG, g:r.grasaG },
-    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-   }, { merge:true }).then(()=> toast("Macros guardados en la nube · "+act.n))
+   const refMacros = FB.db.collection("athletes").doc(fbIdMacros);
+   refMacros.get().then(snap=>{
+    const planActualM = (snap.exists && snap.data().plan) || {};
+    const planFinalM = Object.assign({}, planActualM, { macros: { kcal:r.kcal, p:r.protG, c:r.carbG, g:r.grasaG } });
+    return refMacros.set({ plan: planFinalM, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+   }).then(()=> toast("Macros guardados en la nube · "+act.n))
      .catch(err=> toast("Estructura creada, pero no se pudo guardar macros en la nube: "+err.message));
   }
   okAviso(e.target);
