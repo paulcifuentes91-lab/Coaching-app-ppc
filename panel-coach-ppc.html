@@ -542,6 +542,7 @@ cursor:pointer;padding:4px 0 12px;letter-spacing:.5px}
 border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-height:1.6}
 .anfalta b{display:block;color:var(--tx);margin-bottom:5px}
 .anestado{font-family:var(--mono);font-size:10.5px;color:var(--ok);margin-top:9px}
+.hrowa.pnew{border-left:2.5px solid var(--ok);background:linear-gradient(90deg,rgba(99,194,149,.06),var(--card2))}
 </style><script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
@@ -585,6 +586,12 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
   <div class="hgrid">
    <div class="sec"><div class="st">Necesita tu atención</div><div id="homeAtencion"></div></div>
    <div class="sec"><div class="st">Anamnesis pendientes</div><div id="homeAnamnesis"></div></div>
+  </div>
+  <div class="sec" id="secProspectos" style="display:none">
+   <div class="st">Nuevos interesados <span class="aux">llenaron la ficha sin ser aún tus atletas</span></div>
+   <div id="homeProspectos"></div>
+  </div>
+  <div class="hgrid" style="margin-top:11px">
   </div>
   <div class="sec"><div class="st">Adherencia de los últimos 7 días <span class="aux">días entrenados sobre los programados</span></div>
    <div id="homeAdherencia"></div></div>
@@ -1172,7 +1179,7 @@ function cargar(a){
  $("#fChk").value=a.chk; $("#fVence").value=a.vence; $("#fEstado").value=a.estado; $("#fNota").value=a.nota;
  $("#nAgua").value=a.nut.agua; $("#nSal").value=a.nut.sal; $("#nLibre").value=a.nut.libre; $("#nVig").value=a.nut.vig;
  $("#semAviso").textContent = a.ini_f ? "Hoy: "+semanaHoy(a.ini_f) : "";
- pintarDias(); pintarBloques(); _postBloques(); pintarSups(); pintarHist(); recalcular(); v7cargar();
+ pintarDias(); pintarBloques(); _postBloques(); pintarSups(); pintarHist(); recalcular(); v7cargar(); anPintar();
 }
 function semanaHoy(ini){
  const d=Math.floor((new Date("2026-07-22")-new Date(ini+"T12:00:00"))/864e5);
@@ -2991,7 +2998,7 @@ document.addEventListener("click", async e=>{
  }
  if(t.id==="anTraer"){
   t.disabled=true; const txt=t.textContent; t.textContent="Consultando...";
-  const d = (HOME.datos && HOME.datos[act.id]) ? HOME.datos[act.id] : await fbTraer(act);
+  const d = await fbTraer(act);
   t.disabled=false; t.textContent=txt;
   const box=document.getElementById("anResp");
   if(!d || !d.anamnesis){
@@ -3037,6 +3044,16 @@ function irAtleta(a){
 }
 
 /* Trae de Firebase lo que hace falta para la portada */
+async function cargarProspectos(){
+ if(!FB.on) return [];
+ try{
+  const snap = await FB.db.collection("athletes").where("esProspecto","==",true).get();
+  const out = [];
+  snap.forEach(d=>{ out.push({id:d.id, ...d.data()}); });
+  return out.sort((a,b)=> String(b.creado||"").localeCompare(String(a.creado||"")));
+ }catch(e){ console.warn("prospectos:", e.message); return []; }
+}
+
 async function cargarDatosHome(){
  if(!FB.on) return;
  HOME.cargando = true;
@@ -3050,6 +3067,7 @@ async function cargarDatosHome(){
    HOME.datos[a.id] = doc.exists ? doc.data() : null;
   }catch(e){ HOME.datos[a.id] = null; }
  }
+ HOME.prospectos = await cargarProspectos();
  HOME.cargando = false; HOME.cargado = true;
  if(marca) marca.style.display = "none";
  pintarHome();
@@ -3171,6 +3189,27 @@ function pintarHome(){
   document.getElementById("adMedia").textContent = conDatos.length? media+"%" : "—";
  }
 
+ /* ── Nuevos interesados ── */
+ const pros = HOME.prospectos || [];
+ const secP = document.getElementById("secProspectos");
+ if(pros.length){
+  secP.style.display = "block";
+  document.getElementById("homeProspectos").innerHTML = pros.map(p=>{
+   const an = p.anamnesis || {};
+   const nom = an.nombre || p.contacto?.nombre || "Sin nombre";
+   const ini = nom.split(" ").map(x=>x[0]).slice(0,2).join("").toUpperCase() || "?";
+   const cuando = (p.creado||"").slice(0,10);
+   const datos = [an.edad?an.edad+" años":"", an.objetivo||"", an.ciudad||an.pais||""]
+     .filter(Boolean).join(" · ");
+   return `<div class="hrowa pnew" data-pros="${p.id}">
+     <div class="hav">${ini}</div>
+     <div class="hinfo"><div class="ht">${nom}</div>
+      <div class="hs">${datos || "ficha recibida"} · ${cuando}</div></div>
+     <button class="hbtn" data-verpros="${p.id}">Ver ficha</button>
+    </div>`;
+  }).join("");
+ } else { secP.style.display = "none"; }
+
  /* ── Números de cabecera ── */
  document.getElementById("numActivos").textContent = activos.length;
  const chkSemana = ATLETAS.filter(a=>{ const d=diasHasta(a.chk); return d!==null && d>=0 && d<=7; }).length;
@@ -3240,8 +3279,65 @@ document.addEventListener("click", e=>{
   irAtleta(prox[0]);
   return;
  }
+ if(t.hasAttribute?.("data-verpros")){
+  e.stopPropagation();
+  const p = (HOME.prospectos||[]).find(x=>x.id===t.dataset.verpros);
+  if(!p) return;
+  mostrarProspecto(p);
+  return;
+ }
+ if(t.id==="cerrarPros"){ document.getElementById("prosModal")?.remove(); return; }
+ if(t.id==="prosWa"){
+  const p = window._prosActual; if(!p) return;
+  const tel = (p.anamnesis?.telefono||"").replace(/[^0-9]/g,"");
+  if(!tel){ toast("Su ficha no incluye teléfono · escríbele por donde te contactó"); return; }
+  window.open("https://wa.me/"+tel,"_blank","noopener"); return;
+ }
+ if(t.id==="prosConvertir"){
+  const p = window._prosActual; if(!p) return;
+  const an = p.anamnesis||{};
+  toast("Crea el atleta y luego reenvíale la ficha para vincularla");
+  document.getElementById("prosModal")?.remove();
+  document.getElementById("modal").classList.add("on");
+  setTimeout(()=>{
+   const n=document.getElementById("wNombre"); if(n&&an.nombre) n.value=an.nombre;
+   const c2=document.getElementById("wCat"); if(c2&&an.objetivo) c2.value=an.objetivo;
+   if(an.edad) document.getElementById("asEdad").value=an.edad;
+   if(an.peso) document.getElementById("asPeso").value=an.peso;
+   if(an.altura) document.getElementById("asAltura").value=an.altura;
+   if(an.genero) document.getElementById("asSexo").value = /mujer/i.test(an.genero)?"f":"m";
+  },150);
+  return;
+ }
  if(t.id==="raRefrescar"){ HOME.cargado=false; HOME.datos={}; cargarDatosHome(); toast("Actualizando..."); return; }
 });
+
+function mostrarProspecto(p){
+ window._prosActual = p;
+ document.getElementById("prosModal")?.remove();
+ const an = p.anamnesis || {};
+ const nom = an.nombre || "Sin nombre";
+ const filas = AN_SECS.map(([sec, campos])=>{
+  const f = campos.filter(k=>{ const v=an[k]; return v && (Array.isArray(v)?v.length:String(v).trim()); })
+   .map(k=>`<div class="anfila"><span class="anl">${AN_ETIQUETAS[k]||k}</span>
+     <span class="anv">${Array.isArray(an[k])?an[k].join(" · "):an[k]}</span></div>`).join("");
+  return f ? `<div class="ansec"><div class="ansect">${sec}</div>${f}</div>` : "";
+ }).join("");
+ const m = document.createElement("div");
+ m.id="prosModal"; m.className="modal on";
+ m.innerHTML = `<div class="mbox" style="max-width:640px">
+   <div class="mtop2"><div><div class="t">${nom}</div>
+     <div class="s">Interesado · ficha del ${(p.creado||"").slice(0,10)} · ${an._completitud||0}% completada</div></div>
+     <button class="cerrar" id="cerrarPros">Cerrar</button></div>
+   <div class="mbody">
+    <div class="anbtns" style="margin-bottom:15px">
+     <button class="b2 wa" id="prosWa">WhatsApp</button>
+     <button class="b2" id="prosConvertir">Crear como atleta</button>
+    </div>
+    ${filas || '<div class="v7vacio">Ficha vacía.</div>'}
+   </div></div>`;
+ document.body.appendChild(m);
+}
 
 /* ═══════════ INICIO ═══════════ */
 $("#gFecha").value="2026-07-22";
