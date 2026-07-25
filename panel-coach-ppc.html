@@ -1209,7 +1209,7 @@ function okAviso(btn){const o=btn.parentElement.querySelector(".ok");
 function pintarLista(filtro=""){
  const f=filtro.toLowerCase();
  $("#lista").innerHTML = ATLETAS.filter(a=>a.n.toLowerCase().includes(f)||a.cat.toLowerCase().includes(f))
-  .map(a=>`<div class="item ${a.id===act.id?'on':''} ${a.estado==='pausa'?'frz':''}" data-id="${a.id}">
+  .map(a=>`<div class="item ${a.id===act?.id?'on':''} ${a.estado==='pausa'?'frz':''}" data-id="${a.id}">
    <div class="av">${a.ini}</div><div style="min-width:0">
    <div class="inm">${a.n}${a.tz!=='America/Santiago'?'<span class="tg nz">'+paisCorto(a.tz)+'</span>':''}</div>
    <div class="ict">${a.cat}</div></div><span class="pt ${a.e}"></span></div>`).join("");
