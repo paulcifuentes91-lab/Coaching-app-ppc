@@ -2872,7 +2872,10 @@ document.addEventListener("click", e=>{
   const r = window._genDieta; if(!r) return;
   const aj = +$("#gnAjuste").value;
   const nombre = aj<0 ? `Déficit ${-aj}%` : aj>0 ? `Superávit ${aj}%` : "Mantenimiento";
-  if(!act.nut.bloques.length) $("#bloques").innerHTML = "";
+  if(act.nut.bloques.length){
+   const reemplazar = confirm("Ya tienes "+act.nut.bloques.length+" bloque(s) de dieta cargados para "+act.n+".\n\nAceptar = REEMPLAZARLOS todos por este nuevo.\nCancelar = AGREGAR este como un bloque adicional (ej. día alto/bajo).");
+   if(reemplazar) $("#bloques").innerHTML = "";
+  }
   $("#bloques").insertAdjacentHTML("beforeend", `
    <div class="bloque"><div class="bh"><input class="bn" value="${nombre}" data-bnm>
     <button class="dx" data-delbloq>Quitar bloque</button></div>
@@ -3369,7 +3372,8 @@ function pintarHome(){
  const chkSemana = ATLETAS.filter(a=>{ const d=diasHasta(a.chk); return d!==null && d>=0 && d<=7; }).length;
  document.getElementById("numChequeos").textContent = chkSemana;
  const porVencer = ATLETAS.filter(a=>{ const d=diasHasta(a.vence); return d!==null && d>=0 && d<=30; }).length;
- document.getElementById("numVencen").textContent = porVencer;
+ const elVencen2 = document.getElementById("numVencen");
+ if(elVencen2) elVencen2.textContent = porVencer;
 
  /* ── Semana del mesociclo ── */
  const conFecha = ATLETAS.find(a=>a.ini_f && a.estado!=="pausa");
