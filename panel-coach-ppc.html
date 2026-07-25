@@ -780,7 +780,8 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
           <option value="2.6">2,6 · déficit marcado</option><option value="2.8">2,8 · competición</option></select></label>
         <label><span class="lb">Excluir</span><select class="in" id="gnExcluir">
           <option value="">Nada</option><option value="carne">Sin carne roja</option>
-          <option value="carne,pescado,atún,salmón,pavo">Vegetariano</option>
+          <option value="carne,pescado,atún,salmón,pavo,camarones,cerdo">Vegetariano</option>
+          <option value="carne,pescado,atún,salmón,pavo,camarones,cerdo,huevo,claras,lácteos,yogurt,queso,leche,kefir">Vegano</option>
           <option value="pan,pasta,avena">Sin gluten</option></select></label>
       </div>
       <button class="add g" id="gnGenerar">Generar propuesta de dieta</button>
@@ -2651,7 +2652,7 @@ const GEN_ALIM = {
  carbo:{
   "arroz blanco cocido":[130,2.7,28,0.3], "papa cocida":[87,2,20,0.1],
   "camote cocido":[86,1.6,20,0.1], "avena":[389,17,66,7],
-  "pasta cocida":[158,6,31,0.9], "pan":[265,9,49,3.2],
+  "pasta cocida":[158,6,31,0.9], "pan":[265,9,49,3.2], "pan integral":[247,13,41,4.2],
   "quinoa cocida":[120,4.4,21,1.9], "legumbres cocidas":[116,8,20,0.5],
   "zapallo":[34,1,8,0.1], "choclo":[96,3.4,21,1.5],
   "arroz integral cocido":[112,2.3,24,0.9], "galletas de arroz":[387,8,81,3]
@@ -2659,7 +2660,8 @@ const GEN_ALIM = {
  grasa:{
   "aceite de oliva":[884,0,0,100], "palta":[160,2,9,15],
   "frutos secos":[607,20,21,54], "mantequilla de maní":[588,25,20,50],
-  "almendras":[579,21,22,50], "nueces":[654,15,14,65]
+  "almendras":[579,21,22,50], "nueces":[654,15,14,65],
+  "chía":[486,17,42,31], "linaza":[534,18,29,42]
  },
  lacteos:{
   "yogurt griego":[59,10,3.6,0.4], "queso":[320,25,2,24],
@@ -2844,7 +2846,7 @@ function generarDieta(cfg){
  const tot = [0,0,0];
  plantilla.forEach((pl, i)=>{
   const m = {p: protG*pl.p, c: carbG*pl.c, g: grasaG*pl.g};
-  const r = armarComida(pl, m, {excluir: cfg.excluir||[], sem: i});
+  const r = armarComida(pl, m, {excluir: cfg.excluir||[], sem: i + (cfg.variante||0)*4});
   comidas.push({n: pl.n, items: r.items});
   for(let k=0;k<3;k++) tot[k] += r.usado[k];
  });
@@ -2907,31 +2909,35 @@ document.addEventListener("click", e=>{
  if(e.target.id === "gnGenerar"){
   const peso = +$("#gnPeso").value, tdee = +$("#gnTdee").value;
   if(!peso || !tdee){ toast("Necesito el peso y las calorías de mantenimiento"); return; }
-  const cfg = { peso, tdee, ajuste:+$("#gnAjuste").value, comidas:+$("#gnComidas").value,
+  const cfgBase = { peso, tdee, ajuste:+$("#gnAjuste").value, comidas:+$("#gnComidas").value,
     protKg:+$("#gnProt").value, excluir:($("#gnExcluir").value||"").split(",").filter(Boolean) };
-  const r = generarDieta(cfg);
-  window._genDieta = r;
-  const ajTxt = cfg.ajuste<0 ? `déficit del ${-cfg.ajuste}%` : cfg.ajuste>0 ? `superávit del ${cfg.ajuste}%` : "mantenimiento";
+  const propuestas = [generarDieta(Object.assign({},cfgBase,{variante:0})), generarDieta(Object.assign({},cfgBase,{variante:1}))];
+  window._genDietaOpciones = propuestas;
+  const ajTxt = cfgBase.ajuste<0 ? `déficit del ${-cfgBase.ajuste}%` : cfgBase.ajuste>0 ? `superávit del ${cfgBase.ajuste}%` : "mantenimiento";
+  const letras = ["A","B"];
   $("#gnRes").style.display = "block";
-  $("#gnRes").innerHTML = `
-   <div class="genhead">
-     <div><b>${r.real.kcal} kcal</b> · ${r.real.p}P · ${r.real.c}C · ${r.real.g}G
-       <span class="gensub">${ajTxt} sobre ${cfg.tdee} kcal · ${(r.real.p/peso).toFixed(1)} g proteína por kg</span></div>
-     <div class="gendes ${Math.abs(r.desvio)<=5?'ok':'warn'}">${r.desvio>0?"+":""}${r.desvio}% vs objetivo</div>
-   </div>
-   ${r.comidas.map(cm=>`<div class="gencom"><div class="gencn">${cm.n}</div>
-     ${cm.items.map(i=>`<div class="genit">${i}</div>`).join("")}</div>`).join("")}
-   <div class="guardar" style="position:static;padding-top:14px">
-     <button class="sv" id="gnAplicar">Añadir como bloque de dieta</button>
-     <span class="ok">Añadido ✓</span>
-     <span class="hintx">Después puedes ajustar cada alimento a mano</span></div>`;
+  $("#gnRes").innerHTML = propuestas.map((r,idx)=>`
+   <div class="gensec" style="margin-bottom:16px;padding-bottom:14px;${idx===0?'border-bottom:1px solid var(--line)':''}">
+    <div class="genhead">
+      <div><b>Propuesta ${letras[idx]} · ${r.real.kcal} kcal</b> · ${r.real.p}P · ${r.real.c}C · ${r.real.g}G
+        <span class="gensub">${ajTxt} sobre ${cfgBase.tdee} kcal · ${(r.real.p/peso).toFixed(1)} g proteína por kg</span></div>
+      <div class="gendes ${Math.abs(r.desvio)<=5?'ok':'warn'}">${r.desvio>0?"+":""}${r.desvio}% vs objetivo</div>
+    </div>
+    ${r.comidas.map(cm=>`<div class="gencom"><div class="gencn">${cm.n}</div>
+      ${cm.items.map(i=>`<div class="genit">${i}</div>`).join("")}</div>`).join("")}
+    <div class="guardar" style="position:static;padding-top:14px">
+      <button class="sv" data-usarprop="${idx}">Usar propuesta ${letras[idx]}</button>
+      <span class="ok">Añadido ✓</span></div>
+   </div>`).join("") + `<div class="hintx" style="text-align:center;padding-top:4px">Después puedes ajustar cada alimento a mano</div>`;
   $("#gnRes").scrollIntoView({behavior:"smooth",block:"nearest"});
   return;
  }
- if(e.target.id === "gnAplicar"){
-  const r = window._genDieta; if(!r) return;
+ if(e.target.hasAttribute?.("data-usarprop")){
+  const idx = +e.target.dataset.usarprop;
+  const r = (window._genDietaOpciones||[])[idx]; if(!r) return;
   const aj = +$("#gnAjuste").value;
-  const nombre = aj<0 ? `Déficit ${-aj}%` : aj>0 ? `Superávit ${aj}%` : "Mantenimiento";
+  const letras = ["A","B"];
+  const nombre = (aj<0 ? `Déficit ${-aj}%` : aj>0 ? `Superávit ${aj}%` : "Mantenimiento") + " · Propuesta " + letras[idx];
   if(act.nut.bloques.length){
    const reemplazar = confirm("Ya tienes "+act.nut.bloques.length+" bloque(s) de dieta cargados para "+act.n+".\n\nAceptar = REEMPLAZARLOS todos por este nuevo.\nCancelar = AGREGAR este como un bloque adicional (ej. día alto/bajo).");
    if(reemplazar) $("#bloques").innerHTML = "";
