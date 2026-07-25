@@ -628,6 +628,7 @@ let anamnesisData = null;
 let progressPhotos = [];
 let healthLog = {};
 let exercisePRs = {};
+let _histSeedDone = false;
 let dataReady = false;
 
 function showToast(msg, isError){
@@ -662,7 +663,8 @@ athleteRef.onSnapshot((doc)=>{
     loads = data.exerciseLoads || {};
     // Siembra del historial maestro: si la nube no tiene la marca de esta siembra, cargar HISTORICAL_ENTRIES
     const HISTORY_SEED_V = ATHLETE_ID + '-histseed-1';
-    if(HISTORICAL_ENTRIES.length && data.historySeed !== HISTORY_SEED_V){
+    if(HISTORICAL_ENTRIES.length && data.historySeed !== HISTORY_SEED_V && !_histSeedDone){
+      _histSeedDone = true;
       // fusionar: conservar registros que el atleta/coach haya agregado a mano (fechas no incluidas en el historial base)
       const baseDates = new Set(HISTORICAL_ENTRIES.map(e=>e.date));
       const extras = (data.progressLog||[]).filter(e=> !baseDates.has(e.date));
