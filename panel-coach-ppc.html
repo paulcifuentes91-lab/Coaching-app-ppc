@@ -3593,15 +3593,22 @@ document.addEventListener("click", e=>{
  if(t.id==="raNuevo"){ document.getElementById("modal").classList.add("on"); return; }
  if(t.id==="raAnamnesis"){
   const linkBlanco = BASE_URL + "anamnesis.html";
-  const msg = encodeURIComponent(`Hola, antes de armar tu plan necesito que completes esta ficha inicial. Son 45 preguntas y toma unos 10 minutos. Se hace una sola vez: ${linkBlanco}`);
+  document.getElementById("raAnModal")?.remove();
   const m = document.createElement("div");
   m.id = "raAnModal"; m.className = "modal on";
   m.innerHTML = `<div class="mbox" style="max-width:480px">
-    <div class="mtop2"><div><div class="t">Ficha en blanco</div>
-      <div class="s">Para una persona nueva que todavía no es tu atleta</div></div>
+    <div class="mtop2"><div><div class="t">Enviar anamnesis</div>
+      <div class="s">Elige a quién se la mandas</div></div>
       <button class="cerrar" id="raAnCerrar">Cerrar</button></div>
     <div class="mbody">
-      <div class="anlink" style="margin-bottom:14px;word-break:break-all">${linkBlanco}</div>
+      <label style="display:block;margin-bottom:14px">
+       <span class="lb">Destinatario</span>
+       <select class="in" id="raAnQuien" style="width:100%">
+        <option value="">Prospecto nuevo (ficha en blanco)</option>
+        ${ATLETAS.filter(a=>FB_ID[a.id]).map(a=>`<option value="${a.id}">${a.n}</option>`).join("")}
+       </select>
+      </label>
+      <div class="anlink" id="raAnLink" style="margin-bottom:14px;word-break:break-all">${linkBlanco}</div>
       <div class="anbtns">
        <button class="b2 wa" id="raAnWa">Enviar por WhatsApp</button>
        <button class="b2" id="raAnCopiar">Copiar enlace</button>
@@ -3609,9 +3616,20 @@ document.addEventListener("click", e=>{
       </div>
     </div></div>`;
   document.body.appendChild(m);
-  document.getElementById("raAnWa").onclick = ()=>window.open("https://wa.me/?text="+msg,"_blank","noopener");
-  document.getElementById("raAnCopiar").onclick = ()=>navigator.clipboard.writeText(linkBlanco).then(()=>toast("Enlace copiado")).catch(()=>toast("No se pudo copiar"));
-  document.getElementById("raAnAbrir").onclick = ()=>window.open(linkBlanco,"_blank","noopener");
+  const actualizarLinkAn = ()=>{
+   const sel = document.getElementById("raAnQuien").value;
+   const a = sel ? ATLETAS.find(x=>x.id===sel) : null;
+   const link = a ? (anEnlace(a) || linkBlanco) : linkBlanco;
+   document.getElementById("raAnLink").textContent = link;
+   const nombreTxt = a ? a.n.split(" ")[0] : "";
+   const msg = encodeURIComponent(`Hola ${nombreTxt}, antes de armar tu plan necesito que completes esta ficha inicial. Son 45 preguntas y toma unos 10 minutos. Se hace una sola vez: ${link}`);
+   const tel = a ? (a.wa||"").replace(/[^0-9]/g,"") : "";
+   document.getElementById("raAnWa").onclick = ()=>window.open("https://wa.me/"+tel+"?text="+msg,"_blank","noopener");
+   document.getElementById("raAnCopiar").onclick = ()=>navigator.clipboard.writeText(link).then(()=>toast("Enlace copiado")).catch(()=>toast("No se pudo copiar"));
+   document.getElementById("raAnAbrir").onclick = ()=>window.open(link,"_blank","noopener");
+  };
+  document.getElementById("raAnQuien").addEventListener("change", actualizarLinkAn);
+  actualizarLinkAn();
   document.getElementById("raAnCerrar").onclick = ()=>m.remove();
   return;
  }
