@@ -725,6 +725,9 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
       <div style="margin-top:11px"><span class="lb">Nota interna del bloque</span>
         <textarea class="in" id="fNota" placeholder="Objetivo de la fase, observaciones..."></textarea></div>
     </div>
+    <div class="sec"><div class="st">Vista de calendario</div>
+      <div id="mesoCal"></div>
+    </div>
     <div class="guardar"><button class="sv" data-save>Guardar cambios</button><span class="ok">Guardado ✓</span>
       <span class="hintx" id="semAviso"></span></div>
   </div>
@@ -1234,13 +1237,39 @@ function cargar(a){
  $("#fChk").value=a.chk; $("#fVence").value=a.vence; $("#fEstado").value=a.estado; $("#fNota").value=a.nota;
  $("#nAgua").value=a.nut.agua; $("#nSal").value=a.nut.sal; $("#nLibre").value=a.nut.libre; $("#nVig").value=a.nut.vig;
  $("#semAviso").textContent = a.ini_f ? "Hoy: "+semanaHoy(a.ini_f) : "";
- pintarDias(); pintarBloques(); _postBloques(); pintarSups(); pintarHist(); recalcular(); v7cargar();
+ pintarDias(); pintarBloques(); _postBloques(); pintarSups(); pintarHist(); recalcular(); v7cargar(); pintarMesocicloCalendario();
 }
 function semanaHoy(ini){
  const d=Math.floor((new Date("2026-07-22")-new Date(ini+"T12:00:00"))/864e5);
  if(d<0) return "aún no inicia";
  const s=Math.floor(d/7)+1;
  return s>4? "bloque terminado" : "semana "+s+" de 4";
+}
+function pintarMesocicloCalendario(){
+ const el = document.getElementById("mesoCal");
+ if(!el) return;
+ if(!act.ini_f){ el.innerHTML = '<div class="v7vacio">Define la fecha de inicio para ver el calendario.</div>'; return; }
+ const totalSem = +act.sem || 4;
+ const fases = totalSem<=4 ? ["Acumulación","Progresión","Intensificación","Descarga"]
+  : totalSem<=6 ? ["Acumulación","Acumulación","Progresión","Progresión","Intensificación","Descarga"]
+  : Array.from({length:totalSem},(_,i)=> i===totalSem-1?"Descarga": i<totalSem*0.4?"Acumulación": i<totalSem*0.7?"Progresión":"Intensificación");
+ const dd = Math.floor((new Date() - new Date(act.ini_f+"T12:00:00"))/86400000);
+ const semActual = dd<0 ? 0 : Math.min(totalSem, Math.floor(dd/7)+1);
+ const cards = Array.from({length:totalSem},(_,i)=>{
+  const n = i+1, actual = n===semActual;
+  return `<div class="asb${actual?' ashi':''}"><div class="asl">Semana ${n}${actual?' · hoy':''}</div><div class="ass">${fases[i]||''}</div></div>`;
+ }).join("");
+ const pct = totalSem ? Math.max(4, Math.min(100, Math.round(Math.max(0,semActual-1)/totalSem*100))) : 0;
+ const fmt = iso => { if(!iso) return ""; const d=new Date(iso+"T12:00:00");
+  const M=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  return d.getDate()+" "+M[d.getMonth()]+" "+d.getFullYear(); };
+ const dChk = diasHasta(act.chk);
+ el.innerHTML = `
+  <div class="asgrid" style="margin-bottom:12px">${cards}</div>
+  <div class="hadb" style="margin-bottom:14px"><i class="ok" style="width:${pct}%"></i></div>
+  <div class="anfila"><span class="anl">Inicio del mesociclo</span><span class="anv">${fmt(act.ini_f)}</span></div>
+  <div class="anfila"><span class="anl">Próximo chequeo</span><span class="anv">${fmt(act.chk)}${dChk!==null&&dChk>=0?` · en ${dChk} días`:''}</span></div>
+  <div class="anfila"><span class="anl">Vence / renueva</span><span class="anv">${fmt(act.vence)}</span></div>`;
 }
 
 /* ═══════════ ENTRENAMIENTO ═══════════ */
