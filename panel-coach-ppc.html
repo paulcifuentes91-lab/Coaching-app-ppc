@@ -1219,6 +1219,14 @@ function pintarLista(filtro=""){
 /* ═══════════ CARGAR FICHA ═══════════ */
 function cargar(a){
  act=a; pintarLista($("#buscar").value);
+ /* Limpiar propuestas pendientes del atleta anterior para que nunca se crucen */
+ window._asis = null; window._asisAplicada = null;
+ window._genDieta = null; window._genDietaOpciones = null;
+ const _asRes = document.getElementById("asRes"); if(_asRes){ _asRes.style.display="none"; _asRes.innerHTML=""; }
+ const _gnRes = document.getElementById("gnRes"); if(_gnRes){ _gnRes.style.display="none"; _gnRes.innerHTML=""; }
+ const _asPeso = document.getElementById("asPeso"); if(_asPeso) _asPeso.value="";
+ const _gnPeso = document.getElementById("gnPeso"); if(_gnPeso) _gnPeso.value="";
+ const _gnTdee = document.getElementById("gnTdee"); if(_gnTdee) _gnTdee.value="";
  $("#hAv").textContent=a.ini; $("#hNm").textContent=a.n;
  $("#hCt").textContent=`${a.cat}${a.fed!=="Sin federación"?" · "+a.fed:""} · ${paisCorto(a.tz)}${a.estado==="pausa"?" · EN PAUSA":""}`;
  $("#fNombre").value=a.n; $("#fCat").value=a.cat; $("#fFed").value=a.fed; $("#fTz").value=a.tz;
