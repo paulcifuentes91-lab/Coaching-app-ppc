@@ -710,14 +710,9 @@ athleteRef.onSnapshot((doc)=>{
       if(!days.find(d=>d.id===activeDay)) activeDay = days[0].id;
       if(!mealWindows.find(m=>m.id===activeMealWindow)) activeMealWindow = mealWindows[0].id;
     }
-    // Leer también campos guardados con notación de punto ('plan.macros', 'plan.mealWindows')
-    // que es el formato que usa el panel del coach al guardar con merge
-    if(data['plan.macros']) MEAL_PLAN_MACROS = data['plan.macros'];
-    if(data['plan.mealWindows'] && data['plan.mealWindows'].length){
-      mealWindows = data['plan.mealWindows'];
-      if(!mealWindows.find(m=>m.id===activeMealWindow)) activeMealWindow = mealWindows[0].id;
-    }
-    if(data['plan.mesocicloLabel']) mesocicloLabel = data['plan.mesocicloLabel'];
+    // (fix 25-07-2026: se elimino el respaldo de notacion de punto - el panel
+    // ahora siempre guarda anidado correctamente, ese formato viejo quedaba
+    // congelado con datos antiguos y le ganaba al dato real y actualizado)
   } else {
     // Primera vez: crear documento vacío — el plan queda en el código
     athleteRef.set({
