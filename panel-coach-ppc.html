@@ -725,7 +725,8 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
       <div style="margin-top:11px"><span class="lb">Nota interna del bloque</span>
         <textarea class="in" id="fNota" placeholder="Objetivo de la fase, observaciones..."></textarea></div>
     </div>
-    <div class="sec"><div class="st">Vista de calendario</div>
+    <div class="sec"><div class="st">Vista de calendario
+      <button class="dx" id="verHistorialBtn" style="float:right;font-size:12px">Ver historial de cambios</button></div>
       <div id="mesoCal"></div>
     </div>
     <div class="guardar"><button class="sv" data-save>Guardar cambios</button><span class="ok">Guardado ✓</span>
@@ -1271,6 +1272,29 @@ function pintarMesocicloCalendario(){
   <div class="anfila"><span class="anl">Próximo chequeo</span><span class="anv">${fmt(act.chk)}${dChk!==null&&dChk>=0?` · en ${dChk} días`:''}</span></div>
   <div class="anfila"><span class="anl">Vence / renueva</span><span class="anv">${fmt(act.vence)}</span></div>`;
 }
+async function verHistorial(){
+ if(!act) return;
+ const id = FB_ID[act.id];
+ if(!id){ toast(act.n+" todavía no tiene app publicada"); return; }
+ if(!FB.on){ toast("Sin conexión a Firebase"); return; }
+ const snap = await FB.db.collection("athletes").doc(id).get();
+ const hist = (snap.exists && snap.data().plan && snap.data().plan.historial) || [];
+ document.getElementById("histModal")?.remove();
+ const m = document.createElement("div");
+ m.id="histModal"; m.className="modal on";
+ const filas = hist.length ? [...hist].reverse().map(hh=>{
+  const f = new Date(hh.fecha);
+  const fStr = isNaN(f) ? hh.fecha : f.toLocaleString("es-CL",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
+  return `<div class="anfila"><span class="anl">${fStr}</span><span class="anv">${hh.tipo==="entrenamiento"?"Entrenamiento":"Nutrición"} · ${hh.resumen||""}</span></div>`;
+ }).join("") : '<div class="v7vacio">Sin cambios registrados todavía.</div>';
+ m.innerHTML = `<div class="mbox" style="max-width:520px">
+   <div class="mtop2"><div><div class="t">Historial de cambios</div><div class="s">${act.n}</div></div>
+     <button class="cerrar" id="histCerrar">Cerrar</button></div>
+   <div class="mbody">${filas}</div></div>`;
+ document.body.appendChild(m);
+ document.getElementById("histCerrar").onclick = ()=>m.remove();
+}
+document.addEventListener("click", e=>{ if(e.target.id==="verHistorialBtn") verHistorial(); });
 
 /* ═══════════ ENTRENAMIENTO ═══════════ */
 function filaEj(e){
