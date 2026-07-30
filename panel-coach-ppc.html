@@ -1241,7 +1241,7 @@ function cargar(a){
  pintarDias(); pintarBloques(); _postBloques(); pintarSups(); pintarHist(); recalcular(); v7cargar(); pintarMesocicloCalendario();
 }
 function semanaHoy(ini){
- const d=Math.floor((new Date("2026-07-22")-new Date(ini+"T12:00:00"))/864e5);
+ const d=Math.floor((new Date()-new Date(ini+"T12:00:00"))/864e5);
  if(d<0) return "aún no inicia";
  const s=Math.floor(d/7)+1;
  return s>4? "bloque terminado" : "semana "+s+" de 4";
@@ -3822,7 +3822,7 @@ function mostrarProspecto(p){
 }
 
 /* ═══════════ INICIO ═══════════ */
-$("#gFecha").value="2026-07-22";
+$("#gFecha").value=new Date().toISOString().slice(0,10);
 document.addEventListener("change", e=>{
  if(e.target.id === "segFAtleta"){ SEG.fAtleta = e.target.value; pintarSeguimiento(); }
  if(e.target.id === "segFEstado"){ SEG.fEstado = e.target.value; pintarSeguimiento(); }
