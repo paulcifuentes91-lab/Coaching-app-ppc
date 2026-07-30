@@ -35,8 +35,7 @@ def slug_palabra(s):
 
 
 def slug_completo(s):
-    s = re.sub(r"[^a-zA-Z0-9]+", "-", quitar_tildes(s).lower()).strip("-")
-    return s
+    return re.sub(r"[^a-zA-Z0-9]+", "-", quitar_tildes(s).lower()).strip("-")
 
 
 def generar_id_panel(nombre, existentes):
@@ -63,6 +62,50 @@ def convertir_dias(days_exportado):
         nombre_dia = (d.get("dayTag", "") + " · " + d.get("name", "")).strip(" ·")
         dias.append({"n": nombre_dia, "secs": secs})
     return dias
+
+
+def encontrar_cierre(texto, idx_apertura, abre, cierra):
+    """Busca el indice del caracter de cierre que hace match con el de apertura
+    en idx_apertura, contando profundidad y sin dejarse enganar por [ ] { } que
+    esten dentro de strings (texto entre comillas)."""
+    profundidad = 0
+    i = idx_apertura
+    en_string = False
+    escape = False
+    n = len(texto)
+    while i < n:
+        c = texto[i]
+        if en_string:
+            if escape:
+                escape = False
+            elif c == "\\":
+                escape = True
+            elif c == '"':
+                en_string = False
+        else:
+            if c == '"':
+                en_string = True
+            elif c == abre:
+                profundidad += 1
+            elif c == cierra:
+                profundidad -= 1
+                if profundidad == 0:
+                    return i
+        i += 1
+    return -1
+
+
+def reemplazar_estructura(panel, marcador_const, abre, cierra):
+    """Encuentra 'const NOMBRE=' o 'const NOMBRE = ', localiza el bloque
+    balanceado que sigue, y devuelve (objeto_python, idx_inicio, idx_fin_incl)."""
+    idx_const = panel.index(marcador_const)
+    idx_apertura = panel.index(abre, idx_const)
+    idx_cierre = encontrar_cierre(panel, idx_apertura, abre, cierra)
+    if idx_cierre == -1:
+        raise ValueError("no encontre el cierre balanceado de " + marcador_const)
+    bloque = panel[idx_apertura:idx_cierre + 1]
+    obj = json.loads(bloque)
+    return obj, idx_apertura, idx_cierre
 
 
 def main():
@@ -92,20 +135,10 @@ def main():
     with open(PANEL, encoding="utf-8") as f:
         panel = f.read()
 
-    # ── 1. Cargar ATLETAS como JSON real y agregar el nuevo ──
-    start_marker = "const ATLETAS="
-    start_idx = panel.index(start_marker) + len(start_marker)
-    fbid_marker_idx = panel.index("const FB_ID")
-    region = panel[start_idx:fbid_marker_idx]
-    cierre = region.rfind("];")
-    if cierre == -1:
-        print("ERROR: no pude leer el array ATLETAS de forma segura. No se modificó nada. Pide ayuda.")
-        sys.exit(1)
-    array_literal = region[:cierre + 1]
     try:
-        atletas = json.loads(array_literal)
-    except json.JSONDecodeError as e:
-        print("ERROR: ATLETAS no se pudo leer como JSON válido (" + str(e) + "). No se modificó nada.")
+        atletas, a_ini, a_fin = reemplazar_estructura(panel, "const ATLETAS=", "[", "]")
+    except (ValueError, json.JSONDecodeError) as e:
+        print("ERROR leyendo ATLETAS (" + str(e) + "). No se modificó nada.")
         sys.exit(1)
 
     existentes = {a.get("id", "") for a in atletas}
@@ -126,38 +159,33 @@ def main():
         "sup": [], "hist": []
     }
     atletas.append(nuevo)
-    nueva_array_literal = json.dumps(atletas, ensure_ascii=False)
-    panel = panel[:start_idx] + nueva_array_literal + ";\n\n" + panel[fbid_marker_idx:]
+    panel = panel[:a_ini] + json.dumps(atletas, ensure_ascii=False, separators=(",", ":")) + panel[a_fin + 1:]
 
-    # ── 2. FB_ID ──
-    start_idx2 = panel.index("const FB_ID") + len("const FB_ID")
-    start_idx2 = panel.index("{", start_idx2)
-    appurl_idx = panel.index("const APP_URL")
-    region2 = panel[start_idx2:appurl_idx]
-    cierre2 = region2.rfind("};")
-    fbid_obj = json.loads(region2[:cierre2 + 1])
+    try:
+        fbid_obj, f_ini, f_fin = reemplazar_estructura(panel, "const FB_ID", "{", "}")
+    except (ValueError, json.JSONDecodeError) as e:
+        print("ERROR leyendo FB_ID (" + str(e) + "). ATLETAS ya se modificó, revisa a mano.")
+        sys.exit(1)
     fbid_obj[aid] = fb_id_valor
-    panel = panel[:start_idx2] + json.dumps(fbid_obj, ensure_ascii=False) + ";\n\n" + panel[appurl_idx:]
+    panel = panel[:f_ini] + json.dumps(fbid_obj, ensure_ascii=False, separators=(",", ":")) + panel[f_fin + 1:]
 
-    # ── 3. APP_URL ──
-    start_idx3 = panel.index("const APP_URL") + len("const APP_URL=")
-    resto = panel[start_idx3:]
-    cierre3 = resto.index("};")
-    appurl_obj = json.loads(resto[:cierre3 + 1])
+    try:
+        appurl_obj, u_ini, u_fin = reemplazar_estructura(panel, "const APP_URL", "{", "}")
+    except (ValueError, json.JSONDecodeError) as e:
+        print("ERROR leyendo APP_URL (" + str(e) + "). ATLETAS/FB_ID ya se modificaron, revisa a mano.")
+        sys.exit(1)
     appurl_obj[aid] = "plan-" + aid
-    panel = panel[:start_idx3] + json.dumps(appurl_obj, ensure_ascii=False) + ";" + resto[cierre3 + 2:]
+    panel = panel[:u_ini] + json.dumps(appurl_obj, ensure_ascii=False, separators=(",", ":")) + panel[u_fin + 1:]
 
     with open(PANEL, "w", encoding="utf-8") as f:
         f.write(panel)
 
-    # ── 4. Copiar plantilla y corregir ATHLETE_ID ──
     destino_app = "plan-" + aid + ".html"
     shutil.copyfile(TEMPLATE, destino_app)
     with open(destino_app, encoding="utf-8") as f:
         app_html = f.read()
-    placeholder_variantes = ["'CAMBIAR-ESTE-ID'", '"CAMBIAR-ESTE-ID"']
     reemplazado = False
-    for ph in placeholder_variantes:
+    for ph in ["'CAMBIAR-ESTE-ID'", '"CAMBIAR-ESTE-ID"']:
         if ph in app_html:
             app_html = app_html.replace(ph, "'" + fb_id_valor + "'", 1)
             reemplazado = True
@@ -168,7 +196,7 @@ def main():
     print("")
     print("LISTO —", nombre, "agregado como id de panel:", aid)
     print("  Firestore / FB_ID:", fb_id_valor)
-    print("  App creada:", destino_app, "(ATHLETE_ID corregido)" if reemplazado else "(⚠ no encontré el placeholder ATHLETE_ID, revísalo a mano)")
+    print("  App creada:", destino_app, "(ATHLETE_ID corregido)" if reemplazado else "(revisa el ATHLETE_ID a mano)")
     print("")
     print("Sube todo con:")
     print("  git add panel-coach-ppc.html " + destino_app)
