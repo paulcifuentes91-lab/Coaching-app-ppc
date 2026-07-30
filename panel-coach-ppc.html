@@ -2333,6 +2333,9 @@ async function fbGuardarPlan(a){
   const snap = await ref.get();
   const planActual = (snap.exists && snap.data().plan) || {};
   const planFinal = Object.assign({}, planActual, plan);
+  const hist = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
+  hist.push({ fecha: new Date().toISOString(), tipo: "entrenamiento", resumen: dias.length+" día(s) de entrenamiento actualizados" });
+  planFinal.historial = hist.slice(-30);
   await ref.set({ plan: planFinal, contacto }, { merge:true });
   return true;
  }catch(e){ toast("No se pudo guardar: "+e.message); return false; }
@@ -2361,6 +2364,9 @@ async function fbGuardarNutricion(a){
   const snap = await ref.get();
   const planActual = (snap.exists && snap.data().plan) || {};
   const planFinal = Object.assign({}, planActual, { mealWindows: bloques, actualizado: new Date().toISOString() });
+  const hist = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
+  hist.push({ fecha: new Date().toISOString(), tipo: "nutricion", resumen: bloques.length+" bloque(s) de dieta actualizados" });
+  planFinal.historial = hist.slice(-30);
   await ref.set({ plan: planFinal }, { merge:true });
   return true;
  }catch(e){ toast("No se pudo guardar: "+e.message); return false; }
