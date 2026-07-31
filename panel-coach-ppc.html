@@ -735,7 +735,8 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
       </div>
     </div>
     <div class="sec"><div class="st">Vista de calendario
-      <button class="dx" id="verHistorialBtn" style="float:right;font-size:12px">Ver historial de cambios</button></div>
+      <button class="dx" id="verHistorialBtn" style="float:right;font-size:12px">Ver historial de cambios</button>
+      <button class="add" id="renovarMesoBtn" style="float:right;font-size:12px;margin-right:8px">Renovar mesociclo</button></div>
       <div id="mesoCal"></div>
     </div>
     <div class="guardar"><button class="sv" data-save>Guardar cambios</button><span class="ok">Guardado ✓</span>
@@ -1387,6 +1388,67 @@ async function verHistorial(){
  document.getElementById("histCerrar").onclick = ()=>m.remove();
 }
 document.addEventListener("click", e=>{ if(e.target.id==="verHistorialBtn") verHistorial(); });
+
+async function renovarMesociclo(){
+ if(!act) return;
+ const meta = document.getElementById("fMacroMeta")?.value || (act.macro && act.macro.meta) || "";
+ let faseSugerida = "Volumen", semanasRestantes = null;
+ if(meta){
+  const dd = Math.floor((new Date(meta+"T12:00:00") - new Date())/86400000);
+  semanasRestantes = Math.round(dd/7);
+  if(semanasRestantes <= 1) faseSugerida = "Peak week";
+  else if(semanasRestantes <= 8) faseSugerida = "Definición";
+ }
+ const diasResumen = (act.dias||[]).map(d=>d.n).join(", ") || "sin días cargados";
+ document.getElementById("renovarModal")?.remove();
+ const m = document.createElement("div");
+ m.id = "renovarModal"; m.className = "modal on";
+ m.innerHTML = `<div class="mbox" style="max-width:520px">
+   <div class="mtop2"><div><div class="t">Renovar mesociclo</div><div class="s">${act.n}</div></div>
+     <button class="cerrar" id="renovarCerrar">Cancelar</button></div>
+   <div class="mbody">
+    <div class="v7vacio" style="margin-bottom:12px">Días actuales (se mantienen): ${diasResumen}</div>
+    ${semanasRestantes!==null ? `<div class="anfila"><span class="anl">Semanas hasta la meta</span><span class="anv">${semanasRestantes}</span></div>` : `<div class="v7vacio" style="margin-bottom:12px">Sin fecha meta definida - sugerencia por defecto: Volumen</div>`}
+    <label style="display:block;margin:12px 0"><span class="lb">Fase sugerida para el próximo bloque</span>
+     <select class="in" id="renovarFase" style="width:100%">
+      <option value="Volumen" ${faseSugerida==="Volumen"?"selected":""}>Volumen</option>
+      <option value="Definición" ${faseSugerida==="Definición"?"selected":""}>Definición</option>
+      <option value="Peak week" ${faseSugerida==="Peak week"?"selected":""}>Peak week</option>
+      <option value="Transición">Transición / descanso activo</option>
+     </select></label>
+    <label style="display:block;margin-bottom:14px"><span class="lb">¿Qué cambia este bloque?</span>
+     <textarea class="in" id="renovarNota" placeholder="ej. subir 2.5kg en principales, agregar día de brazo..."></textarea></label>
+    <button class="sv" id="renovarConfirmar" style="width:100%">Confirmar renovación</button>
+   </div></div>`;
+ document.body.appendChild(m);
+ document.getElementById("renovarCerrar").onclick = ()=>m.remove();
+ document.getElementById("renovarConfirmar").onclick = async ()=>{
+  const fase = document.getElementById("renovarFase").value;
+  const nota = document.getElementById("renovarNota").value;
+  const hoy = new Date().toISOString().slice(0,10);
+  const semDias = (+act.sem||4)*7;
+  const nuevoChk = new Date(Date.now()+semDias*86400000).toISOString().slice(0,10);
+  act.ini_f = hoy; act.chk = nuevoChk;
+  const elFIni = document.getElementById("fIni"); if(elFIni) elFIni.value = hoy;
+  const elFChk = document.getElementById("fChk"); if(elFChk) elFChk.value = nuevoChk;
+  const id = FB_ID[act.id];
+  if(id && FB.on){
+   const ref = FB.db.collection("athletes").doc(id);
+   const snap = await ref.get();
+   const planActual = (snap.exists && snap.data().plan) || {};
+   const mesos = Array.isArray(planActual.mesociclos) ? planActual.mesociclos.slice() : [];
+   mesos.push({fecha_inicio: hoy, fase, nota});
+   const hist = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
+   hist.push({fecha: new Date().toISOString(), tipo:"mesociclo", resumen: "Renovado - fase: "+fase+(nota?" - "+nota:"")});
+   const planFinal = Object.assign({}, planActual, {startDate: hoy, checkDate: nuevoChk, mesociclos: mesos.slice(-30), historial: hist.slice(-30)});
+   await ref.set({plan: planFinal}, {merge:true});
+  }
+  m.remove();
+  pintarMesocicloCalendario();
+  toast("Mesociclo renovado · fase: "+fase);
+ };
+}
+document.addEventListener("click", e=>{ if(e.target.id==="renovarMesoBtn") renovarMesociclo(); });
 
 /* ═══════════ ENTRENAMIENTO ═══════════ */
 function filaEj(e){
