@@ -1393,7 +1393,7 @@ function renderNutritionNotesBanner(){
   const el = document.getElementById('nutritionNotesBanner');
   if(!nutritionInfo.length){ el.style.display = 'none'; return; }
   el.style.display = '';
-  const rows = nutritionInfo.map(([l,v])=>`${l}: ${v}`).join(' · ');
+  const rows = nutritionInfo.map(function(x){ if(Array.isArray(x)) return x[0]+': '+x[1]; return x.l+': '+x.v; }).join(' · ');
   el.innerHTML = `
     <div class="wb-title">Plan nutricional</div>
     <div class="wb-desc">${rows}</div>
