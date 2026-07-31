@@ -3493,6 +3493,15 @@ function pintarHome(){
     txt:`<b>${a.n.split(" ")[0]}</b> no marca entrenamiento`,
     sub:`hace ${ua.dias} días`, acc:"wa", tipo:"seguimiento"});
   }
+  if(a.ini_f && a.sem){
+   const _dd = Math.floor((new Date() - new Date(a.ini_f+"T12:00:00"))/86400000);
+   const _totalDias = (+a.sem||4) * 7;
+   if(_dd >= _totalDias){
+    alertas.push({p:0, ini:a.ini, id:a.id,
+     txt:`Mesociclo de <b>${a.n.split(" ")[0]}</b> terminó`,
+     sub:`hace ${_dd-_totalDias} día(s) · planifica el siguiente`, acc:"ficha", tipo:"mesociclo"});
+   }
+  }
  });
  alertas.sort((x,y)=>x.p-y.p);
  const cAt = document.getElementById("homeAtencion");
