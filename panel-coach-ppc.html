@@ -1252,6 +1252,10 @@ function cargar(a){
  $("#fEst").value=a.est; $("#fWa").value=a.wa; $("#fIni").value=a.ini_f; $("#fSem").value=a.sem;
  $("#fChk").value=a.chk; $("#fVence").value=a.vence; $("#fEstado").value=a.estado; $("#fNota").value=a.nota;
  $("#nAgua").value=a.nut.agua; $("#nSal").value=a.nut.sal; $("#nLibre").value=a.nut.libre; $("#nVig").value=a.nut.vig;
+ const _macro = a.macro || {};
+ $("#fMacroTipo").value = _macro.tipo || "mantencion";
+ $("#fMacroNombre").value = _macro.nombre || "";
+ $("#fMacroMeta").value = _macro.meta || "";
  $("#semAviso").textContent = a.ini_f ? "Hoy: "+semanaHoy(a.ini_f) : "";
  pintarDias(); pintarBloques(); _postBloques(); pintarSups(); pintarHist(); recalcular(); v7cargar(); pintarMesocicloCalendario(); pintarPerfil();
  /* Sincronizar fechas reales desde Firebase - la ATLETAS de fabrica puede estar vieja */
@@ -2432,6 +2436,11 @@ async function fbGuardarPlan(a){
    s3principal: +(document.getElementById("kS3p")?.value || 2),
    s3accesorio: +(document.getElementById("kS3a")?.value || 1),
    deload: +(document.getElementById("kDl")?.value || 0.7)
+  },
+  macrociclo: {
+   tipo: document.getElementById("fMacroTipo")?.value || "mantencion",
+   nombre: document.getElementById("fMacroNombre")?.value || "",
+   meta: document.getElementById("fMacroMeta")?.value || ""
   },
   actualizado: new Date().toISOString(),
   porCoach: true
