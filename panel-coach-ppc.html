@@ -3536,12 +3536,31 @@ function pintarHome(){
    const txt = ad ? `${ad.entrenados} de ${ad.objetivo}` : "sin datos";
    return {a, pct, cls, txt, orden: ad?pct:-1};
   }).sort((x,y)=>x.orden-y.orden);
-  cAd.innerHTML = filas.map(f=>`
+  const bajos = filas.filter(f=>f.cls==="bajo"||f.cls==="nada"||f.cls==="medio");
+  const bien = filas.filter(f=>f.cls==="ok");
+  let htmlAd = bajos.map(f=>`
    <div class="hadh" data-ir="${f.a.id}">
     <span class="hadn">${f.a.n.split(" ")[0]}</span>
     <div class="hadb"><i class="${f.cls}" style="width:${f.pct}%"></i></div>
     <span class="hadv ${f.cls}">${f.txt}</span>
    </div>`).join("");
+  if(bien.length){
+   htmlAd += `<div class="hvacio" style="margin-top:6px">✓ ${bien.length} atleta${bien.length===1?"":"s"} con buena adherencia (80%+) <span id="verBienAd" style="text-decoration:underline;cursor:pointer;color:var(--gold,#E0C23D)">mostrar</span></div>
+    <div id="listaBienAd" style="display:none">${bien.map(f=>`
+     <div class="hadh" data-ir="${f.a.id}">
+      <span class="hadn">${f.a.n.split(" ")[0]}</span>
+      <div class="hadb"><i class="${f.cls}" style="width:${f.pct}%"></i></div>
+      <span class="hadv ${f.cls}">${f.txt}</span>
+     </div>`).join("")}</div>`;
+  }
+  cAd.innerHTML = htmlAd || '<div class="hvacio">Sin datos todavía.</div>';
+  const btnVer = document.getElementById("verBienAd");
+  if(btnVer) btnVer.onclick = ()=>{
+   const l = document.getElementById("listaBienAd");
+   const on = l.style.display==="none";
+   l.style.display = on?"block":"none";
+   btnVer.textContent = on?"ocultar":"mostrar";
+  };
   const conDatos = filas.filter(f=>f.orden>=0);
   const media = conDatos.length? Math.round(conDatos.reduce((s,f)=>s+f.pct,0)/conDatos.length) : 0;
   document.getElementById("adMedia").textContent = conDatos.length? media+"%" : "—";
