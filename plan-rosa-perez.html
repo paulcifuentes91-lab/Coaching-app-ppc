@@ -1036,6 +1036,8 @@ function renderCheckBanner(){
     else document.body.prepend(el);
   }
   if(!planCheckDate){ el.style.display='none'; return; }
+  const _yaChk = (typeof progressLog !== 'undefined' && progressLog) ? progressLog.some(function(e){ return e && e.date && e.date >= planCheckDate; }) : false;
+  if(_yaChk){ el.style.display='none'; return; }
   const today = new Date(); today.setHours(0,0,0,0);
   const chk = new Date(planCheckDate + 'T00:00:00');
   const diff = Math.round((chk - today) / 86400000);
