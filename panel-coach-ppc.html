@@ -2454,11 +2454,11 @@ async function fbGuardarNutricion(a){
    return d.getDate()+" "+M[d.getMonth()]+" "+d.getFullYear(); };
   const _fechasTxt = ["Inicio "+_fmtF(a.ini_f), "Chequeo "+_fmtF(a.chk), "Vence "+_fmtF(a.vence)].filter(s=>!s.endsWith(" ")).join(" · ");
   const nutritionInfo = [
-   ["Agua", document.getElementById("nAgua")?.value || a.nut.agua || ""],
-   ["Sal", document.getElementById("nSal")?.value || a.nut.sal || ""],
-   ["Comida libre", document.getElementById("nLibre")?.value || a.nut.libre || ""],
-   ["Fechas", _fechasTxt]
-  ].filter(([l,v])=>v);
+   ["Agua", document.getElementById("nAgua")?.value || a.nut.agua || "4 a 5 litros sugeridos"],
+   ["Sal", document.getElementById("nSal")?.value || a.nut.sal || "1 g por comida"],
+   ["Comida libre", document.getElementById("nLibre")?.value || a.nut.libre || "Una a la semana"],
+   ["Fechas", _fechasTxt || "Sin fechas definidas todavía"]
+  ];
   const planFinal = Object.assign({}, planActual, { mealWindows: bloques, nutritionInfo, actualizado: new Date().toISOString() });
   const hist = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
   hist.push({ fecha: new Date().toISOString(), tipo: "nutricion", resumen: bloques.length+" bloque(s) de dieta actualizados" });
