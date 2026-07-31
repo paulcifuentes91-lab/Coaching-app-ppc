@@ -2449,7 +2449,17 @@ async function fbGuardarNutricion(a){
   const ref = FB.db.collection("athletes").doc(id);
   const snap = await ref.get();
   const planActual = (snap.exists && snap.data().plan) || {};
-  const planFinal = Object.assign({}, planActual, { mealWindows: bloques, actualizado: new Date().toISOString() });
+  const _fmtF = iso => { if(!iso) return ""; const d=new Date(iso+"T12:00:00");
+   const M=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+   return d.getDate()+" "+M[d.getMonth()]+" "+d.getFullYear(); };
+  const _fechasTxt = ["Inicio "+_fmtF(a.ini_f), "Chequeo "+_fmtF(a.chk), "Vence "+_fmtF(a.vence)].filter(s=>!s.endsWith(" ")).join(" · ");
+  const nutritionInfo = [
+   ["Agua", document.getElementById("nAgua")?.value || a.nut.agua || ""],
+   ["Sal", document.getElementById("nSal")?.value || a.nut.sal || ""],
+   ["Comida libre", document.getElementById("nLibre")?.value || a.nut.libre || ""],
+   ["Fechas", _fechasTxt]
+  ].filter(([l,v])=>v);
+  const planFinal = Object.assign({}, planActual, { mealWindows: bloques, nutritionInfo, actualizado: new Date().toISOString() });
   const hist = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
   hist.push({ fecha: new Date().toISOString(), tipo: "nutricion", resumen: bloques.length+" bloque(s) de dieta actualizados" });
   planFinal.historial = hist.slice(-30);
