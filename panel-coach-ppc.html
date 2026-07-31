@@ -668,6 +668,7 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
     <button class="tab" data-p="p6">Periodización</button>
     <button class="tab" data-p="p7">Chequeo V7.0</button>
     <button class="tab" data-p="p9">Anamnesis</button>
+    <button class="tab" data-p="p10">Perfil</button>
   </div>
 
   <!-- DATOS -->
@@ -978,6 +979,12 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
       <div id="anResp"></div>
     </div>
   </div>
+
+  <div class="pane" id="p10">
+    <div class="sec"><div class="st">Perfil completo <span class="aux">todo en un solo lugar</span></div>
+      <div id="perfilCont"></div>
+    </div>
+  </div>
 </div>
 </main>
 </div>
@@ -1238,7 +1245,7 @@ function cargar(a){
  $("#fChk").value=a.chk; $("#fVence").value=a.vence; $("#fEstado").value=a.estado; $("#fNota").value=a.nota;
  $("#nAgua").value=a.nut.agua; $("#nSal").value=a.nut.sal; $("#nLibre").value=a.nut.libre; $("#nVig").value=a.nut.vig;
  $("#semAviso").textContent = a.ini_f ? "Hoy: "+semanaHoy(a.ini_f) : "";
- pintarDias(); pintarBloques(); _postBloques(); pintarSups(); pintarHist(); recalcular(); v7cargar(); pintarMesocicloCalendario();
+ pintarDias(); pintarBloques(); _postBloques(); pintarSups(); pintarHist(); recalcular(); v7cargar(); pintarMesocicloCalendario(); pintarPerfil();
 }
 function semanaHoy(ini){
  const d=Math.floor((new Date()-new Date(ini+"T12:00:00"))/864e5);
@@ -1271,6 +1278,61 @@ function pintarMesocicloCalendario(){
   <div class="anfila"><span class="anl">Inicio del mesociclo</span><span class="anv">${fmt(act.ini_f)}</span></div>
   <div class="anfila"><span class="anl">Próximo chequeo</span><span class="anv">${fmt(act.chk)}${dChk!==null&&dChk>=0?` · en ${dChk} días`:''}</span></div>
   <div class="anfila"><span class="anl">Vence / renueva</span><span class="anv">${fmt(act.vence)}</span></div>`;
+}
+
+async function pintarPerfil(){
+ const el = document.getElementById("perfilCont");
+ if(!el) return;
+ el.innerHTML = '<div class="v7vacio">Cargando...</div>';
+
+ const h = (act.hist||[])[0];
+ const pesoActual = h ? h[1]+" kg" : "-";
+ const pesoFecha = h ? h[0] : "";
+ let tendencia = "";
+ if(act.hist && act.hist.length>=2){
+  const num = s=>parseFloat(String(s).replace(",",".")) || 0;
+  const dif = num(act.hist[0][1]) - num(act.hist[1][1]);
+  tendencia = (dif>0?"+":"")+dif.toFixed(1)+" kg vs. chequeo anterior";
+ }
+
+ let an = null;
+ if(HOME.datos && HOME.datos[act.id] && HOME.datos[act.id].anamnesis) an = HOME.datos[act.id].anamnesis;
+ else { const d = await fbTraer(act); an = d && d.anamnesis; }
+
+ const camposClave = [
+  ["edad","Edad"], ["altura","Estatura (anamnesis)"], ["objetivo","Objetivo"],
+  ["fecha_objetivo","Fecha objetivo"], ["condiciones","Condiciones medicas"],
+  ["lesiones","Lesiones"], ["medicamentos","Medicamentos"], ["alergias","Alergias/intolerancias"],
+  ["restricciones","Restricciones dieteticas"]
+ ];
+ const filasAn = an ? camposClave.filter(function(par){
+   const v=an[par[0]]; return v && (Array.isArray(v)?v.length:String(v).trim());
+  }).map(function(par){
+   const val = an[par[0]];
+   return '<div class="anfila"><span class="anl">'+par[1]+'</span><span class="anv">'+(Array.isArray(val)?val.join(" - "):val)+'</span></div>';
+  }).join("") : "";
+
+ const nDias = (act.dias||[]).length;
+ const nBloques = (act.nut && act.nut.bloques ? act.nut.bloques.length : 0);
+ const adh = (HOME.datos && typeof adherenciaSemana==="function") ? adherenciaSemana(act.id) : null;
+
+ let html = '<div class="asgrid" style="margin-bottom:16px">';
+ html += '<div class="asb"><div class="asl">Peso actual</div><div class="asv2">'+pesoActual+'</div><div class="ass">'+pesoFecha+(tendencia?" - "+tendencia:"")+'</div></div>';
+ html += '<div class="asb"><div class="asl">Adherencia semana</div><div class="asv2">'+(adh?adh.pct+"%":"-")+'</div><div class="ass">'+(adh?adh.entrenados+" de "+adh.objetivo+" dias":"")+'</div></div>';
+ html += '<div class="asb"><div class="asl">Dias de entreno</div><div class="asv2">'+(nDias||"-")+'</div><div class="ass">en su plan actual</div></div>';
+ html += '<div class="asb"><div class="asl">Bloques de dieta</div><div class="asv2">'+(nBloques||"-")+'</div><div class="ass">cargados</div></div>';
+ html += '</div>';
+ html += '<div class="ansec"><div class="ansect">Datos generales</div>';
+ html += '<div class="anfila"><span class="anl">Categoria</span><span class="anv">'+(act.cat||"-")+'</span></div>';
+ html += '<div class="anfila"><span class="anl">Estatura</span><span class="anv">'+(act.est||"-")+'</span></div>';
+ html += '<div class="anfila"><span class="anl">Federacion</span><span class="anv">'+(act.fed||"-")+'</span></div>';
+ html += '<div class="anfila"><span class="anl">Proximo chequeo</span><span class="anv">'+(act.chk||"-")+'</span></div>';
+ html += '</div>';
+ if(filasAn){ html += '<div class="ansec"><div class="ansect">De su anamnesis</div>'+filasAn+'</div>'; }
+ else { html += '<div class="v7vacio" style="margin-top:14px">Sin anamnesis completada todavia.</div>'; }
+ if(act.nota){ html += '<div class="ansec"><div class="ansect">Nota interna</div><div class="anfila"><span class="anv">'+act.nota+'</span></div></div>'; }
+
+ el.innerHTML = html;
 }
 async function verHistorial(){
  if(!act) return;
