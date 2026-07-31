@@ -3472,7 +3472,9 @@ function pintarHome(){
   const dChk = diasHasta(a.chk);
   if(dChk!==null && dChk>=0 && dChk<=7){
    const _log = (HOME.datos[a.id] && HOME.datos[a.id].progressLog) || [];
-   const _yaRegistro = _log.some(e=> e && e.date && e.date >= a.chk);
+   const _yaEnLog = _log.some(e=> e && e.date && e.date >= a.chk);
+   const _yaEnHist = (a.hist||[]).some(e=> e && e[0] && e[0] >= a.chk);
+   const _yaRegistro = _yaEnLog || _yaEnHist;
    if(!_yaRegistro){
     alertas.push({p:dChk<=2?0:1, ini:a.ini, id:a.id,
      txt:`Chequeo de <b>${a.n.split(" ")[0]}</b>`,
