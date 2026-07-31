@@ -2470,7 +2470,7 @@ async function fbGuardarNutricion(a){
   const _fmtF = iso => { if(!iso) return ""; const d=new Date(iso+"T12:00:00");
    const M=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
    return d.getDate()+" "+M[d.getMonth()]+" "+d.getFullYear(); };
-  const _fechasTxt = ["Inicio "+_fmtF(a.ini_f), "Chequeo "+_fmtF(a.chk), "Vence "+_fmtF(a.vence)].filter(s=>!s.endsWith(" ")).join(" · ");
+  const _fechasTxt = ["Inicio "+_fmtF(planActual.startDate||a.ini_f), "Chequeo "+_fmtF(planActual.checkDate||a.chk), "Vence "+_fmtF(planActual.accessExpiresAt||a.vence)].filter(s=>!s.endsWith(" ")).join(" · ");
   const nutritionInfo = [
    {l:"Agua", v:document.getElementById("nAgua")?.value || a.nut.agua || "4 a 5 litros sugeridos"},
    {l:"Sal", v:document.getElementById("nSal")?.value || a.nut.sal || "1 g por comida"},
