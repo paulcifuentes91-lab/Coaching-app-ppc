@@ -1033,9 +1033,10 @@ function renderHeader(){
 }
 
 function renderStaticPanels(){
-  document.getElementById('paramsContent').innerHTML = params.map(([l,v])=>
-    `<div class="param-row"><span class="param-label">${l}</span><span class="param-value">${v}</span></div>`
-  ).join('');
+  document.getElementById('paramsContent').innerHTML = params.map(function(x){
+    var l = Array.isArray(x) ? x[0] : x.l, v = Array.isArray(x) ? x[1] : x.v;
+    return '<div class="param-row"><span class="param-label">'+l+'</span><span class="param-value">'+v+'</span></div>';
+  }).join('');
 }
 
 function renderViewSwitch(){
