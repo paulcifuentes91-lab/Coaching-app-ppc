@@ -675,6 +675,7 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
       <div class="campos">
         <label><span class="lb">Nombre completo</span><input class="in" id="fNombre"></label>
         <label><span class="lb">Categoría</span><input class="in" id="fCat"></label>
+        <label><span class="lb">Tipo de plan</span><select class="in" id="fTipoPlan"><option value="basico">Básico</option><option value="performance">Performance</option><option value="elite">Elite</option></select></label>
         <label><span class="lb">Federación</span><select class="in" id="fFed"><option>NPC</option><option>IFBB</option><option>Sin federación</option></select></label>
         <label><span class="lb">Zona horaria</span><select class="in" id="fTz"><option value="America/Santiago">Chile · Santiago</option>
         <option value="Pacific/Easter">Chile · Isla de Pascua</option>
@@ -1321,6 +1322,7 @@ function cargar(a){
  $("#fEst").value=a.est; $("#fWa").value=a.wa; $("#fIni").value=a.ini_f; $("#fSem").value=a.sem;
  $("#fChk").value=a.chk; $("#fVence").value=a.vence; $("#fEstado").value=a.estado; $("#fNota").value=a.nota;
  $("#nAgua").value=a.nut.agua; $("#nSal").value=a.nut.sal; $("#nLibre").value=a.nut.libre; $("#nVig").value=a.nut.vig;
+ $("#fTipoPlan").value = a.tipoPlan || "basico";
  const _macro = a.macro || {};
  $("#fMacroTipo").value = _macro.tipo || "mantencion";
  $("#fMacroNombre").value = _macro.nombre || "";
@@ -1341,9 +1343,10 @@ function cargar(a){
    if(c.estado && c.estado!==a.estado){ a.estado=c.estado; cambio=true; }
    if(c.estatura && c.estatura!==a.est){ a.est=c.estatura; cambio=true; }
    if(c.nota!==undefined && c.nota!==a.nota){ a.nota=c.nota; cambio=true; }
+   if(c.tipoPlan && c.tipoPlan!==a.tipoPlan){ a.tipoPlan=c.tipoPlan; cambio=true; }
    if(cambio){
     $("#fIni").value=a.ini_f; $("#fChk").value=a.chk; $("#fVence").value=a.vence;
-    $("#fEstado").value=a.estado; $("#fEst").value=a.est; $("#fNota").value=a.nota;
+    $("#fEstado").value=a.estado; $("#fEst").value=a.est; $("#fNota").value=a.nota; $("#fTipoPlan").value=a.tipoPlan||"basico";
     $("#semAviso").textContent = a.ini_f ? "Hoy: "+semanaHoy(a.ini_f) : "";
     pintarMesocicloCalendario();
     toast("Datos actualizados desde la nube");
@@ -2610,7 +2613,8 @@ async function fbGuardarPlan(a){
   zonaHoraria: document.getElementById("fTz")?.value || a.tz,
   estado: document.getElementById("fEstado")?.value || a.estado,
   estatura: document.getElementById("fEst")?.value || a.est,
-  nota: document.getElementById("fNota")?.value || a.nota
+  nota: document.getElementById("fNota")?.value || a.nota,
+  tipoPlan: document.getElementById("fTipoPlan")?.value || a.tipoPlan || "basico"
  };
 
  try{
