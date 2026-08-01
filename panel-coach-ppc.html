@@ -2555,9 +2555,20 @@ async function fbGuardarPlan(a){
   {l:"Frecuencia", v:`${dias.length} sesiones semanales · `+dias.map(d=>d.n.split("·").slice(1).join("·").trim()||d.n).join(", ")},
   {l:"Zona horaria", v:`Plan ajustado a horario de ${paisCorto(a.tz)}`}
  ];
+ const _descFases = {
+  "Acumulación":"Volumen base. Fija tus cargas de referencia con técnica sólida y RIR 2-3 (deja repeticiones en reserva). Registra los kg de cada ejercicio.",
+  "Progresión":"Sube el volumen en los ejercicios principales (+1 serie) y aumenta carga donde la técnica fue estable. RIR 1-2.",
+  "Intensificación":"Semana de mayor volumen e intensidad: principales +2 series, accesorios +1, dropset de cierre. Máximo esfuerzo con técnica (RIR 0-1).",
+  "Descarga":"Reducción planificada del volumen (~40% menos series) para recuperar y supercompensar. Cargas cómodas, sin fallo. Prepara el cuerpo para el próximo bloque."
+ };
+ const _weekMeta = Array.from({length:_totalSem}, (_,i)=>{
+  const fase = _fases[Math.min(i,3)] || "Acumulación";
+  return { n:i+1, label:`Semana ${i+1} · ${fase}`, desc:_descFases[fase]||"" };
+ });
  const plan = {
   eyebrow: `Mesociclo · ${a.cat}`,
   params: _params,
+  weekMeta: _weekMeta,
   days: dias.map(d=>{
    const [tag, ...resto] = d.n.split("·");
    const _pal=['#E0C23D','#5B8DEF','#4CAF7D','#E07A72','#8C7BFF','#E08A3D','#63C295'];
