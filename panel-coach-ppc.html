@@ -1172,18 +1172,26 @@ const SUSTITUTOS_EJ = {
  "Curl con barra":"Curl martillo", "Press francés":"Extensión en polea alta",
  "Peso muerto convencional":"Peso muerto rumano", "Clean and press":"Thrusters con mancuernas"
 };
-function generarEjercicios(gruposStr, semilla){
+function generarEjercicios(gruposStr, semilla, nivel, objetivo){
  const grupos = (gruposStr||"").split(",").map(g=>g.trim()).filter(Boolean);
+ /* cuantos ejercicios por grupo segun nivel (evidencia: mas volumen tolerado con mas experiencia) */
+ const porGrupo = nivel==="principiante" ? 1 : nivel==="avanzado" ? 3 : 2;
+ /* rango de reps segun objetivo */
+ const repsPrincipal = objetivo==="fuerza" ? "4 X 5-6" : objetivo==="definicion" ? "3 X 12-15" : "4 X 8-10";
+ const repsAccesorio = objetivo==="fuerza" ? "3 X 8-10" : objetivo==="definicion" ? "3 X 15-20" : "3 X 12-15";
  const filas = [];
  grupos.forEach((g, gi)=>{
   const lista = EJERCICIOS[g];
   if(!lista || !lista.length) return;
-  const idx = (semilla + gi) % lista.length;
-  const par = lista[idx];
-  const nombre = par[0], tier = par[1];
-  const reps = tier==="principal" ? "4 X 8-10" : "3 X 12-15";
-  const sust = SUSTITUTOS_EJ[nombre];
-  filas.push([nombre, reps, tier, sust ? ("Alternativa: "+sust) : ""]);
+  const n = Math.min(porGrupo, lista.length);
+  for(let k=0;k<n;k++){
+   const idx = (semilla + gi + k) % lista.length;
+   const par = lista[idx];
+   const nombre = par[0], tier = par[1];
+   const reps = tier==="principal" ? repsPrincipal : repsAccesorio;
+   const sust = SUSTITUTOS_EJ[nombre];
+   filas.push([nombre, reps, tier, sust ? ("Alternativa: "+sust) : ""]);
+  }
  });
  if(!filas.length) filas.push(["", "4 X 10", "principal", ""]);
  return filas;
@@ -1916,7 +1924,7 @@ function crear(){
         secs:[
          {n:"Calentamiento",ej:[["Movilidad articular general","5 a 10 min","accesorio",""],
               ["Activación de "+s[1].split(",").map(x=>GRUPO_LB[x]||x).join(", "),"2 a 3 min","accesorio","Series livianas de aproximación"]]},
-         {n:"Entrenamiento",ej: generarEjercicios(s[1], i)},
+         {n:"Entrenamiento",ej: generarEjercicios(s[1], i, document.getElementById("asNivel")?.value, document.getElementById("asObjetivo")?.value)},
          {n:"Estiramiento",ej:[["Elongación de "+s[1].split(",").map(x=>GRUPO_LB[x]||x).join(", "),"5 a 8 min","accesorio",""]]},
          {n:"Cardio",ej:[["Caminata en cinta LISS","30 min","accesorio",prop.cardio]]}
         ]}))
@@ -2433,7 +2441,7 @@ document.addEventListener("click",e=>{
    secs:[
     {n:"Calentamiento",ej:[["Movilidad articular general","5 a 10 min","accesorio",""],
          ["Activación de "+s[1].split(",").map(x=>GRUPO_LB[x]||x).join(", "),"2 a 3 min","accesorio","Series livianas de aproximación"]]},
-    {n:"Entrenamiento",ej: generarEjercicios(s[1], i)},
+    {n:"Entrenamiento",ej: generarEjercicios(s[1], i, document.getElementById("asNivel")?.value, document.getElementById("asObjetivo")?.value)},
     {n:"Estiramiento",ej:[["Elongación de "+s[1].split(",").map(x=>GRUPO_LB[x]||x).join(", "),"5 a 8 min","accesorio",""]]},
     {n:"Cardio",ej:[["Caminata en cinta LISS","30 min","accesorio",r.cardio]]}
    ]}));
