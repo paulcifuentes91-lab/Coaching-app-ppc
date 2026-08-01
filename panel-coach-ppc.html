@@ -794,8 +794,8 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
           <option value="2.6">2,6 · déficit marcado</option><option value="2.8">2,8 · competición</option></select></label>
         <label><span class="lb">Excluir</span><select class="in" id="gnExcluir">
           <option value="">Nada</option><option value="carne">Sin carne roja</option>
-          <option value="carne,pescado,atún,salmón,pavo,camarones,cerdo">Vegetariano</option>
-          <option value="carne,pescado,atún,salmón,pavo,camarones,cerdo,huevo,claras,lácteos,yogurt,queso,leche,kefir">Vegano</option>
+          <option value="carne,pescado,atún,salmón,pavo,camarones,cerdo|vegetariano">Vegetariano</option>
+          <option value="carne,pescado,atún,salmón,pavo,camarones,cerdo,huevo,claras,lácteos,yogurt,queso,leche,kefir|vegano">Vegano</option>
           <option value="pan,pasta,avena">Sin gluten</option></select></label>
       </div>
       <button class="add g" id="gnGenerar">Generar propuesta de dieta</button>
@@ -2958,12 +2958,19 @@ const SUSTITUTOS = {
  "leche de almendras":["leche de soya","leche descremada"], "leche de soya":["leche de almendras","leche descremada"]
 };
 
-function sugerirSustituto(nombre, categoria, objetivoGramoMacro, excluir){
+function sugerirSustituto(nombre, categoria, objetivoGramoMacro, excluir, dieta){
  const lista = SUSTITUTOS[nombre];
  if(!lista || !lista.length) return "";
  const excl = excluir || [];
  const tabla = categoria==="p" ? GEN_ALIM.prot : categoria==="c" ? GEN_ALIM.carbo : GEN_ALIM.grasa;
- const opciones = lista.filter(sust=> !excl.some(x=>sust.includes(x))).map(sust=>{
+ const dietaOkSust = sust => {
+  if(!dieta) return true;
+  const tag = tabla[sust] && tabla[sust][4];
+  if(dieta === "vegano") return tag === "vegano";
+  if(dieta === "vegetariano") return tag === "vegano" || tag === "vegetariano";
+  return true;
+ };
+ const opciones = lista.filter(sust=> !excl.some(x=>sust.includes(x)) && dietaOkSust(sust)).map(sust=>{
   const datosSust = tabla[sust];
   if(!datosSust) return null;
   const gSust = gramosPara(datosSust, categoria, objetivoGramoMacro);
@@ -3017,8 +3024,15 @@ function armarComida(plan, macros, opciones){
  const usado = [0,0,0];   // P, C, G acumulados
  const P = GEN_ALIM.prot, C = GEN_ALIM.carbo, G = GEN_ALIM.grasa;
  const permitidas = k => !opciones.excluir.some(x => k.includes(x));
+ const dietaOk = (tabla, k) => {
+  if(!opciones.dieta) return true;
+  const tag = tabla[k] && tabla[k][4];
+  if(opciones.dieta === "vegano") return tag === "vegano";
+  if(opciones.dieta === "vegetariano") return tag === "vegano" || tag === "vegetariano";
+  return true;
+ };
  const elegir = (tabla, sem) => {
-  const ks = Object.keys(tabla).filter(permitidas);
+  const ks = Object.keys(tabla).filter(k => permitidas(k) && dietaOk(tabla, k));
   return ks.length ? ks[sem % ks.length] : Object.keys(tabla)[0];
  };
 
@@ -3072,7 +3086,7 @@ function armarComida(plan, macros, opciones){
  /* principal y cena */
  const kp = elegir(P, opciones.sem);
  const gp = gramosPara(P[kp], "p", macros.p);
- items.push(`${gp} g ${kp}${sugerirSustituto(kp,"p",macros.p,opciones.excluir)}`);
+ items.push(`${gp} g ${kp}${sugerirSustituto(kp,"p",macros.p,opciones.excluir,opciones.dieta)}`);
  usado[0] += gp*P[kp][1]/100; usado[1] += gp*P[kp][2]/100; usado[2] += gp*P[kp][3]/100;
 
  if(macros.c - usado[1] > 5){
@@ -3081,14 +3095,14 @@ function armarComida(plan, macros, opciones){
   const kc = dispo.length ? dispo[opciones.sem % dispo.length] : elegir(C, opciones.sem + 1);
   const objetivoC = macros.c - usado[1];
   const gc = gramosPara(C[kc], "c", objetivoC);
-  items.push(`${gc} g ${kc}${sugerirSustituto(kc,"c",objetivoC,opciones.excluir)}`);
+  items.push(`${gc} g ${kc}${sugerirSustituto(kc,"c",objetivoC,opciones.excluir,opciones.dieta)}`);
   usado[0] += gc*C[kc][1]/100; usado[1] += gc*C[kc][2]/100; usado[2] += gc*C[kc][3]/100;
  }
  const faltaG = macros.g - usado[2];
  if(faltaG > 4){
   const kg = faltaG > 12 ? "palta" : "aceite de oliva";
   const gg = gramosPara(G[kg], "g", faltaG);
-  items.push(`${gg} g ${kg}${sugerirSustituto(kg,"g",faltaG,opciones.excluir)}`);
+  items.push(`${gg} g ${kg}${sugerirSustituto(kg,"g",faltaG,opciones.excluir,opciones.dieta)}`);
   usado[2] += gg*G[kg][3]/100; usado[1] += gg*G[kg][2]/100;
  }
  const verdurasLibres = ["Verduras cocidas","Ensalada verde","Brócoli al vapor","Espinaca salteada","Tomate y pepino","Zanahoria rallada"];
@@ -3110,7 +3124,7 @@ function generarDieta(cfg){
  const tot = [0,0,0];
  plantilla.forEach((pl, i)=>{
   const m = {p: protG*pl.p, c: carbG*pl.c, g: grasaG*pl.g};
-  const r = armarComida(pl, m, {excluir: cfg.excluir||[], sem: i + (cfg.variante||0)*4});
+  const r = armarComida(pl, m, {excluir: cfg.excluir||[], dieta: cfg.dieta||"", sem: i + (cfg.variante||0)*4});
   comidas.push({n: pl.n, items: r.items});
   for(let k=0;k<3;k++) tot[k] += r.usado[k];
  });
@@ -3174,7 +3188,10 @@ document.addEventListener("click", e=>{
   const peso = +$("#gnPeso").value, tdee = +$("#gnTdee").value;
   if(!peso || !tdee){ toast("Necesito el peso y las calorías de mantenimiento"); return; }
   const cfgBase = { peso, tdee, ajuste:+$("#gnAjuste").value, comidas:+$("#gnComidas").value,
-    protKg:+$("#gnProt").value, excluir:($("#gnExcluir").value||"").split(",").filter(Boolean) };
+    protKg:+$("#gnProt").value };
+  const _excRaw = ($("#gnExcluir").value||"").split("|");
+  cfgBase.excluir = _excRaw[0].split(",").filter(Boolean);
+  cfgBase.dieta = _excRaw[1] || "";
   const propuestas = [generarDieta(Object.assign({},cfgBase,{variante:0})), generarDieta(Object.assign({},cfgBase,{variante:1}))];
   window._genDietaOpciones = propuestas;
   const ajTxt = cfgBase.ajuste<0 ? `déficit del ${-cfgBase.ajuste}%` : cfgBase.ajuste>0 ? `superávit del ${cfgBase.ajuste}%` : "mantenimiento";
