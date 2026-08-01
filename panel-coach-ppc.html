@@ -1337,11 +1337,16 @@ function cargar(a){
    if(p.startDate && p.startDate!==a.ini_f){ a.ini_f=p.startDate; cambio=true; }
    if(p.checkDate && p.checkDate!==a.chk){ a.chk=p.checkDate; cambio=true; }
    if(p.accessExpiresAt && p.accessExpiresAt!==a.vence){ a.vence=p.accessExpiresAt; cambio=true; }
+   const c = snap.data().contacto || {};
+   if(c.estado && c.estado!==a.estado){ a.estado=c.estado; cambio=true; }
+   if(c.estatura && c.estatura!==a.est){ a.est=c.estatura; cambio=true; }
+   if(c.nota!==undefined && c.nota!==a.nota){ a.nota=c.nota; cambio=true; }
    if(cambio){
     $("#fIni").value=a.ini_f; $("#fChk").value=a.chk; $("#fVence").value=a.vence;
+    $("#fEstado").value=a.estado; $("#fEst").value=a.est; $("#fNota").value=a.nota;
     $("#semAviso").textContent = a.ini_f ? "Hoy: "+semanaHoy(a.ini_f) : "";
     pintarMesocicloCalendario();
-    toast("Fechas actualizadas desde la nube");
+    toast("Datos actualizados desde la nube");
    }
   }).catch(()=>{});
  }
@@ -2579,7 +2584,10 @@ async function fbGuardarPlan(a){
   nombre: document.getElementById("fNombre")?.value || a.n,
   whatsapp: (document.getElementById("fWa")?.value || "").trim(),
   categoria: document.getElementById("fCat")?.value || a.cat,
-  zonaHoraria: document.getElementById("fTz")?.value || a.tz
+  zonaHoraria: document.getElementById("fTz")?.value || a.tz,
+  estado: document.getElementById("fEstado")?.value || a.estado,
+  estatura: document.getElementById("fEst")?.value || a.est,
+  nota: document.getElementById("fNota")?.value || a.nota
  };
 
  try{
