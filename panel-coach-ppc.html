@@ -2544,8 +2544,20 @@ async function fbGuardarPlan(a){
  if(!id){ toast(a.n+" todavía no tiene app publicada · usa Exportar plan"); return false; }
 
  const dias = leerDOM();
+ const _iniF = document.getElementById("fIni")?.value || a.ini_f;
+ const _totalSem = +a.sem || 4;
+ const _fases = ["Acumulación","Progresión","Intensificación","Descarga"];
+ const _dd = _iniF ? Math.floor((new Date() - new Date(_iniF+"T12:00:00"))/86400000) : -1;
+ const _semActual = _dd<0 ? 1 : Math.min(_totalSem, Math.floor(_dd/7)+1);
+ const _mesTxt = new Date().toLocaleDateString("es-CL",{month:"long"});
+ const _params = [
+  {l:"Mesociclo", v:`${_mesTxt.charAt(0).toUpperCase()+_mesTxt.slice(1)} · ${_fases[_semActual-1]||"Acumulación"} · Semana ${_semActual} de ${_totalSem}`},
+  {l:"Frecuencia", v:`${dias.length} sesiones semanales · `+dias.map(d=>d.n.split("·").slice(1).join("·").trim()||d.n).join(", ")},
+  {l:"Zona horaria", v:`Plan ajustado a horario de ${paisCorto(a.tz)}`}
+ ];
  const plan = {
   eyebrow: `Mesociclo · ${a.cat}`,
+  params: _params,
   days: dias.map(d=>{
    const [tag, ...resto] = d.n.split("·");
    const _pal=['#E0C23D','#5B8DEF','#4CAF7D','#E07A72','#8C7BFF','#E08A3D','#63C295'];
