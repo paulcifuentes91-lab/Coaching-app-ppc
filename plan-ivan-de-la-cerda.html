@@ -1228,9 +1228,8 @@ function renderHeader(){
   document.getElementById('headerEyebrow').textContent = headerEyebrow;
   document.getElementById('headerName').textContent = headerNombre;
   document.getElementById('headerMeta').innerHTML = headerMeta;
-  document.getElementById('statStrip').innerHTML = statChips.map(c=>
-    `<div class="stat-chip"><div class="v">${c.v}</div><div class="l">${c.l}</div></div>`
-  ).join('');
+  var _sc = document.getElementById('statStrip');
+  if(_sc) _sc.style.display = 'none';
 }
 
 function renderStaticPanels(){
