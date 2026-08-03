@@ -1357,11 +1357,26 @@ function cargar(a){
    if(c.estatura && c.estatura!==a.est){ a.est=c.estatura; cambio=true; }
    if(c.nota!==undefined && c.nota!==a.nota){ a.nota=c.nota; cambio=true; }
    if(c.tipoPlan && c.tipoPlan!==a.tipoPlan){ a.tipoPlan=c.tipoPlan; cambio=true; }
+   const mw = p.mealWindows;
+   if(Array.isArray(mw)){
+    const bloquesReales = mw.map(function(x){
+     const macros = x.macros || {};
+     return {
+      n: x.label || "Pauta",
+      p: macros.proteinG || 0, c: macros.carbG || 0, g: macros.fatG || 0,
+      comidas: (x.meals||[]).map(function(m){ return { n: m.name || "Comida", items: m.items || [] }; })
+     };
+    });
+    const actualJSON = JSON.stringify(a.nut.bloques||[]);
+    const nuevoJSON = JSON.stringify(bloquesReales);
+    if(actualJSON !== nuevoJSON){ a.nut.bloques = bloquesReales; cambio = true; }
+   }
    if(cambio){
     $("#fIni").value=a.ini_f; $("#fChk").value=a.chk; $("#fVence").value=a.vence;
     $("#fEstado").value=a.estado; $("#fEst").value=a.est; $("#fNota").value=a.nota; $("#fTipoPlan").value=a.tipoPlan||"basico";
     $("#semAviso").textContent = a.ini_f ? "Hoy: "+semanaHoy(a.ini_f) : "";
     pintarMesocicloCalendario();
+    pintarBloques(); _postBloques();
     toast("Datos actualizados desde la nube");
    }
   }).catch(()=>{});
