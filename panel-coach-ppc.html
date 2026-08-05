@@ -1347,9 +1347,9 @@ function cargar(a){
  pintarDias(); pintarBloques(); _postBloques(); pintarSups(); pintarHist(); recalcular(); v7cargar(); pintarMesocicloCalendario(); pintarPerfil();
  /* Sincronizar fechas reales desde Firebase - la ATLETAS de fabrica puede estar vieja */
  const _idSync = FB_ID[a.id];
- const _btnGuardar = document.querySelector('[data-save]');
+ const _btnsGuardar = document.querySelectorAll('[data-save]');
  if(_idSync && FB.on){
-  if(_btnGuardar){ _btnGuardar.disabled = true; _btnGuardar.textContent = "Sincronizando..."; }
+  _btnsGuardar.forEach(b=>{ b.disabled = true; b.dataset.txtOriginal = b.textContent; b.textContent = "Sincronizando..."; });
   FB.db.collection("athletes").doc(_idSync).get().then(snap=>{
    if(!snap.exists || !act || act.id!==a.id) return;
    const p = snap.data().plan || {};
@@ -1386,8 +1386,8 @@ function cargar(a){
     pintarLista($("#buscar").value);
     toast("Datos actualizados desde la nube");
    }
-   if(_btnGuardar){ _btnGuardar.disabled = false; _btnGuardar.textContent = "Guardar cambios"; }
-  }).catch(()=>{ if(_btnGuardar){ _btnGuardar.disabled = false; _btnGuardar.textContent = "Guardar cambios"; } });
+   _btnsGuardar.forEach(b=>{ b.disabled = false; b.textContent = b.dataset.txtOriginal || "Guardar cambios"; });
+  }).catch(()=>{ _btnsGuardar.forEach(b=>{ b.disabled = false; b.textContent = b.dataset.txtOriginal || "Guardar cambios"; }); });
  }
 }
 function semanaHoy(ini){
