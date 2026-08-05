@@ -2654,7 +2654,7 @@ async function fbGuardarPlan(a){
   const planActual = (snap.exists && snap.data().plan) || {};
   const planFinal = Object.assign({}, planActual, plan);
   const hist = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
-  hist.push({ fecha: new Date().toISOString(), tipo: "entrenamiento", resumen: dias.length+" día(s) de entrenamiento actualizados" });
+  hist.push({ fecha: new Date().toISOString(), tipo: "entrenamiento", resumen: dias.length+" día(s) de entrenamiento actualizados", snapshotDays: plan.days });
   planFinal.historial = hist.slice(-30);
   await ref.set({ plan: planFinal, contacto }, { merge:true });
   return true;
@@ -2695,7 +2695,7 @@ async function fbGuardarNutricion(a){
   ];
   const planFinal = Object.assign({}, planActual, { mealWindows: bloques, nutritionInfo, actualizado: new Date().toISOString() });
   const hist = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
-  hist.push({ fecha: new Date().toISOString(), tipo: "nutricion", resumen: bloques.length+" bloque(s) de dieta actualizados" });
+  hist.push({ fecha: new Date().toISOString(), tipo: "nutricion", resumen: bloques.length+" bloque(s) de dieta actualizados", snapshotMealWindows: bloques });
   planFinal.historial = hist.slice(-30);
   await ref.set({ plan: planFinal }, { merge:true });
   return true;
