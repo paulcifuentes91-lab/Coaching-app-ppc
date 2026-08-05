@@ -1338,6 +1338,7 @@ function cargar(a){
  $("#nAgua").value=a.nut.agua; $("#nSal").value=a.nut.sal; $("#nLibre").value=a.nut.libre; $("#nVig").value=a.nut.vig;
  $("#fTipoPlan").value = a.tipoPlan || "basico";
  $("#fEdad").value = a.edad || "";
+ const _asEdadField = document.getElementById("asEdad"); if(_asEdadField && a.edad) _asEdadField.value = a.edad;
  const _macro = a.macro || {};
  $("#fMacroTipo").value = _macro.tipo || "mantencion";
  $("#fMacroNombre").value = _macro.nombre || "";
