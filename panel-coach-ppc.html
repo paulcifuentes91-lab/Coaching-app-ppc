@@ -1479,22 +1479,54 @@ async function verHistorial(){
  if(!FB.on){ toast("Sin conexión a Firebase"); return; }
  const snap = await FB.db.collection("athletes").doc(id).get();
  const hist = (snap.exists && snap.data().plan && snap.data().plan.historial) || [];
+ window._histActual = hist;
  document.getElementById("histModal")?.remove();
  const m = document.createElement("div");
  m.id="histModal"; m.className="modal on";
- const filas = hist.length ? [...hist].reverse().map(hh=>{
+ const histReversed = [...hist].reverse();
+ const filas = hist.length ? histReversed.map((hh,ri)=>{
+  const origIdx = hist.length - 1 - ri;
   const f = new Date(hh.fecha);
   const fStr = isNaN(f) ? hh.fecha : f.toLocaleString("es-CL",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"});
-  return `<div class="anfila"><span class="anl">${fStr}</span><span class="anv">${hh.tipo==="entrenamiento"?"Entrenamiento":"Nutrición"} · ${hh.resumen||""}</span></div>`;
+  const puedeRestaurar = hh.snapshotDays || hh.snapshotMealWindows;
+  const btnR = puedeRestaurar ? ` <button class="dx" data-restaurar="${origIdx}" style="font-size:11px;margin-left:8px;padding:3px 9px">Restaurar</button>` : '';
+  return `<div class="anfila"><span class="anl">${fStr}</span><span class="anv">${hh.tipo==="entrenamiento"?"Entrenamiento":"Nutrición"} · ${hh.resumen||""}${btnR}</span></div>`;
  }).join("") : '<div class="v7vacio">Sin cambios registrados todavía.</div>';
- m.innerHTML = `<div class="mbox" style="max-width:520px">
+ m.innerHTML = `<div class="mbox" style="max-width:560px">
    <div class="mtop2"><div><div class="t">Historial de cambios</div><div class="s">${act.n}</div></div>
      <button class="cerrar" id="histCerrar">Cerrar</button></div>
    <div class="mbody">${filas}</div></div>`;
  document.body.appendChild(m);
  document.getElementById("histCerrar").onclick = ()=>m.remove();
+ m.querySelectorAll("[data-restaurar]").forEach(btn=>{
+  btn.onclick = ()=>restaurarVersion(+btn.dataset.restaurar);
+ });
 }
 document.addEventListener("click", e=>{ if(e.target.id==="verHistorialBtn") verHistorial(); });
+async function restaurarVersion(idx){
+ const hh = (window._histActual||[])[idx];
+ if(!hh || !act) return;
+ const tipoTxt = hh.tipo==="entrenamiento" ? "el entrenamiento actual" : "la dieta actual";
+ if(!confirm("¿Restaurar esta versión? Esto reemplazará "+tipoTxt+" de "+act.n+".")) return;
+ const id = FB_ID[act.id];
+ if(!id || !FB.on){ toast("Sin conexión a Firebase"); return; }
+ const ref = FB.db.collection("athletes").doc(id);
+ const snap = await ref.get();
+ const planActual = (snap.exists && snap.data().plan) || {};
+ let planFinal;
+ if(hh.tipo==="entrenamiento" && hh.snapshotDays){
+  planFinal = Object.assign({}, planActual, { days: hh.snapshotDays });
+ } else if(hh.tipo==="nutricion" && hh.snapshotMealWindows){
+  planFinal = Object.assign({}, planActual, { mealWindows: hh.snapshotMealWindows });
+ } else { toast("Esta version no tiene copia guardada para restaurar"); return; }
+ const hist2 = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
+ hist2.push({ fecha: new Date().toISOString(), tipo: hh.tipo, resumen: "Restaurado desde version anterior" });
+ planFinal.historial = hist2.slice(-15);
+ await ref.set({ plan: planFinal }, { merge:true });
+ toast("Version restaurada - recarga la ficha para verla");
+ document.getElementById("histModal")?.remove();
+}
+
 
 async function renovarMesociclo(){
  if(!act) return;
