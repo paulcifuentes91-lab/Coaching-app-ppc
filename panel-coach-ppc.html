@@ -712,6 +712,7 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
         <option value="Australia/Perth">Australia · Perth</option>
         <option value="Pacific/Auckland">Nueva Zelanda</option></select></label>
         <label><span class="lb">Estatura</span><input class="in" id="fEst" placeholder="1,50 m"></label>
+        <label><span class="lb">Edad</span><input class="in mono" id="fEdad" type="number" placeholder="34"></label>
         <label><span class="lb">WhatsApp</span><input class="in mono" id="fWa" placeholder="+569..."></label>
       </div></div>
     <div class="sec"><div class="st">Calendario del bloque</div>
@@ -1336,6 +1337,7 @@ function cargar(a){
  $("#fChk").value=a.chk; $("#fVence").value=a.vence; $("#fEstado").value=a.estado; $("#fNota").value=a.nota;
  $("#nAgua").value=a.nut.agua; $("#nSal").value=a.nut.sal; $("#nLibre").value=a.nut.libre; $("#nVig").value=a.nut.vig;
  $("#fTipoPlan").value = a.tipoPlan || "basico";
+ $("#fEdad").value = a.edad || "";
  const _macro = a.macro || {};
  $("#fMacroTipo").value = _macro.tipo || "mantencion";
  $("#fMacroNombre").value = _macro.nombre || "";
@@ -1359,6 +1361,7 @@ function cargar(a){
    if(c.estatura && c.estatura!==a.est){ a.est=c.estatura; cambio=true; }
    if(c.nota!==undefined && c.nota!==a.nota){ a.nota=c.nota; cambio=true; }
    if(c.tipoPlan && c.tipoPlan!==a.tipoPlan){ a.tipoPlan=c.tipoPlan; cambio=true; }
+   if(c.edad && c.edad!==a.edad){ a.edad=c.edad; cambio=true; }
    const mw = p.mealWindows;
    if(Array.isArray(mw)){
     const bloquesReales = mw.map(function(x){
@@ -1375,7 +1378,7 @@ function cargar(a){
    }
    if(cambio){
     $("#fIni").value=a.ini_f; $("#fChk").value=a.chk; $("#fVence").value=a.vence;
-    $("#fEstado").value=a.estado; $("#fEst").value=a.est; $("#fNota").value=a.nota; $("#fTipoPlan").value=a.tipoPlan||"basico";
+    $("#fEstado").value=a.estado; $("#fEst").value=a.est; $("#fNota").value=a.nota; $("#fTipoPlan").value=a.tipoPlan||"basico"; $("#fEdad").value=a.edad||"";
     $("#semAviso").textContent = a.ini_f ? "Hoy: "+semanaHoy(a.ini_f) : "";
     pintarMesocicloCalendario();
     pintarBloques(); _postBloques();
@@ -2677,7 +2680,8 @@ async function fbGuardarPlan(a){
   estado: document.getElementById("fEstado")?.value || a.estado,
   estatura: document.getElementById("fEst")?.value || a.est,
   nota: document.getElementById("fNota")?.value || a.nota,
-  tipoPlan: document.getElementById("fTipoPlan")?.value || a.tipoPlan || "basico"
+  tipoPlan: document.getElementById("fTipoPlan")?.value || a.tipoPlan || "basico",
+  edad: document.getElementById("fEdad")?.value || a.edad || ""
  };
 
  try{
