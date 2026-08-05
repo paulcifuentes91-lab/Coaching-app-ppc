@@ -1344,7 +1344,9 @@ function cargar(a){
  pintarDias(); pintarBloques(); _postBloques(); pintarSups(); pintarHist(); recalcular(); v7cargar(); pintarMesocicloCalendario(); pintarPerfil();
  /* Sincronizar fechas reales desde Firebase - la ATLETAS de fabrica puede estar vieja */
  const _idSync = FB_ID[a.id];
+ const _btnGuardar = document.querySelector('[data-save]');
  if(_idSync && FB.on){
+  if(_btnGuardar){ _btnGuardar.disabled = true; _btnGuardar.textContent = "Sincronizando..."; }
   FB.db.collection("athletes").doc(_idSync).get().then(snap=>{
    if(!snap.exists || !act || act.id!==a.id) return;
    const p = snap.data().plan || {};
@@ -1379,7 +1381,8 @@ function cargar(a){
     pintarBloques(); _postBloques();
     toast("Datos actualizados desde la nube");
    }
-  }).catch(()=>{});
+   if(_btnGuardar){ _btnGuardar.disabled = false; _btnGuardar.textContent = "Guardar cambios"; }
+  }).catch(()=>{ if(_btnGuardar){ _btnGuardar.disabled = false; _btnGuardar.textContent = "Guardar cambios"; } });
  }
 }
 function semanaHoy(ini){
