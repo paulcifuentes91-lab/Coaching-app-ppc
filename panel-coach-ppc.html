@@ -1383,6 +1383,7 @@ function cargar(a){
     $("#semAviso").textContent = a.ini_f ? "Hoy: "+semanaHoy(a.ini_f) : "";
     pintarMesocicloCalendario();
     pintarBloques(); _postBloques();
+    pintarLista($("#buscar").value);
     toast("Datos actualizados desde la nube");
    }
    if(_btnGuardar){ _btnGuardar.disabled = false; _btnGuardar.textContent = "Guardar cambios"; }
