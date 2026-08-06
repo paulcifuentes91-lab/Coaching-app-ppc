@@ -190,6 +190,13 @@ def main():
             app_html = app_html.replace(ph, "'" + fb_id_valor + "'", 1)
             reemplazado = True
             break
+    # Reemplazar tambien el nombre de ejemplo en titulo/encabezado/config
+    app_html = app_html.replace(
+        "<title>Mesociclo — Nuevo Atleta</title>", "<title>Mesociclo — " + nombre + "</title>", 1)
+    app_html = app_html.replace(
+        '<h1 id="headerName">Nuevo Atleta</h1>', '<h1 id="headerName">' + nombre + '</h1>', 1)
+    app_html = app_html.replace(
+        "nombre: 'Nuevo Atleta',", "nombre: '" + nombre + "',", 1)
     with open(destino_app, "w", encoding="utf-8") as f:
         f.write(app_html)
 
