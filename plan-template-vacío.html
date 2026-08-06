@@ -204,7 +204,6 @@
 <div id="trainingView" style="display: none;">
     <div class="stat-strip" id="statStrip" style="display:none"></div>
     <details class="accordion"><summary>Parámetros de entrenamiento</summary><div class="content" id="paramsContent"></div></details>
-    <div id="mealWindowRow"></div>
     <div style="padding: 20px;">
         <div style="text-align: center; color: var(--text-muted); padding: 40px;">
             <div style="font-size: 3rem; margin-bottom: 10px;">📝</div>
@@ -217,6 +216,17 @@
     </details>
   </div>
 
+  <div id="nutritionView" style="display:none">
+    <div class="week-banner" id="nutritionNotesBanner"></div>
+    <div class="card" id="macroCard" style="margin-top:12px"></div>
+    <div class="week-row" id="mealWindowRow"></div>
+    <main class="card" id="mealCard"></main>
+    <div class="card" id="mealHistoryCard" style="margin-top:12px"></div>
+    <details class="accordion" style="margin-top:14px">
+      <summary>Suplementación</summary>
+      <div class="content" id="supplementContent"></div>
+    </details>
+  </div>
   <div id="progressView" style="display:none">
     <div class="week-banner" id="progressBanner"></div>
     <div class="card" id="adherenceCard"></div>
