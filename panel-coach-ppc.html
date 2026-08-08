@@ -1192,6 +1192,32 @@ const SUSTITUTOS_EJ = {
  "Peso muerto convencional":"Peso muerto rumano", "Good morning":"Hiperextensiones",
  "Clean and press":"Thrusters con mancuernas", "Turkish get-up":"Kettlebell swing", "Sled push":"Burpees"
 };
+const EJERCICIOS_FUNCIONAL = [
+ ["Kettlebell swing","principal"],["TRX remo","principal"],["Battle ropes","accesorio"],
+ ["Farmer carry","principal"],["Sled push","principal"],["Sled pull","accesorio"],
+ ["Box step-up con peso","principal"],["Medicine ball slam","accesorio"],["Bear crawl","accesorio"],
+ ["Turkish get-up","principal"],["Plank walk-out","accesorio"],["Renegade row","principal"],
+ ["Sandbag carry","accesorio"],["TRX push-up","accesorio"],["Landmine rotation","accesorio"],
+ ["Kettlebell goblet squat","principal"],["Battle ropes ondas alternas","accesorio"]
+];
+const EJERCICIOS_CROSSFIT = [
+ ["Thruster","principal"],["Wall ball","principal"],["Box jump","accesorio"],
+ ["Double unders","accesorio"],["Kipping pull-up","principal"],["Toes to bar","accesorio"],
+ ["Burpee","principal"],["Peso muerto crossfit","principal"],["Push press","principal"],
+ ["Air squat","accesorio"],["Row en máquina (erg)","accesorio"],["Devil press","principal"],
+ ["Sumo deadlift high pull","principal"],["Clean","principal"],["Snatch con barra vacía","principal"],
+ ["Handstand push-up asistido","accesorio"]
+];
+function generarCircuito(pool, semilla, seriesSesion){
+ const totalMov = Math.max(4, Math.min(8, Math.round((seriesSesion||20)/3)));
+ const filas = [];
+ for(let k=0;k<totalMov;k++){
+  const idx = (semilla + k) % pool.length;
+  const par = pool[idx];
+  filas.push([par[0], "4 X 12-15 o AMRAP", par[1], "Estilo circuito - ajustar carga/tiempo según capacidad"]);
+ }
+ return filas;
+}
 const TIPOS_DIA = {
  "Cuerpo completo":"cuadriceps,espalda,pecho,hombro,core",
  "Piernas":"cuadriceps,femoral,gluteo,pantorrilla",
