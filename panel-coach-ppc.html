@@ -2437,7 +2437,7 @@ const ASIS = {
   const g = this.gasto(d.peso,d.altura,d.edad,d.sexo,d.act);
   const kcal = Math.round(g.tdee*obj.kcal);
   const protG = Math.round(d.peso*((obj.prot[0]+obj.prot[1])/2));
-  const grasaG = Math.round(d.peso*(d.objetivo==="definicion"||d.objetivo==="competicion"?0.8:1.0));
+  const grasaG = Math.round(d.peso*(d.objetivo==="definicion"||d.objetivo==="competicion"?0.8:1.0)*(d.sexo==="f"?1.15:1.0));
   const carbG = Math.max(0, Math.round((kcal - protG*4 - grasaG*9)/4));
   const seriesSesion = Math.round((vmin+vmax)/2 * (d.dias>=5?2.2:d.dias===4?2.6:3.2) / 1);
   const cap = d.edad>=60?22 : d.nivel==="avanzado"&&d.sexo==="m"?34 : d.nivel==="avanzado"?32 : 30;
@@ -3273,7 +3273,7 @@ function generarDieta(cfg){
  /* cfg: {peso, tdee, ajuste(%), comidas, protKg, excluir[]} */
  const kcal = Math.round(cfg.tdee * (1 + cfg.ajuste/100));
  const protG = Math.round(cfg.peso * cfg.protKg);
- const grasaG = Math.round(cfg.peso * (cfg.ajuste < -15 ? 0.8 : 1.0));
+ const grasaG = Math.round(cfg.peso * (cfg.ajuste < -15 ? 0.8 : 1.0) * (cfg.sexo==="f" ? 1.15 : 1.0));
  let carbG = Math.round((kcal - protG*4 - grasaG*9)/4);
  if(carbG < 40) carbG = 40;
  const kcalReal = protG*4 + carbG*4 + grasaG*9;
@@ -3347,7 +3347,7 @@ document.addEventListener("click", e=>{
   const peso = +$("#gnPeso").value, tdee = +$("#gnTdee").value;
   if(!peso || !tdee){ toast("Necesito el peso y las calorías de mantenimiento"); return; }
   const cfgBase = { peso, tdee, ajuste:+$("#gnAjuste").value, comidas:+$("#gnComidas").value,
-    protKg:+$("#gnProt").value };
+    protKg:+$("#gnProt").value, sexo: document.getElementById("asSexo")?.value || "m" };
   const _excRaw = ($("#gnExcluir").value||"").split("|");
   cfgBase.excluir = _excRaw[0].split(",").filter(Boolean);
   cfgBase.dieta = _excRaw[1] || "";
