@@ -1237,7 +1237,16 @@ const TIPOS_DIA = {
  "Cuádriceps y pantorrilla":"cuadriceps,pantorrilla",
  "Core y cardio":"core,cardio"
 };
-function generarEjercicios(gruposStr, semilla, nivel, objetivo, seriesSesion){
+function calcularProgresion(seriesBase, modelo){
+ const m = modelo || "lineal";
+ let s2, s3, s4;
+ const s1 = seriesBase;
+ if(m==="ondulante"){ s2=Math.max(2,seriesBase-1); s3=seriesBase+2; s4=Math.max(2,Math.round(seriesBase*0.5)); }
+ else if(m==="escalonado"){ s2=seriesBase; s3=seriesBase+2; s4=Math.max(2,Math.round(seriesBase*0.5)); }
+ else { s2=seriesBase+1; s3=seriesBase+2; s4=Math.max(2,Math.round(seriesBase*0.5)); }
+ return "S1:"+s1+" · S2:"+s2+" · S3:"+s3+" · S4 descarga:"+s4;
+}
+function generarEjercicios(gruposStr, semilla, nivel, objetivo, seriesSesion, modelo){
  const grupos = (gruposStr||"").split(",").map(g=>g.trim()).filter(Boolean);
  /* Volumen real de la sesion (calculado por ASIS.generar segun nivel/edad/sexo/objetivo) repartido entre los grupos del dia */
  const totalSeries = seriesSesion || (nivel==="principiante"?14:nivel==="avanzado"?26:20);
@@ -1270,7 +1279,8 @@ function generarEjercicios(gruposStr, semilla, nivel, objetivo, seriesSesion){
    asignadas += seriesEj;
    const reps = tier==="principal" ? repsPrincipal : repsAccesorio;
    const sust = SUSTITUTOS_EJ[nombre];
-   filas.push([nombre, seriesEj+" X "+reps, tier, sust ? ("Alternativa: "+sust) : ""]);
+   const progresion = calcularProgresion(seriesEj, modelo);
+   filas.push([nombre, seriesEj+" X "+reps, tier, (sust?("Alternativa: "+sust+" · "):"")+"Progresión "+progresion]);
   }
  });
  if(!filas.length) filas.push(["", "4 X 10", "principal", ""]);
