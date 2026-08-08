@@ -1208,13 +1208,19 @@ const EJERCICIOS_CROSSFIT = [
  ["Sumo deadlift high pull","principal"],["Clean","principal"],["Snatch con barra vacía","principal"],
  ["Handstand push-up asistido","accesorio"]
 ];
-function generarCircuito(pool, semilla, seriesSesion){
+function generarCircuito(pool, semilla, seriesSesion, objetivo){
  const totalMov = Math.max(4, Math.min(8, Math.round((seriesSesion||20)/3)));
+ const REPS_CIRCUITO = {
+  fuerza_maxima:"3-5", fuerza:"4-6", definicion:"15-20", rehabilitacion:"12-20",
+  performance:"8-12", competicion:"8-12", hipertrofia:"10-12", longevidad:"10-15",
+  mantencion:"8-12", retorno:"10-15", salud:"10-15", recomposicion:"10-12"
+ };
+ const reps = REPS_CIRCUITO[objetivo] || "10-12";
  const filas = [];
  for(let k=0;k<totalMov;k++){
   const idx = (semilla + k) % pool.length;
   const par = pool[idx];
-  filas.push([par[0], "4 X 12-15 o AMRAP", par[1], "Estilo circuito - ajustar carga/tiempo según capacidad"]);
+  filas.push([par[0], "4 X "+reps+" o AMRAP", par[1], "Estilo circuito - ajustar carga/tiempo según capacidad"]);
  }
  return filas;
 }
@@ -1676,7 +1682,7 @@ async function renovarMesociclo(){
    const poolDisciplina = disciplina==="crossfit" ? EJERCICIOS_CROSSFIT : disciplina==="funcional" ? EJERCICIOS_FUNCIONAL : null;
    act.dias = filasDia.map((f,i)=>{
     const grupos = TIPOS_DIA[f.tipo] || "cuadriceps,espalda,pecho";
-    const ejEntrenamiento = poolDisciplina ? generarCircuito(poolDisciplina, i, r.seriesSesion) : generarEjercicios(grupos, i, nivel, objetivo, r.seriesSesion);
+    const ejEntrenamiento = poolDisciplina ? generarCircuito(poolDisciplina, i, r.seriesSesion, objetivo) : generarEjercicios(grupos, i, nivel, objetivo, r.seriesSesion);
     const etiquetaTipo = poolDisciplina ? (disciplina==="crossfit"?"WOD":"Circuito funcional") : f.tipo;
     return {n:`${f.dia} · ${etiquetaTipo}`,
      secs:[
