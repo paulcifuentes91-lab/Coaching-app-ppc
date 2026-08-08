@@ -1552,7 +1552,7 @@ async function renovarMesociclo(){
  const m = document.createElement("div");
  m.id = "renovarModal"; m.className = "modal on";
  m.innerHTML = `<div class="mbox" style="max-width:560px">
-   <div class="mtop2"><div><div class="t">Renovar mesociclo</div><div class="s">${act.n}</div></div>
+   <div class="mtop2"><div><div class="t">Renovar mesociclo de ${act.n}</div><div class="s">Estás editando su entrenamiento existente, no creando un atleta nuevo</div></div>
      <button class="cerrar" id="renovarCerrar">Cancelar</button></div>
    <div class="mbody">
     ${semanasRestantes!==null ? `<div class="anfila"><span class="anl">Semanas hasta la meta</span><span class="anv">${semanasRestantes}</span></div>` : `<div class="v7vacio" style="margin-bottom:12px">Sin fecha meta definida - sugerencia por defecto: Volumen</div>`}
