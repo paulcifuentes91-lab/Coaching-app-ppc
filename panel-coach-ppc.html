@@ -1258,7 +1258,8 @@ function generarEjercicios(gruposStr, semilla, nivel, objetivo, seriesSesion){
   const lista = EJERCICIOS[g];
   if(!lista || !lista.length) return;
   /* ~3 a 4 series efectivas por ejercicio es lo razonable antes de sumar otro movimiento */
-  const nEj = Math.max(1, Math.min(lista.length, Math.round(seriesPorGrupo/3.5)));
+  const _maxEjDia = nivel==="avanzado" ? 8 : nivel==="principiante" ? 5 : 6;
+  const nEj = Math.max(1, Math.min(lista.length, Math.max(1, Math.floor(_maxEjDia / Math.max(1,grupos.length)))));
   let asignadas = 0;
   for(let k=0;k<nEj;k++){
    const idx = (semilla + gi + k) % lista.length;
