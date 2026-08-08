@@ -1647,6 +1647,11 @@ async function renovarMesociclo(){
       <option value="crossfit">CrossFit</option>
       <option value="funcional">Funcional</option>
      </select></label>
+     <label><span class="lb">Modelo de progresión</span><select class="in" id="renovarModelo">
+      <option value="lineal">Lineal (sube cada semana)</option>
+      <option value="ondulante">Ondulante (alterna alto/bajo)</option>
+      <option value="escalonado">Escalonado (2 sem. iguales, luego sube)</option>
+     </select></label>
     </div>
     <div class="lb" style="margin-bottom:6px">Días de la semana (elige tipo o "Descanso")</div>
     <div id="renovarGrillaDias" style="margin-bottom:12px">
@@ -1693,7 +1698,8 @@ async function renovarMesociclo(){
    const poolDisciplina = disciplina==="crossfit" ? EJERCICIOS_CROSSFIT : disciplina==="funcional" ? EJERCICIOS_FUNCIONAL : null;
    act.dias = filasDia.map((f,i)=>{
     const grupos = TIPOS_DIA[f.tipo] || "cuadriceps,espalda,pecho";
-    const ejEntrenamiento = poolDisciplina ? generarCircuito(poolDisciplina, i, r.seriesSesion, objetivo) : generarEjercicios(grupos, i, nivel, objetivo, r.seriesSesion);
+    const modelo = document.getElementById("renovarModelo")?.value || "lineal";
+    const ejEntrenamiento = poolDisciplina ? generarCircuito(poolDisciplina, i, r.seriesSesion, objetivo) : generarEjercicios(grupos, i, nivel, objetivo, r.seriesSesion, modelo);
     const etiquetaTipo = poolDisciplina ? (disciplina==="crossfit"?"WOD":"Circuito funcional") : f.tipo;
     return {n:`${f.dia} · ${etiquetaTipo}`,
      secs:[
