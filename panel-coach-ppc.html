@@ -1210,8 +1210,17 @@ function generarEjercicios(gruposStr, semilla, nivel, objetivo, seriesSesion){
  /* Volumen real de la sesion (calculado por ASIS.generar segun nivel/edad/sexo/objetivo) repartido entre los grupos del dia */
  const totalSeries = seriesSesion || (nivel==="principiante"?14:nivel==="avanzado"?26:20);
  const seriesPorGrupo = grupos.length ? totalSeries/grupos.length : totalSeries;
- const repsPrincipal = objetivo==="fuerza" ? "5-6" : objetivo==="definicion" ? "12-15" : "8-10";
- const repsAccesorio = objetivo==="fuerza" ? "8-10" : objetivo==="definicion" ? "15-20" : "12-15";
+ const REPS_POR_OBJETIVO = {
+  fuerza:["4-6","8-10"], fuerza_maxima:["3-5","6-8"],
+  definicion:["12-15","15-20"], competicion:["8-12","12-15"],
+  hipertrofia:["8-10","12-15"], performance:["8-12","15-20"],
+  longevidad:["10-15","12-15"], rehabilitacion:["12-20","15-20"],
+  mantencion:["8-12","10-12"], retorno:["10-15","12-15"],
+  salud:["10-15","12-15"], recomposicion:["8-12","12-15"]
+ };
+ const _repsPar = REPS_POR_OBJETIVO[objetivo] || ["8-10","12-15"];
+ const repsPrincipal = _repsPar[0];
+ const repsAccesorio = _repsPar[1];
  const filas = [];
  grupos.forEach((g, gi)=>{
   const lista = EJERCICIOS[g];
