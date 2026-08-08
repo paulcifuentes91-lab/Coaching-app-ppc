@@ -1279,8 +1279,7 @@ function generarEjercicios(gruposStr, semilla, nivel, objetivo, seriesSesion, mo
    asignadas += seriesEj;
    const reps = tier==="principal" ? repsPrincipal : repsAccesorio;
    const sust = SUSTITUTOS_EJ[nombre];
-   const progresion = calcularProgresion(seriesEj, modelo);
-   filas.push([nombre, seriesEj+" X "+reps, tier, (sust?("Alternativa: "+sust+" · "):"")+"Progresión "+progresion]);
+   filas.push([nombre, seriesEj+" X "+reps, tier, sust ? ("Alternativa: "+sust) : ""]);
   }
  });
  if(!filas.length) filas.push(["", "4 X 10", "principal", ""]);
