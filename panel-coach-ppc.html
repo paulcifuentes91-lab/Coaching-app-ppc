@@ -739,7 +739,8 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
     </div>
     <div class="sec"><div class="st">Vista de calendario
       <button class="dx" id="verHistorialBtn" style="float:right;font-size:12px">Ver historial de cambios</button>
-      <button class="add" id="renovarMesoBtn" style="float:right;font-size:12px;margin-right:8px">Renovar mesociclo</button></div>
+      <button class="add" id="renovarMesoBtn" style="float:right;font-size:12px;margin-right:8px">Renovar mesociclo</button>
+      <button class="add" id="abrirCalculadoraBtn" style="float:right;font-size:12px;margin-right:8px">Calculadora</button></div>
       <div id="mesoCal"></div>
     </div>
     <div class="guardar"><button class="sv" data-save>Guardar cambios</button><span class="ok">Guardado ✓</span>
@@ -1589,6 +1590,19 @@ async function renovarMesociclo(){
  };
 }
 document.addEventListener("click", e=>{ if(e.target.id==="renovarMesoBtn") renovarMesociclo(); });
+document.addEventListener("click", e=>{
+ if(e.target.id!=="abrirCalculadoraBtn" || !act) return;
+ document.getElementById("modal").classList.add("on");
+ document.querySelectorAll(".wp").forEach(x=>x.classList.remove("on"));
+ const w2 = document.getElementById("w2"); if(w2) w2.classList.add("on");
+ document.querySelectorAll(".pasos .p").forEach(p=>p.classList.toggle("on", p.dataset.w==="w2"));
+ setTimeout(()=>{
+  if(act.edad) document.getElementById("asEdad").value = act.edad;
+  if(act.est) document.getElementById("asAltura").value = String(act.est).replace(/[^0-9.,]/g,"").replace(",",".");
+  const hUlt = (act.hist||[])[0]; if(hUlt) document.getElementById("asPeso").value = hUlt[1];
+  toast("Calculadora abierta para "+act.n);
+ },100);
+});
 
 /* ═══════════ ENTRENAMIENTO ═══════════ */
 function filaEj(e){
