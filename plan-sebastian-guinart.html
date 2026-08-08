@@ -791,8 +791,9 @@ function trainHistoryByDay(){
     if(!checks[k]) return;
     const date = k.slice(0,10);
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) return; // ignora claves del formato antiguo por semana
-    const rest = k.slice(11); // "dia-1-s-i"
-    const dayId = rest.split('-').slice(0,2).join('-');
+    const rest = k.slice(11); // "w{semana}-dia-1-s-i"
+    const partes = rest.split('-');
+    const dayId = partes.slice(1,3).join('-');
     if(!perDate[date]) perDate[date] = {};
     perDate[date][dayId] = (perDate[date][dayId]||0) + 1;
   });
