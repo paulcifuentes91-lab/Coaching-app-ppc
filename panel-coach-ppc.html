@@ -1192,6 +1192,19 @@ const SUSTITUTOS_EJ = {
  "Peso muerto convencional":"Peso muerto rumano", "Good morning":"Hiperextensiones",
  "Clean and press":"Thrusters con mancuernas", "Turkish get-up":"Kettlebell swing", "Sled push":"Burpees"
 };
+const TIPOS_DIA = {
+ "Cuerpo completo":"cuadriceps,espalda,pecho,hombro,core",
+ "Piernas":"cuadriceps,femoral,gluteo,pantorrilla",
+ "Tren superior":"pecho,espalda,hombro,biceps,triceps",
+ "Empuje":"pecho,hombro,triceps",
+ "Tracción":"espalda,biceps",
+ "Pecho y tríceps":"pecho,triceps",
+ "Espalda y bíceps":"espalda,biceps",
+ "Hombro y brazos":"hombro,biceps,triceps",
+ "Glúteo y femoral":"gluteo,femoral,lumbar",
+ "Cuádriceps y pantorrilla":"cuadriceps,pantorrilla",
+ "Core y cardio":"core,cardio"
+};
 function generarEjercicios(gruposStr, semilla, nivel, objetivo, seriesSesion){
  const grupos = (gruposStr||"").split(",").map(g=>g.trim()).filter(Boolean);
  /* Volumen real de la sesion (calculado por ASIS.generar segun nivel/edad/sexo/objetivo) repartido entre los grupos del dia */
@@ -1562,15 +1575,14 @@ async function renovarMesociclo(){
       <option value="Definición" ${faseSugerida==="Definición"?"selected":""}>Definición</option>
       <option value="Peak week" ${faseSugerida==="Peak week"?"selected":""}>Peak week</option>
       <option value="Transición">Transición / descanso activo</option>
+      <option value="Performance">Performance</option>
+      <option value="Longevidad">Longevidad</option>
+      <option value="Rehabilitación">Rehabilitación</option>
+      <option value="Fuerza máxima">Fuerza máxima</option>
+      <option value="Mantención">Mantención</option>
+      <option value="Retorno post-pausa">Retorno post-pausa</option>
      </select></label>
     <div class="campos" style="margin-bottom:12px">
-     <label><span class="lb">Días por semana</span><select class="in" id="renovarDias">
-      <option value="2" ${diasActuales===2?"selected":""}>2 días</option>
-      <option value="3" ${diasActuales===3?"selected":""}>3 días</option>
-      <option value="4" ${diasActuales===4?"selected":""}>4 días</option>
-      <option value="5" ${diasActuales===5?"selected":""}>5 días</option>
-      <option value="6" ${diasActuales===6?"selected":""}>6 días</option>
-     </select></label>
      <label><span class="lb">Edad</span><input class="in mono" id="renovarEdad" type="number" value="${edadAct}"></label>
      <label><span class="lb">Sexo</span><select class="in" id="renovarSexo"><option value="m" ${sexoAct==="m"?"selected":""}>Hombre</option><option value="f" ${sexoAct==="f"?"selected":""}>Mujer</option></select></label>
      <label><span class="lb">Nivel</span><select class="in" id="renovarNivel">
@@ -1578,6 +1590,19 @@ async function renovarMesociclo(){
       <option value="intermedio" ${nivelAct==="intermedio"?"selected":""}>Intermedio</option>
       <option value="avanzado" ${nivelAct==="avanzado"?"selected":""}>Avanzado</option>
      </select></label>
+    </div>
+    <div class="lb" style="margin-bottom:6px">Días de la semana (elige tipo o "Descanso")</div>
+    <div id="renovarGrillaDias" style="margin-bottom:12px">
+     ${["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"].map((dia,di)=>{
+      const diaActualNombre = (act.dias[di]?.n||"").split("·").pop().trim();
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+       <span style="width:80px;font-size:12.5px;color:var(--mu)">${dia}</span>
+       <select class="in" data-tipo-dia="${dia}" style="flex:1;font-size:12.5px">
+        <option value="">Descanso</option>
+        ${Object.keys(TIPOS_DIA).map(t=>`<option value="${t}" ${diaActualNombre===t?"selected":""}>${t}</option>`).join("")}
+       </select>
+      </div>`;
+     }).join("")}
     </div>
     <div class="v7vacio" style="margin-bottom:12px">Se va a regenerar el split y los ejercicios completos según estos parámetros.</div>
     <label style="display:block;margin-bottom:14px"><span class="lb">¿Qué cambia este bloque?</span>
@@ -1589,33 +1614,36 @@ async function renovarMesociclo(){
  document.getElementById("renovarConfirmar").onclick = async ()=>{
   const fase = document.getElementById("renovarFase").value;
   const nota = document.getElementById("renovarNota").value;
-  const nDias = +document.getElementById("renovarDias").value;
   const edad = +document.getElementById("renovarEdad").value || 30;
   const sexo = document.getElementById("renovarSexo").value;
   const nivel = document.getElementById("renovarNivel").value;
-  const objetivoMapa = {"Volumen":"hipertrofia","Definición":"definicion","Peak week":"competicion","Transición":"salud"};
+  const objetivoMapa = {
+   "Volumen":"hipertrofia","Definición":"definicion","Peak week":"competicion","Transición":"salud",
+   "Performance":"performance","Longevidad":"longevidad","Rehabilitación":"rehabilitacion",
+   "Fuerza máxima":"fuerza_maxima","Mantención":"mantencion","Retorno post-pausa":"retorno"
+  };
   const objetivo = objetivoMapa[fase] || "hipertrofia";
   const hoy = new Date().toISOString().slice(0,10);
   act.sem = 4;
   const semDias = 28;
   const nuevoChk = new Date(Date.now()+semDias*86400000).toISOString().slice(0,10);
   act.ini_f = hoy; act.chk = nuevoChk;
-  const diasActualesN = (act.dias||[]).length;
-  const cambioDias = nDias !== diasActualesN;
-  if(cambioDias){
-   const split = ASIS.splits[nDias] || ASIS.splits[4];
+  const filasDia = [...document.querySelectorAll("[data-tipo-dia]")].map(sel=>({dia:sel.dataset.tipoDia, tipo:sel.value})).filter(f=>f.tipo);
+  if(filasDia.length){
    const r = ASIS.generar({peso:(act.hist&&act.hist[0]&&+String(act.hist[0][1]).replace(",",".")) || 75,
-    altura:+String(act.est||170).replace(/[^0-9.]/g,"")||170, edad, sexo, act:"moderado", nivel, objetivo, dias:nDias});
-   act.dias = split.map((s,i)=>({n:`Día ${i+1} · ${s[0]}`,
-    secs:[
-     {n:"Calentamiento",ej:[["Movilidad articular general","5 a 10 min","accesorio",""],
-          ["Activación de "+s[1].split(",").map(x=>GRUPO_LB[x]||x).join(", "),"2 a 3 min","accesorio","Series livianas de aproximación"]]},
-     {n:"Entrenamiento",ej: generarEjercicios(s[1], i, nivel, objetivo, r.seriesSesion)},
-     {n:"Estiramiento",ej:[["Elongación de "+s[1].split(",").map(x=>GRUPO_LB[x]||x).join(", "),"5 a 8 min","accesorio",""]]},
-     {n:"Cardio",ej:[["Caminata en cinta LISS","30 min","accesorio",r.obj.cardio]]}
-    ]}));
+    altura:+String(act.est||170).replace(/[^0-9.]/g,"")||170, edad, sexo, act:"moderado", nivel, objetivo, dias:filasDia.length});
+   act.dias = filasDia.map((f,i)=>{
+    const grupos = TIPOS_DIA[f.tipo] || "cuadriceps,espalda,pecho";
+    return {n:`${f.dia} · ${f.tipo}`,
+     secs:[
+      {n:"Calentamiento",ej:[["Movilidad articular general","5 a 10 min","accesorio",""],
+           ["Activación de "+grupos.split(",").map(x=>GRUPO_LB[x]||x).join(", "),"2 a 3 min","accesorio","Series livianas de aproximación"]]},
+      {n:"Entrenamiento",ej: generarEjercicios(grupos, i, nivel, objetivo, r.seriesSesion)},
+      {n:"Estiramiento",ej:[["Elongación de "+grupos.split(",").map(x=>GRUPO_LB[x]||x).join(", "),"5 a 8 min","accesorio",""]]},
+      {n:"Cardio",ej:[["Caminata en cinta LISS","30 min","accesorio",r.obj.cardio]]}
+     ]};
+   });
   }
-  // si no cambio la cantidad de dias, se respeta el orden y la estructura que ya tenia - no se toca act.dias
   pintarDias();
   const elFIni = document.getElementById("fIni"); if(elFIni) elFIni.value = hoy;
   const elFChk = document.getElementById("fChk"); if(elFChk) elFChk.value = nuevoChk;
