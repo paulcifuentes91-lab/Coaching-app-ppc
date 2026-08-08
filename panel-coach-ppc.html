@@ -779,7 +779,8 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
         <label><span class="lb">Vigencia de la pauta</span><input class="in" id="nVig" placeholder="20-07 al 22-08"></label>
       </div></div>
     <div class="sec gensec"><div class="st">Generar dieta automáticamente
-        <span class="aux">calcula los gramos para que cuadren con el objetivo</span></div>
+        <span class="aux">calcula los gramos para que cuadren con el objetivo</span>
+        <button class="add" id="abrirCalculadoraBtn2" style="float:right;font-size:12px">Calculadora</button></div>
       <div class="campos">
         <label><span class="lb">Peso del atleta kg</span><input class="in mono" id="gnPeso" type="number" step="0.1"></label>
         <label><span class="lb">Calorías de mantenimiento</span><input class="in mono" id="gnTdee" type="number" placeholder="2400"></label>
@@ -1591,7 +1592,7 @@ async function renovarMesociclo(){
 }
 document.addEventListener("click", e=>{ if(e.target.id==="renovarMesoBtn") renovarMesociclo(); });
 document.addEventListener("click", e=>{
- if(e.target.id!=="abrirCalculadoraBtn" || !act) return;
+ if((e.target.id!=="abrirCalculadoraBtn" && e.target.id!=="abrirCalculadoraBtn2") || !act) return;
  document.getElementById("modal").classList.add("on");
  document.querySelectorAll(".wp").forEach(x=>x.classList.remove("on"));
  const w2 = document.getElementById("w2"); if(w2) w2.classList.add("on");
