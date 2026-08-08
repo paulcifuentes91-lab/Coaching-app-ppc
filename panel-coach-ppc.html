@@ -1600,17 +1600,22 @@ async function renovarMesociclo(){
   const semDias = 28;
   const nuevoChk = new Date(Date.now()+semDias*86400000).toISOString().slice(0,10);
   act.ini_f = hoy; act.chk = nuevoChk;
-  const split = ASIS.splits[nDias] || ASIS.splits[4];
-  const r = ASIS.generar({peso:(act.hist&&act.hist[0]&&+String(act.hist[0][1]).replace(",",".")) || 75,
-   altura:+String(act.est||170).replace(/[^0-9.]/g,"")||170, edad, sexo, act:"moderado", nivel, objetivo, dias:nDias});
-  act.dias = split.map((s,i)=>({n:`Día ${i+1} · ${s[0]}`,
-   secs:[
-    {n:"Calentamiento",ej:[["Movilidad articular general","5 a 10 min","accesorio",""],
-         ["Activación de "+s[1].split(",").map(x=>GRUPO_LB[x]||x).join(", "),"2 a 3 min","accesorio","Series livianas de aproximación"]]},
-    {n:"Entrenamiento",ej: generarEjercicios(s[1], i, nivel, objetivo, r.seriesSesion)},
-    {n:"Estiramiento",ej:[["Elongación de "+s[1].split(",").map(x=>GRUPO_LB[x]||x).join(", "),"5 a 8 min","accesorio",""]]},
-    {n:"Cardio",ej:[["Caminata en cinta LISS","30 min","accesorio",r.obj.cardio]]}
-   ]}));
+  const diasActualesN = (act.dias||[]).length;
+  const cambioDias = nDias !== diasActualesN;
+  if(cambioDias){
+   const split = ASIS.splits[nDias] || ASIS.splits[4];
+   const r = ASIS.generar({peso:(act.hist&&act.hist[0]&&+String(act.hist[0][1]).replace(",",".")) || 75,
+    altura:+String(act.est||170).replace(/[^0-9.]/g,"")||170, edad, sexo, act:"moderado", nivel, objetivo, dias:nDias});
+   act.dias = split.map((s,i)=>({n:`Día ${i+1} · ${s[0]}`,
+    secs:[
+     {n:"Calentamiento",ej:[["Movilidad articular general","5 a 10 min","accesorio",""],
+          ["Activación de "+s[1].split(",").map(x=>GRUPO_LB[x]||x).join(", "),"2 a 3 min","accesorio","Series livianas de aproximación"]]},
+     {n:"Entrenamiento",ej: generarEjercicios(s[1], i, nivel, objetivo, r.seriesSesion)},
+     {n:"Estiramiento",ej:[["Elongación de "+s[1].split(",").map(x=>GRUPO_LB[x]||x).join(", "),"5 a 8 min","accesorio",""]]},
+     {n:"Cardio",ej:[["Caminata en cinta LISS","30 min","accesorio",r.obj.cardio]]}
+    ]}));
+  }
+  // si no cambio la cantidad de dias, se respeta el orden y la estructura que ya tenia - no se toca act.dias
   pintarDias();
   const elFIni = document.getElementById("fIni"); if(elFIni) elFIni.value = hoy;
   const elFChk = document.getElementById("fChk"); if(elFChk) elFChk.value = nuevoChk;
