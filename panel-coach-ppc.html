@@ -1625,6 +1625,11 @@ async function renovarMesociclo(){
       <option value="intermedio" ${nivelAct==="intermedio"?"selected":""}>Intermedio</option>
       <option value="avanzado" ${nivelAct==="avanzado"?"selected":""}>Avanzado</option>
      </select></label>
+     <label><span class="lb">Disciplina</span><select class="in" id="renovarDisciplina">
+      <option value="fisicoculturismo">Fisicoculturismo</option>
+      <option value="crossfit">CrossFit</option>
+      <option value="funcional">Funcional</option>
+     </select></label>
     </div>
     <div class="lb" style="margin-bottom:6px">Días de la semana (elige tipo o "Descanso")</div>
     <div id="renovarGrillaDias" style="margin-bottom:12px">
@@ -1663,19 +1668,23 @@ async function renovarMesociclo(){
   const semDias = 28;
   const nuevoChk = new Date(Date.now()+semDias*86400000).toISOString().slice(0,10);
   act.ini_f = hoy; act.chk = nuevoChk;
+  const disciplina = document.getElementById("renovarDisciplina")?.value || "fisicoculturismo";
   const filasDia = [...document.querySelectorAll("[data-tipo-dia]")].map(sel=>({dia:sel.dataset.tipoDia, tipo:sel.value})).filter(f=>f.tipo);
   if(filasDia.length){
    const r = ASIS.generar({peso:(act.hist&&act.hist[0]&&+String(act.hist[0][1]).replace(",",".")) || 75,
     altura:+String(act.est||170).replace(/[^0-9.]/g,"")||170, edad, sexo, act:"moderado", nivel, objetivo, dias:filasDia.length});
+   const poolDisciplina = disciplina==="crossfit" ? EJERCICIOS_CROSSFIT : disciplina==="funcional" ? EJERCICIOS_FUNCIONAL : null;
    act.dias = filasDia.map((f,i)=>{
     const grupos = TIPOS_DIA[f.tipo] || "cuadriceps,espalda,pecho";
-    return {n:`${f.dia} · ${f.tipo}`,
+    const ejEntrenamiento = poolDisciplina ? generarCircuito(poolDisciplina, i, r.seriesSesion) : generarEjercicios(grupos, i, nivel, objetivo, r.seriesSesion);
+    const etiquetaTipo = poolDisciplina ? (disciplina==="crossfit"?"WOD":"Circuito funcional") : f.tipo;
+    return {n:`${f.dia} · ${etiquetaTipo}`,
      secs:[
       {n:"Calentamiento",ej:[["Movilidad articular general","5 a 10 min","accesorio",""],
-           ["Activación de "+grupos.split(",").map(x=>GRUPO_LB[x]||x).join(", "),"2 a 3 min","accesorio","Series livianas de aproximación"]]},
-      {n:"Entrenamiento",ej: generarEjercicios(grupos, i, nivel, objetivo, r.seriesSesion)},
-      {n:"Estiramiento",ej:[["Elongación de "+grupos.split(",").map(x=>GRUPO_LB[x]||x).join(", "),"5 a 8 min","accesorio",""]]},
-      {n:"Cardio",ej:[["Caminata en cinta LISS","30 min","accesorio",r.obj.cardio]]}
+           ["Activación general","2 a 3 min","accesorio","Series livianas de aproximación"]]},
+      {n:"Entrenamiento",ej: ejEntrenamiento},
+      {n:"Estiramiento",ej:[["Elongación general","5 a 8 min","accesorio",""]]},
+      {n:"Cardio",ej: poolDisciplina ? [] : [["Caminata en cinta LISS","30 min","accesorio",r.obj.cardio]]}
      ]};
    });
   }
