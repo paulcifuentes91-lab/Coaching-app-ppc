@@ -1617,7 +1617,7 @@ async function renovarMesociclo(){
  }
  const diasActuales = (act.dias||[]).length || 4;
  const edadAct = document.getElementById("asEdad")?.value || act.edad || "";
- const sexoAct = document.getElementById("asSexo")?.value || "m";
+ const sexoAct = act.sexo || document.getElementById("asSexo")?.value || "m";
  const nivelAct = document.getElementById("asNivel")?.value || "intermedio";
  const objAct = document.getElementById("asObjetivo")?.value || "hipertrofia";
  document.getElementById("renovarModal")?.remove();
