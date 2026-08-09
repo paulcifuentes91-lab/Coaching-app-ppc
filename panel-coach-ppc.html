@@ -67,6 +67,10 @@ text-transform:uppercase;padding:10px 13px;cursor:pointer;border-bottom:2px soli
 @keyframes fade{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 
 .sec{background:rgba(255,255,255,.075);border:1px solid rgba(242,205,92,.22);border-top:1px solid rgba(255,255,255,.35);border-radius:16px;padding:17px 19px;margin-bottom:11px;backdrop-filter:blur(24px) saturate(170%);-webkit-backdrop-filter:blur(24px) saturate(170%);box-shadow:0 10px 34px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1px rgba(242,205,92,.05)}
+details.sec > summary.st{cursor:pointer;list-style:none}
+details.sec > summary.st::-webkit-details-marker{display:none}
+details.sec > summary.st::before{content:"▸";display:inline-block;margin-right:6px;transition:transform .15s;font-size:10px}
+details.sec[open] > summary.st::before{transform:rotate(90deg)}
 .st{font-family:var(--mono);font-size:9.5px;letter-spacing:1.3px;text-transform:uppercase;color:var(--gold);
 margin-bottom:13px;font-weight:500;display:flex;align-items:center;gap:9px}
 .st::after{content:'';flex:1;height:1px;background:var(--line)}
