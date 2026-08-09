@@ -1262,8 +1262,12 @@ function generarEjercicios(gruposStr, semilla, nivel, objetivo, seriesSesion, mo
   salud:["10-15","12-15"], recomposicion:["8-12","12-15"]
  };
  const _repsPar = REPS_POR_OBJETIVO[objetivo] || ["8-10","12-15"];
- const repsPrincipal = _repsPar[0];
- const repsAccesorio = _repsPar[1];
+ let repsPrincipal = _repsPar[0];
+ let repsAccesorio = _repsPar[1];
+ /* seguridad: principiante no deberia trabajar en rangos muy bajos de repeticiones (tecnica primero) */
+ if(nivel==="principiante" && (objetivo==="fuerza_maxima" || objetivo==="fuerza")){
+  repsPrincipal = "6-8"; repsAccesorio = "10-12";
+ }
  const filas = [];
  grupos.forEach((g, gi)=>{
   const lista = EJERCICIOS[g];
