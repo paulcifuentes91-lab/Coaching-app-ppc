@@ -1209,8 +1209,9 @@ const EJERCICIOS_CROSSFIT = [
  ["Sumo deadlift high pull","principal"],["Clean","principal"],["Snatch con barra vacía","principal"],
  ["Handstand push-up asistido","accesorio"]
 ];
-function generarCircuito(pool, semilla, seriesSesion, objetivo){
- const totalMov = Math.max(4, Math.min(8, Math.round((seriesSesion||20)/3)));
+function generarCircuito(pool, semilla, seriesSesion, objetivo, nivel){
+ const _maxCircuito = nivel==="avanzado" ? 8 : nivel==="principiante" ? 4 : 6;
+ const totalMov = Math.max(3, Math.min(_maxCircuito, Math.round((seriesSesion||20)/3)));
  const REPS_CIRCUITO = {
   fuerza_maxima:"3-5", fuerza:"4-6", definicion:"15-20", rehabilitacion:"12-20",
   performance:"8-12", competicion:"8-12", hipertrofia:"10-12", longevidad:"10-15",
@@ -1701,7 +1702,7 @@ async function renovarMesociclo(){
    act.dias = filasDia.map((f,i)=>{
     const grupos = TIPOS_DIA[f.tipo] || "cuadriceps,espalda,pecho";
     const modelo = document.getElementById("renovarModelo")?.value || "lineal";
-    const ejEntrenamiento = poolDisciplina ? generarCircuito(poolDisciplina, i, r.seriesSesion, objetivo) : generarEjercicios(grupos, i, nivel, objetivo, r.seriesSesion, modelo);
+    const ejEntrenamiento = poolDisciplina ? generarCircuito(poolDisciplina, i, r.seriesSesion, objetivo, nivel) : generarEjercicios(grupos, i, nivel, objetivo, r.seriesSesion, modelo);
     const etiquetaTipo = poolDisciplina ? (disciplina==="crossfit"?"WOD":"Circuito funcional") : f.tipo;
     return {n:`${f.dia} · ${etiquetaTipo}`,
      secs:[
