@@ -4093,6 +4093,7 @@ function pintarHome(){
  });
  alertas.sort((x,y)=>x.p-y.p);
  const cAt = document.getElementById("homeAtencion");
+ if(!cAt) return;
  cAt.innerHTML = alertas.length
   ? alertas.slice(0,8).map(al=>`
     <div class="hrowa p${al.p}" data-ir="${al.id}">
@@ -4106,6 +4107,7 @@ function pintarHome(){
  /* ── 2 · Anamnesis pendientes ── */
  const sinAn = ATLETAS.filter(a=>a.estado!=="pausa" && FB_ID[a.id] && !tieneAnamnesis(a.id));
  const cAn = document.getElementById("homeAnamnesis");
+ if(!cAn) return;
  if(!HOME.cargado){
   cAn.innerHTML = '<div class="hvacio">Consultando la nube...</div>';
  } else if(!sinAn.length){
@@ -4122,6 +4124,7 @@ function pintarHome(){
 
  /* ── 3 · Adherencia de la semana ── */
  const cAd = document.getElementById("homeAdherencia");
+ if(!cAd) return;
  const activos = ATLETAS.filter(a=>a.estado!=="pausa");
  if(!HOME.cargado){
   cAd.innerHTML = '<div class="hvacio">Consultando la nube...</div>';
