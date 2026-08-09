@@ -728,6 +728,7 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
          <option value="mantencion">Mantención</option>
          <option value="retorno">Retorno post-pausa</option>
         </select></label>
+        <label><span class="lb">Próxima revisión de suplementos</span><input class="in" type="date" id="fSupRevision"></label>
         <label><span class="lb">WhatsApp</span><input class="in mono" id="fWa" placeholder="+569..."></label>
       </div></div>
     <div class="sec"><div class="st">Calendario del bloque</div>
@@ -1425,6 +1426,7 @@ function cargar(a){
  $("#fSexo").value = a.sexo || "m";
  $("#fNivel").value = a.nivel || "intermedio";
  $("#fObjetivo").value = a.objetivoManual || "";
+ $("#fSupRevision").value = a.supRevision || "";
  const _asEdadField = document.getElementById("asEdad"); if(_asEdadField && a.edad) _asEdadField.value = a.edad;
  const _macro = a.macro || {};
  $("#fMacroTipo").value = _macro.tipo || "mantencion";
@@ -2880,7 +2882,8 @@ async function fbGuardarPlan(a){
   edad: document.getElementById("fEdad")?.value || a.edad || "",
   sexo: document.getElementById("fSexo")?.value || a.sexo || "m",
   nivel: document.getElementById("fNivel")?.value || a.nivel || "intermedio",
-  objetivoManual: document.getElementById("fObjetivo")?.value || ""
+  objetivoManual: document.getElementById("fObjetivo")?.value || "",
+  supRevision: document.getElementById("fSupRevision")?.value || ""
  };
 
  try{
