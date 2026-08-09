@@ -1761,6 +1761,19 @@ async function renovarMesociclo(){
 }
 document.addEventListener("click", e=>{ if(e.target.id==="renovarMesoBtn") renovarMesociclo(); });
 document.addEventListener("click", e=>{
+ if(!e.target.hasAttribute || !e.target.hasAttribute("data-dupbloq")) return;
+ const card = e.target.closest(".bloque");
+ if(!card) return;
+ const idx = +card.dataset.b;
+ if(isNaN(idx) || !act.nut.bloques[idx]) return;
+ const original = act.nut.bloques[idx];
+ const copia = JSON.parse(JSON.stringify(original));
+ copia.n = original.n + " (copia)";
+ act.nut.bloques.splice(idx+1, 0, copia);
+ pintarBloques(); _postBloques();
+ toast("Bloque duplicado · edítalo y guarda cambios");
+});
+document.addEventListener("click", e=>{
  if((e.target.id!=="abrirCalculadoraBtn" && e.target.id!=="abrirCalculadoraBtn2") || !act) return;
  document.getElementById("modal").classList.add("on");
  document.querySelectorAll(".wp").forEach(x=>x.classList.remove("on"));
@@ -3600,7 +3613,7 @@ document.addEventListener("click", e=>{
   }
   $("#bloques").insertAdjacentHTML("beforeend", `
    <div class="bloque"><div class="bh"><input class="bn" value="${nombre}" data-bnm>
-    <button class="dx" data-delbloq>Quitar bloque</button></div>
+    <button class="dx" data-dupbloq>Duplicar</button><button class="dx" data-delbloq>Quitar bloque</button></div>
     <div class="macros">
      <div class="mc2"><div class="ml">Proteína g</div><input class="mono" value="${r.real.p}" data-mp></div>
      <div class="mc2"><div class="ml">Carbos g</div><input class="mono" value="${r.real.c}" data-mc></div>
