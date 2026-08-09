@@ -611,8 +611,8 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
   </div>
 
   <div class="hgrid">
-   <div class="sec"><div class="st">Necesita tu atención</div><div id="homeAtencion"></div></div>
-   <div class="sec"><div class="st">Anamnesis pendientes</div><div id="homeAnamnesis"></div></div>
+   <details class="sec" open><summary class="st">Necesita tu atención</summary><div id="homeAtencion"></div></details>
+   <details class="sec"><summary class="st">Anamnesis pendientes</summary><div id="homeAnamnesis"></div></details>
   </div>
   <div class="sec" id="secProspectos" style="display:none">
    <div class="st">Nuevos interesados <span class="aux">llenaron la ficha sin ser aún tus atletas</span></div>
@@ -639,8 +639,8 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
    </div>
    <div class="seggrid" id="segGrid"><div class="segvacio">Consultando la nube...</div></div>
   </div>
-  <div class="sec"><div class="st">Adherencia de los últimos 7 días <span class="aux">días entrenados sobre los programados</span></div>
-   <div id="homeAdherencia"></div></div>
+  <details class="sec"><summary class="st">Adherencia de los últimos 7 días <span class="aux">días entrenados sobre los programados</span></summary>
+   <div id="homeAdherencia"></div></details>
  </div>
 
  <!-- ══ FICHA DEL ATLETA ══ -->
