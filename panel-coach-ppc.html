@@ -3955,7 +3955,9 @@ function irAtleta(a){
  document.getElementById("vistaInicio").style.display = "none";
  document.getElementById("vistaAtleta").style.display = "block";
  cargar(a);
- window.scrollTo({top:0,behavior:"smooth"});
+ window.scrollTo(0,0);
+ setTimeout(()=>window.scrollTo(0,0), 300);
+ setTimeout(()=>window.scrollTo(0,0), 1200);
 }
 
 /* Trae de Firebase lo que hace falta para la portada */
