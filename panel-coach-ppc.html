@@ -3955,9 +3955,14 @@ function irAtleta(a){
  document.getElementById("vistaInicio").style.display = "none";
  document.getElementById("vistaAtleta").style.display = "block";
  cargar(a);
- window.scrollTo(0,0);
- setTimeout(()=>window.scrollTo(0,0), 300);
- setTimeout(()=>window.scrollTo(0,0), 1200);
+ const _irArriba = ()=>{
+  const m = document.querySelector("main");
+  if(m && window.innerWidth <= 900) m.scrollIntoView({behavior:"auto", block:"start"});
+  else window.scrollTo(0,0);
+ };
+ _irArriba();
+ setTimeout(_irArriba, 300);
+ setTimeout(_irArriba, 1200);
 }
 
 /* Trae de Firebase lo que hace falta para la portada */
