@@ -4224,6 +4224,7 @@ function segPoblarFiltroAtletas(){
 }
 
 function pintarSeguimiento(){
+ if(!document.getElementById("segKTotal")) return;
  segPoblarFiltroAtletas();
  const grid = document.getElementById("segGrid");
  if(!grid) return;
