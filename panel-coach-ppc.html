@@ -798,10 +798,17 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
       </div></div>
     <div class="sec gensec"><div class="st">Generar dieta automáticamente
         <span class="aux">calcula los gramos para que cuadren con el objetivo</span>
-        <button class="add" id="abrirCalculadoraBtn2" style="float:right;font-size:12px">Calculadora</button></div>
+        </div>
       <div class="campos">
         <label><span class="lb">Peso del atleta kg</span><input class="in mono" id="gnPeso" type="number" step="0.1"></label>
-        <label><span class="lb">Calorías de mantenimiento</span><input class="in mono" id="gnTdee" type="number" placeholder="2400"></label>
+        <label><span class="lb">Calorías de mantenimiento</span><input class="in mono" id="gnTdee" type="number" placeholder="2400" readonly style="opacity:.75"></label>
+        <label><span class="lb">Edad</span><input class="in mono" id="gnEdad" type="number"></label>
+        <label><span class="lb">Sexo</span><select class="in" id="gnSexo"><option value="m">Hombre</option><option value="f">Mujer</option></select></label>
+        <label><span class="lb">Altura cm</span><input class="in mono" id="gnAltura" type="number"></label>
+        <label><span class="lb">Actividad</span><select class="in" id="gnActividad">
+         <option value="sed">Sedentario</option><option value="ligero">Ligero</option>
+         <option value="moderado" selected>Moderado</option><option value="intenso">Intenso</option><option value="muy">Muy intenso</option>
+        </select></label>
         <label><span class="lb">Ajuste</span><select class="in" id="gnAjuste">
           <option value="-30">Déficit 30%</option><option value="-25">Déficit 25%</option>
           <option value="-20" selected>Déficit 20%</option><option value="-15">Déficit 15%</option>
@@ -3638,7 +3645,24 @@ document.addEventListener("click", e=>{
  if(t && !$("#gnPeso").value){
   const h = (act.hist||[])[0];
   if(h) $("#gnPeso").value = String(h[1]).replace(",",".");
+  $("#gnEdad").value = act.edad || "";
+  $("#gnSexo").value = act.sexo || "m";
+  $("#gnAltura").value = String(act.est||"").replace(/[^0-9.]/g,"");
+  recalcularTdeeNutricion();
  }
+});
+function recalcularTdeeNutricion(){
+ const peso = +$("#gnPeso").value, edad = +$("#gnEdad").value, altura = +$("#gnAltura").value;
+ const sexo = $("#gnSexo").value, actividad = $("#gnActividad").value;
+ if(!peso || !edad || !altura) return;
+ const g = ASIS.gasto(peso, altura, edad, sexo, actividad);
+ $("#gnTdee").value = g.tdee;
+}
+document.addEventListener("input", e=>{
+ if(["gnPeso","gnEdad","gnAltura"].includes(e.target.id)) recalcularTdeeNutricion();
+});
+document.addEventListener("change", e=>{
+ if(["gnSexo","gnActividad"].includes(e.target.id)) recalcularTdeeNutricion();
 });
 
 /* ═══════════════ AJUSTE RÁPIDO DE DIETA ═══════════════
