@@ -3970,8 +3970,7 @@ function irAtleta(a){
   }
  };
  _irArriba();
- setTimeout(_irArriba, 300);
- setTimeout(_irArriba, 1200);
+ [100,300,600,1000,1500,2200,3000].forEach(ms=>setTimeout(_irArriba, ms));
 }
 
 /* Trae de Firebase lo que hace falta para la portada */
