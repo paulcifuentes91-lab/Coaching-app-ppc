@@ -3957,8 +3957,12 @@ function irAtleta(a){
  cargar(a);
  const _irArriba = ()=>{
   const m = document.querySelector("main");
-  if(m && window.innerWidth <= 900) m.scrollIntoView({behavior:"auto", block:"start"});
-  else window.scrollTo(0,0);
+  if(m && window.innerWidth <= 900){
+   const y = m.getBoundingClientRect().top + window.scrollY;
+   window.scrollTo({top:y, left:0, behavior:"instant"});
+  } else {
+   window.scrollTo({top:0, left:0, behavior:"instant"});
+  }
  };
  _irArriba();
  setTimeout(_irArriba, 300);
