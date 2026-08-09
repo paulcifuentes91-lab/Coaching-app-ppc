@@ -2930,7 +2930,9 @@ async function fbGuardarNutricion(a){
   ];
   const planFinal = Object.assign({}, planActual, { mealWindows: bloques, nutritionInfo, actualizado: new Date().toISOString() });
   const hist = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
-  hist.push({ fecha: new Date().toISOString(), tipo: "nutricion", resumen: bloques.length+" bloque(s) de dieta actualizados", snapshotMealWindows: bloques });
+  const _totP = bloques.reduce((s,b)=>s+(+b.p||0),0), _totC = bloques.reduce((s,b)=>s+(+b.c||0),0), _totG = bloques.reduce((s,b)=>s+(+b.g||0),0);
+  const _totKcal = _totP*4 + _totC*4 + _totG*9;
+  hist.push({ fecha: new Date().toISOString(), tipo: "nutricion", resumen: bloques.length+" bloque(s) · "+_totKcal+" kcal · "+_totP+"P/"+_totC+"C/"+_totG+"G", snapshotMealWindows: bloques });
   planFinal.historial = hist.slice(-30);
   await ref.set({ plan: planFinal }, { merge:true });
   return true;
