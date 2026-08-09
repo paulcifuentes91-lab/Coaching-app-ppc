@@ -715,6 +715,19 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
         <label><span class="lb">Edad</span><input class="in mono" id="fEdad" type="number" placeholder="34"></label>
         <label><span class="lb">Sexo</span><select class="in" id="fSexo"><option value="m">Hombre</option><option value="f">Mujer</option></select></label>
         <label><span class="lb">Nivel</span><select class="in" id="fNivel"><option value="principiante">Principiante</option><option value="intermedio">Intermedio</option><option value="avanzado">Avanzado</option></select></label>
+        <label><span class="lb">Objetivo de dieta</span><select class="in" id="fObjetivo">
+         <option value="">Automático (según categoría)</option>
+         <option value="hipertrofia">Hipertrofia</option>
+         <option value="definicion">Definición</option>
+         <option value="recomposicion">Recomposición</option>
+         <option value="fuerza">Fuerza</option>
+         <option value="competicion">Competición</option>
+         <option value="salud">Salud/longevidad</option>
+         <option value="performance">Performance</option>
+         <option value="rehabilitacion">Rehabilitación</option>
+         <option value="mantencion">Mantención</option>
+         <option value="retorno">Retorno post-pausa</option>
+        </select></label>
         <label><span class="lb">WhatsApp</span><input class="in mono" id="fWa" placeholder="+569..."></label>
       </div></div>
     <div class="sec"><div class="st">Calendario del bloque</div>
@@ -1411,6 +1424,7 @@ function cargar(a){
  $("#fEdad").value = a.edad || "";
  $("#fSexo").value = a.sexo || "m";
  $("#fNivel").value = a.nivel || "intermedio";
+ $("#fObjetivo").value = a.objetivoManual || "";
  const _asEdadField = document.getElementById("asEdad"); if(_asEdadField && a.edad) _asEdadField.value = a.edad;
  const _macro = a.macro || {};
  $("#fMacroTipo").value = _macro.tipo || "mantencion";
@@ -1438,6 +1452,7 @@ function cargar(a){
    if(c.edad && c.edad!==a.edad){ a.edad=c.edad; cambio=true; }
    if(c.sexo && c.sexo!==a.sexo){ a.sexo=c.sexo; cambio=true; }
    if(c.nivel && c.nivel!==a.nivel){ a.nivel=c.nivel; cambio=true; }
+   if(c.objetivoManual!==undefined && c.objetivoManual!==a.objetivoManual){ a.objetivoManual=c.objetivoManual; cambio=true; }
    const mw = p.mealWindows;
    if(Array.isArray(mw)){
     const bloquesReales = mw.map(function(x){
@@ -1454,7 +1469,7 @@ function cargar(a){
    }
    if(cambio){
     $("#fIni").value=a.ini_f; $("#fChk").value=a.chk; $("#fVence").value=a.vence;
-    $("#fEstado").value=a.estado; $("#fEst").value=a.est; $("#fNota").value=a.nota; $("#fTipoPlan").value=a.tipoPlan||"basico"; $("#fEdad").value=a.edad||""; $("#fSexo").value=a.sexo||"m"; $("#fNivel").value=a.nivel||"intermedio";
+    $("#fEstado").value=a.estado; $("#fEst").value=a.est; $("#fNota").value=a.nota; $("#fTipoPlan").value=a.tipoPlan||"basico"; $("#fEdad").value=a.edad||""; $("#fSexo").value=a.sexo||"m"; $("#fNivel").value=a.nivel||"intermedio"; $("#fObjetivo").value=a.objetivoManual||"";
     $("#semAviso").textContent = a.ini_f ? "Hoy: "+semanaHoy(a.ini_f) : "";
     pintarMesocicloCalendario();
     pintarBloques(); _postBloques();
@@ -2864,7 +2879,8 @@ async function fbGuardarPlan(a){
   tipoPlan: document.getElementById("fTipoPlan")?.value || a.tipoPlan || "basico",
   edad: document.getElementById("fEdad")?.value || a.edad || "",
   sexo: document.getElementById("fSexo")?.value || a.sexo || "m",
-  nivel: document.getElementById("fNivel")?.value || a.nivel || "intermedio"
+  nivel: document.getElementById("fNivel")?.value || a.nivel || "intermedio",
+  objetivoManual: document.getElementById("fObjetivo")?.value || ""
  };
 
  try{
