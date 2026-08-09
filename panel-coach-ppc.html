@@ -615,23 +615,22 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
   </div>
 
   <div class="hgrid">
-   <details class="sec"><summary class="st">Adherencia de los últimos 7 días <span class="aux">días entrenados sobre los programados</span></summary>
-   <div id="homeAdherencia"></div></details>
-  <details class="sec" id="secProspectos" style="display:none"><summary class="st">Nuevos interesados <span class="aux">llenaron la ficha sin ser aún tus atletas</span></summary>
+   <div class="sec"><div class="st">Necesita tu atención</div><div id="homeAtencion"></div></div>
+   <div class="sec"><div class="st">Anamnesis pendientes</div><div id="homeAnamnesis"></div></div>
+  </div>
+  <div class="sec" id="secProspectos" style="display:none">
+   <div class="st">Nuevos interesados <span class="aux">llenaron la ficha sin ser aún tus atletas</span></div>
    <div id="homeProspectos"></div>
-  </details>
-  <details class="sec" open><summary class="st">Necesita tu atención</summary><div id="homeAtencion"></div></details>
-  <details class="sec"><summary class="st">Anamnesis pendientes</summary><div id="homeAnamnesis"></div></details>
-  <details class="sec"><summary class="st">Seguimiento de anamnesis <span class="aux">estado de cada ficha, filtrable por atleta y estado</span></summary>
+  </div>
+  <div class="sec">
+   <div class="st">Seguimiento de anamnesis <span class="aux">estado de cada ficha, filtrable por atleta y estado</span></div>
    <div class="segkpis">
     <div class="segkpi tot"><b id="segKTotal">—</b><span>Total</span></div>
     <div class="segkpi pend"><b id="segKPend">—</b><span>Pendiente</span></div>
     <div class="segkpi rev"><b id="segKRev">—</b><span>En revisión</span></div>
     <div class="segkpi ok"><b id="segKOk">—</b><span>Completada</span></div>
-    <div class="segkpi prosp"><b id="segKProsp">—</b><span>Prospectos</span></div></details>
-  </div>
-  
-  
+    <div class="segkpi prosp"><b id="segKProsp">—</b><span>Prospectos</span></div>
+   </div>
    <div class="segfiltros">
     <select id="segFAtleta"><option value="">Todos los atletas</option></select>
     <select id="segFEstado">
@@ -644,7 +643,8 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
    </div>
    <div class="seggrid" id="segGrid"><div class="segvacio">Consultando la nube...</div></div>
   </div>
-  
+  <div class="sec"><div class="st">Adherencia de los últimos 7 días <span class="aux">días entrenados sobre los programados</span></div>
+   <div id="homeAdherencia"></div></div>
  </div>
 
  <!-- ══ FICHA DEL ATLETA ══ -->
