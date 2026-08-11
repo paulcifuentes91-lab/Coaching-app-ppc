@@ -1465,6 +1465,7 @@ function cargar(a){
    if(c.estatura && c.estatura!==a.est){ a.est=c.estatura; cambio=true; }
    if(c.nota!==undefined && c.nota!==a.nota){ a.nota=c.nota; cambio=true; }
    if(c.tipoPlan && c.tipoPlan!==a.tipoPlan){ a.tipoPlan=c.tipoPlan; cambio=true; }
+   pintarDiasLibres(snap.data().diasLibres || {});
    if(c.edad && c.edad!==a.edad){ a.edad=c.edad; cambio=true; }
    if(c.sexo && c.sexo!==a.sexo){ a.sexo=c.sexo; cambio=true; }
    if(c.nivel && c.nivel!==a.nivel){ a.nivel=c.nivel; cambio=true; }
@@ -1496,6 +1497,20 @@ function cargar(a){
    _btnsGuardar.forEach(b=>{ b.disabled = false; b.textContent = b.dataset.txtOriginal || "Guardar cambios"; });
   }).catch(()=>{ _btnsGuardar.forEach(b=>{ b.disabled = false; b.textContent = b.dataset.txtOriginal || "Guardar cambios"; }); });
  }
+}
+function pintarDiasLibres(diasLibres){
+ const box = document.getElementById("diasLibresCoach");
+ if(!box) return;
+ const fechas = Object.keys(diasLibres || {}).sort().reverse();
+ if(!fechas.length){ box.innerHTML = '<div class="v7vacio">Sin registros</div>'; return; }
+ box.innerHTML = fechas.slice(0,10).map(f=>{
+  const d = diasLibres[f];
+  const items = (d.items||[]).map(it=>it.nombre).join(", ");
+  const t = d.totales || {};
+  return `<div class="anfila"><span class="anl">${f}</span>
+    <span class="anv">${Math.round(t.kcal||0)} kcal · ${Math.round(t.p||0)}P/${Math.round(t.c||0)}C/${Math.round(t.g||0)}G<br>
+    <span style="color:var(--mu);font-size:11.5px">${items}</span></span></div>`;
+ }).join("");
 }
 function semanaHoy(ini){
  const d=Math.floor((new Date()-new Date(ini+"T12:00:00"))/864e5);
