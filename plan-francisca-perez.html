@@ -564,6 +564,102 @@ let exercisePRs = {};
 let _histSeedDone = false;
 let dataReady = false;
 
+const ALIM_LIBRE = {
+ "manzana":[52,0.3,14,0.2], "plátano":[89,1.1,23,0.3], "naranja":[47,0.9,12,0.1],
+ "sandía":[30,0.6,8,0.2], "uva":[69,0.7,18,0.2], "piña":[50,0.5,13,0.1],
+ "kiwi":[61,1.1,15,0.5], "mango":[60,0.8,15,0.4], "pera":[57,0.4,15,0.1], "durazno":[39,0.9,10,0.3],
+ "hamburguesa completa":[295,17,24,15], "pizza porción":[266,11,33,10],
+ "sushi roll (8 piezas)":[350,10,60,7], "ensalada césar con pollo":[350,25,12,22],
+ "pasta con salsa tomate":[220,8,40,3], "sándwich jamón y queso":[350,18,35,15],
+ "empanada de pino":[290,10,30,14], "completo italiano":[420,15,35,25],
+ "sopaipilla":[180,3,22,9], "taco de carne":[210,12,18,10],
+ "papas fritas porción":[365,4,48,17], "chocolate barra 30g":[160,2,17,9],
+ "helado 1 bocha":[137,2,17,7], "galletas dulces 4 unid":[190,2,28,8],
+ "yogurt griego natural":[100,10,4,5], "barra de cereal":[120,2,20,4],
+ "frutos secos mix 30g":[180,5,8,15], "palomitas de maíz":[120,3,20,4],
+ "jugo natural 250ml":[110,1,27,0.2], "bebida gaseosa 350ml":[150,0,39,0],
+ "café con leche":[60,3,6,2.5], "cerveza 350ml":[150,1.6,13,0], "vino copa 150ml":[125,0.1,4,0],
+ "arroz blanco cocido 1 taza":[205,4.3,45,0.4], "pollo a la plancha 150g":[248,46,0,5.4],
+ "pescado a la plancha 150g":[206,31,0,8], "huevo frito":[90,6,0.5,7], "pan hallulla":[220,6,42,3],
+ "palta media unidad":[120,1.5,6,11], "queso laminado 2 rebanadas":[140,10,1,11]
+};
+let diaLibreActual = { items: [], fecha: todayStr() };
+function abrirDiaLibre(){
+ diaLibreActual = { items: [], fecha: todayStr() };
+ document.getElementById("diaLibreModal")?.remove();
+ const m = document.createElement("div");
+ m.id = "diaLibreModal"; m.className = "modal on";
+ m.innerHTML = `<div class="card" style="max-width:500px;margin:40px auto;padding:20px">
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div style="font-weight:700;font-size:16px">✈️ Día libre / viaje</div>
+    <button id="dlCerrar" style="background:none;border:none;color:var(--tx);font-size:20px;cursor:pointer">✕</button>
+   </div>
+   <input id="dlBuscar" placeholder="Buscar alimento..." style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--tx);margin-bottom:8px">
+   <div id="dlResultados" style="max-height:160px;overflow-y:auto;margin-bottom:10px"></div>
+   <div style="font-weight:600;font-size:13px;margin-bottom:6px">Agregado hoy:</div>
+   <div id="dlLista" style="margin-bottom:10px"></div>
+   <div id="dlTotales" style="padding:10px;background:var(--card2);border-radius:8px;margin-bottom:12px;font-size:13px"></div>
+   <button id="dlGuardar" class="add" style="width:100%">Guardar registro del día</button>
+  </div>`;
+ document.body.appendChild(m);
+ document.getElementById("dlCerrar").onclick = ()=>m.remove();
+ document.getElementById("dlBuscar").oninput = e=>renderResultadosDiaLibre(e.target.value);
+ document.getElementById("dlGuardar").onclick = guardarDiaLibre;
+ renderListaDiaLibre();
+}
+function renderResultadosDiaLibre(query){
+ const box = document.getElementById("dlResultados");
+ if(!query || query.length < 2){ box.innerHTML = ""; return; }
+ const q = query.toLowerCase();
+ const matches = Object.keys(ALIM_LIBRE).filter(n=>n.toLowerCase().includes(q)).slice(0,8);
+ box.innerHTML = matches.map(n=>{
+  const [kcal,p,c,g] = ALIM_LIBRE[n];
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line)">
+    <span style="font-size:13px">${n} <span style="color:var(--mu);font-size:11px">(${kcal} kcal)</span></span>
+    <button class="dx" data-add-alim="${n}" style="font-size:11px">+ Agregar</button>
+   </div>`;
+ }).join("") || `<div style="color:var(--mu);font-size:12px;padding:6px">Sin resultados</div>`;
+ box.querySelectorAll("[data-add-alim]").forEach(btn=>{
+  btn.onclick = ()=>{
+   const nombre = btn.dataset.addAlim;
+   const [kcal,p,c,g] = ALIM_LIBRE[nombre];
+   diaLibreActual.items.push({nombre, kcal, p, c, g});
+   renderListaDiaLibre();
+   document.getElementById("dlBuscar").value = "";
+   box.innerHTML = "";
+  };
+ });
+}
+function renderListaDiaLibre(){
+ const box = document.getElementById("dlLista");
+ if(!diaLibreActual.items.length){
+  box.innerHTML = `<div style="color:var(--mu);font-size:12px">Nada agregado todavía</div>`;
+ } else {
+  box.innerHTML = diaLibreActual.items.map((it,i)=>
+   `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12.5px">
+     <span>${it.nombre}</span>
+     <span style="display:flex;gap:8px;align-items:center">${it.kcal} kcal
+      <button data-quitar="${i}" style="background:none;border:none;color:var(--fa);cursor:pointer">✕</button></span>
+    </div>`
+  ).join("");
+  box.querySelectorAll("[data-quitar]").forEach(btn=>{
+   btn.onclick = ()=>{ diaLibreActual.items.splice(+btn.dataset.quitar,1); renderListaDiaLibre(); };
+  });
+ }
+ const tot = diaLibreActual.items.reduce((a,it)=>({kcal:a.kcal+it.kcal,p:a.p+it.p,c:a.c+it.c,g:a.g+it.g}),{kcal:0,p:0,c:0,g:0});
+ document.getElementById("dlTotales").innerHTML =
+  `<b>${Math.round(tot.kcal)} kcal</b> · ${Math.round(tot.p)}g proteína · ${Math.round(tot.c)}g carbos · ${Math.round(tot.g)}g grasas`;
+}
+async function guardarDiaLibre(){
+ if(!diaLibreActual.items.length){ showToast("Agrega al menos un alimento", true); return; }
+ const tot = diaLibreActual.items.reduce((a,it)=>({kcal:a.kcal+it.kcal,p:a.p+it.p,c:a.c+it.c,g:a.g+it.g}),{kcal:0,p:0,c:0,g:0});
+ try{
+  await athleteRef.set({ diasLibres: { [diaLibreActual.fecha]: { items: diaLibreActual.items, totales: tot } } }, { merge:true });
+  showToast("Día libre registrado ✓");
+  document.getElementById("diaLibreModal")?.remove();
+ }catch(err){ showToast("Error al guardar: "+err.message, true); }
+}
+document.addEventListener("click", e=>{ if(e.target.id==="btnDiaLibre") abrirDiaLibre(); });
 function showToast(msg, isError){
   let t = document.getElementById('debugToast');
   if(!t){
