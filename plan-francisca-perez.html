@@ -583,7 +583,7 @@ const ALIM_LIBRE = {
  "pescado a la plancha 150g":[206,31,0,8], "huevo frito":[90,6,0.5,7], "pan hallulla":[220,6,42,3],
  "palta media unidad":[120,1.5,6,11], "queso laminado 2 rebanadas":[140,10,1,11]
 };
-let diaLibreActual = { items: [], fecha: todayStr() };
+let diaLibreActual = { items: [], fecha: null };
 function abrirDiaLibre(){
  diaLibreActual = { items: [], fecha: todayStr() };
  document.getElementById("diaLibreModal")?.remove();
