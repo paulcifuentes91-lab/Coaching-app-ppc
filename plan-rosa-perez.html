@@ -234,6 +234,7 @@
     <main class="card" id="mealCard"></main>
 
     <div class="card" id="mealHistoryCard" style="margin-top:12px"></div>
+    <button class="add" id="btnDiaLibre" style="width:100%;margin-top:12px">✈️ Registrar día libre / viaje</button>
 
     <details class="accordion" style="margin-top:14px">
       <summary>Suplementación</summary>
@@ -468,6 +469,205 @@ let healthLog = {};
 let exercisePRs = {};
 let dataReady = false;
 
+const ALIM_LIBRE = {
+ "manzana":[52,0.3,14,0.2], "plátano":[89,1.1,23,0.3], "naranja":[47,0.9,12,0.1],
+ "sandía":[30,0.6,8,0.2], "uva":[69,0.7,18,0.2], "piña":[50,0.5,13,0.1],
+ "kiwi":[61,1.1,15,0.5], "mango":[60,0.8,15,0.4], "pera":[57,0.4,15,0.1], "durazno":[39,0.9,10,0.3],
+ "hamburguesa completa":[295,17,24,15], "pizza porción":[266,11,33,10],
+ "sushi roll (8 piezas)":[350,10,60,7], "ensalada césar con pollo":[350,25,12,22],
+ "pasta con salsa tomate":[220,8,40,3], "sándwich jamón y queso":[350,18,35,15],
+ "empanada de pino":[290,10,30,14], "completo italiano":[420,15,35,25],
+ "sopaipilla":[180,3,22,9], "taco de carne":[210,12,18,10],
+ "papas fritas porción":[365,4,48,17], "chocolate barra 30g":[160,2,17,9],
+ "helado 1 bocha":[137,2,17,7], "galletas dulces 4 unid":[190,2,28,8],
+ "yogurt griego natural":[100,10,4,5], "barra de cereal":[120,2,20,4],
+ "frutos secos mix 30g":[180,5,8,15], "palomitas de maíz":[120,3,20,4],
+ "jugo natural 250ml":[110,1,27,0.2], "bebida gaseosa 350ml":[150,0,39,0],
+ "café con leche":[60,3,6,2.5], "cerveza 350ml":[150,1.6,13,0], "vino copa 150ml":[125,0.1,4,0],
+ "arroz blanco cocido 1 taza":[205,4.3,45,0.4], "pollo a la plancha 150g":[248,46,0,5.4],
+ "pescado a la plancha 150g":[206,31,0,8], "huevo frito":[90,6,0.5,7], "pan hallulla":[220,6,42,3],
+ "palta media unidad":[120,1.5,6,11], "queso laminado 2 rebanadas":[140,10,1,11],
+ "tomate":[18,0.9,3.9,0.2], "lechuga":[15,1.4,2.9,0.2], "pepino":[15,0.7,3.6,0.1],
+ "zanahoria":[41,0.9,10,0.2], "brócoli":[34,2.8,7,0.4], "espinaca":[23,2.9,3.6,0.4],
+ "choclo":[86,3.2,19,1.2], "papa cocida":[87,2,20,0.1], "camote cocido":[86,1.6,20,0.1],
+ "quinoa cocida":[120,4.4,21,1.9], "lentejas cocidas":[116,9,20,0.4], "garbanzos cocidos":[164,8.9,27,2.6],
+ "carne molida 150g":[280,26,0,19], "salmón 150g":[280,31,0,17], "atún en lata":[116,26,0,1],
+ "tofu 100g":[76,8,1.9,4.8], "leche entera 1 taza":[150,8,12,8], "leche descremada 1 taza":[86,8,12,0.2],
+ "yogurt natural":[59,3.5,4.7,3.3], "avena cruda 50g":[195,6.8,33,3.5], "pan integral 1 rebanada":[80,4,15,1],
+ "tostada marraqueta":[130,4,25,1.5], "mantequilla 1 cdta":[35,0,0,4], "mermelada 1 cda":[56,0,14,0],
+ "miel 1 cda":[64,0.1,17,0], "mayonesa 1 cda":[94,0.1,0.6,10], "kétchup 1 cda":[15,0.2,4,0],
+ "pizza margarita porción":[250,10,30,10], "lasaña porción":[350,20,30,17], "risotto porción":[300,8,45,10],
+ "pad thai porción":[400,15,50,15], "ramen tazón":[450,18,55,17], "curry con arroz":[420,15,50,18],
+ "burrito":[380,18,45,15], "wrap de pollo":[320,22,30,12], "poke bowl":[400,25,40,15],
+ "croissant":[230,5,26,12], "waffle":[220,5,25,10], "panqueque unidad":[90,2,15,2.5],
+ "smoothie de frutas":[180,3,40,1], "batido de proteína":[150,25,8,2], "granola 40g":[180,4,25,7],
+ "queso mozzarella 30g":[85,6,0.6,6.5], "jamón 2 lonjas":[60,10,1,2], "salame 3 lonjas":[110,6,1,9],
+ "pretzel":[110,3,23,1], "maní 30g":[170,7,5,15], "almendras 30g":[164,6,6,14], "nueces 30g":[196,4.6,4,20],
+ "aceitunas 10 unid":[50,0.3,1.3,5], "hummus 2 cda":[70,2,6,4.5], "guacamole 2 cda":[90,1.2,5,8],
+ "paella porción":[380,20,45,14], "tapas mixtas":[300,15,25,16], "gazpacho tazón":[70,2,10,2.5],
+ "kebab":[450,25,35,22], "falafel 4 unid":[280,8,30,14], "shawarma":[420,25,35,20],
+ "dim sum 4 piezas":[220,10,25,8], "arroz frito porción":[350,10,55,10], "chow mein porción":[380,14,50,12],
+ "pho tazón":[350,20,45,8], "bibimbap":[450,20,60,14], "gyoza 6 piezas":[280,12,30,12],
+ "moussaka porción":[380,18,25,22], "goulash con papas":[400,25,30,20], "schnitzel con papas":[450,28,35,22],
+ "fish and chips":[550,25,55,28], "poutine":[600,15,60,35], "chili con carne":[350,25,25,16],
+ "burrito bowl":[420,28,45,15], "quesadilla":[380,18,30,20], "nachos porción":[450,15,45,25],
+ "chapati o tortilla":[100,3,18,2], "dal (lentejas indias)":[180,10,25,4], "tikka masala con arroz":[450,25,40,20],
+ "biryani":[400,15,55,12], "samosa 2 unid":[260,6,30,13], "naan":[260,9,45,6],
+ "acai bowl":[300,6,50,10], "chia pudding":[180,6,20,9], "overnight oats":[280,10,40,8],
+ "tostada con palta":[220,6,25,11], "bagel con queso crema":[350,12,45,12], "muffin":[350,5,45,17],
+ "donut":[250,3,30,14], "brownie":[240,3,30,13], "cheesecake porción":[320,6,28,20],
+ "chips de tortilla 30g":[140,2,18,7], "trail mix 30g":[140,4,15,8], "queque casero porción":[280,4,35,14],
+ "cereal de caja 40g":[150,3,32,1], "cereal integral fibra 40g":[135,4,28,1.5], "avena instantánea sobre":[130,4,23,2.5],
+ "corn flakes 40g":[150,2,34,0.5], "muesli 50g":[190,5,32,5],
+ "leche entera 200ml":[120,6.6,9.6,6.6], "leche descremada 200ml":[70,6.8,9.6,0.2], "leche de almendras 200ml":[30,1,1,2.5],
+ "leche de avena 200ml":[90,1,15,3], "queso fresco 50g":[85,7,1.5,6], "queso gouda 30g":[113,7,0.6,9],
+ "requesón/cottage 100g":[98,11,3.4,4.3], "yogurt bebible 200ml":[130,5,20,3], "yogurt con fruta 150g":[140,5,22,3.5],
+ "manjar/dulce de leche 1cda":[65,1,12,1.5], "crema de leche 1cda":[52,0.3,0.4,5.5],
+ "barra de proteína":[210,20,22,7], "batido de proteína listo 330ml":[160,25,10,3], "clara de huevo en caja 100ml":[52,11,0.7,0.2],
+ "pechuga de pollo a la plancha 150g":[248,46,0,5.4], "muslo de pollo sin piel 150g":[285,36,0,15],
+ "muslo de pollo con piel 150g":[335,32,0,22], "ala de pollo 100g":[203,19,0,14], "pollo asado con piel 150g":[350,30,0,25],
+ "pan molde blanco 1 rebanada":[70,2,13,1], "pan molde integral 1 rebanada":[75,3,12,1.2],
+ "pan pita":[165,5.5,33,1], "pan de centeno 1 rebanada":[65,2.5,12,0.8], "baguette 1 trozo":[140,4.5,27,1],
+ "pan de molde sin gluten 1 rebanada":[80,2,15,1.5], "pan de campo 1 rebanada":[95,3,18,1],
+ "focaccia porción":[220,5,28,10], "pan de ajo 1 unid":[150,3,18,7],
+ "cazuela de vacuno":[380,28,25,18], "cazuela de pollo":[350,26,22,16], "pastel de choclo":[450,20,45,22],
+ "porotos con riendas":[380,16,55,10], "porotos granados":[320,14,50,7], "charquicán":[280,10,35,10],
+ "chorrillana porción compartir":[650,25,55,35], "curanto porción":[550,35,30,30], "pernil con papas":[500,30,35,25],
+ "longaniza a la parrilla":[300,18,2,24], "arrollado huaso 100g":[380,15,2,34], "ceviche porción":[180,20,15,4],
+ "machas a la parmesana":[280,18,8,18], "chupe de mariscos":[380,20,25,20], "mote con huesillo":[220,2,55,0.3],
+ "humita 1 unid":[150,4,25,4], "pantrucas":[250,8,40,6], "tomaticán":[180,4,25,7],
+ "ají de gallina":[400,25,30,20], "cochayuyo con papas":[150,4,30,1], "empanada de queso":[320,12,28,17],
+ "pichanga porción compartir":[600,30,45,30], "chacarero":[420,22,40,18], "barros luco":[450,28,35,22],
+ "barros jarpa":[420,25,35,20], "ave palta sándwich":[380,20,32,18], "ave mayo sándwich":[400,20,30,22],
+ "mechada sándwich":[420,25,35,18], "italiano sándwich":[400,18,35,20], "hot dog completo":[380,14,30,22],
+ "papas rellenas 2 unid":[320,10,35,15], "kuchen porción":[320,5,40,15], "calzones rotos 3 unid":[220,3,30,10],
+ "berlín":[280,4,35,13], "cuchuflí":[150,2,20,7], "torta mil hojas porción":[380,5,45,20],
+ "alfajor":[180,2,25,8], "picarones 3 unid":[350,4,55,12], "sopaipillas pasadas 2 unid":[280,4,45,10],
+ "salmón ahumado 50g":[78,11,0,3.5], "reineta a la plancha":[180,28,0,7], "congrio frito":[280,20,15,17],
+ "camarones al ajillo":[220,20,3,14], "jaiba porción":[100,18,2,2], "pulpo a la parrilla":[180,25,2,7],
+ "choritos al vapor":[150,16,6,3], "erizos":[90,12,3,3], "picoroco":[110,15,2,4],
+ "queso mantecoso 30g":[100,7,0.5,8], "queso chanco 30g":[95,7,0.3,7.5], "manjar con nuez porción":[220,3,25,12],
+ "leche condensada 1cda":[60,1.4,10,1.6], "yogurt bebible frutilla":[140,4,24,3], "kéfir 200ml":[100,6,10,3.5],
+ "espárragos":[20,2.2,3.9,0.1], "zapallo italiano":[17,1.2,3.1,0.3], "berenjena":[25,1,6,0.2],
+ "coliflor":[25,2,5,0.3], "acelga":[19,1.8,3.7,0.2], "poroto verde":[31,1.8,7,0.2],
+ "cebolla":[40,1.1,9,0.1], "ajo 3 dientes":[13,0.6,3,0],"pimentón":[31,1,6,0.3],
+ "arándanos":[57,0.7,14,0.3], "frutillas":[32,0.7,7.7,0.3], "frambuesas":[52,1.2,12,0.7],
+ "chirimoya":[75,1.6,18,0.6], "papaya":[43,0.5,11,0.3], "granada":[83,1.7,19,1.2],
+ "membrillo":[57,0.4,15,0.1], "higo":[74,0.8,19,0.3], "damasco":[48,1.4,11,0.4],
+ "aceite de oliva 1cda":[119,0,0,13.5], "aceite vegetal 1cda":[120,0,0,14], "vinagre 1cda":[3,0,0.1,0],
+ "salsa soya 1cda":[10,1,1,0], "salsa de tomate casera 1/2taza":[45,2,10,0.3], "mostaza 1cda":[15,1,1.5,0.7],
+ "arroz integral cocido":[112,2.3,24,0.9], "fideos integrales cocidos":[174,7,37,0.8], "polenta cocida":[70,1.7,15,0.3],
+ "pisco sour":[180,0.2,20,0], "piscola":[160,0,15,0], "jugo de frutilla natural":[90,0.5,22,0.2],
+ "agua con gas":[0,0,0,0], "té helado 350ml":[90,0,22,0], "chicha de manzana 200ml":[95,0,22,0],
+ "vino tinto copa":[125,0.1,4,0], "espumante copa 120ml":[95,0.1,3,0],
+ "pastel de papa":[280,15,25,14], "reineta apanada":[320,25,20,15], "vacuno a lo pobre":[650,40,40,35],
+ "lomo a lo pobre":[700,45,40,38], "estofado de vacuno":[380,25,20,20], "guiso de lentejas con arroz":[400,18,55,12],
+ "sopa de verduras":[80,3,14,1], "consomé de ave":[45,4,3,1.5], "crema de zapallo":[150,3,20,6],
+ "puré de papas":[180,3,30,5], "arroz con leche":[220,5,35,6], "leche asada":[180,6,25,6],
+ "flan casero":[150,4,22,5], "arroz graneado 1 taza":[205,4,45,0.5], "ensalada chilena":[45,1,8,1.5],
+ "ensalada de tomate":[35,1,6,1], "ensalada mixta con aceite":[90,1.5,8,6]
+};
+let diaLibreActual = { items: [], fecha: null };
+async function abrirDiaLibre(){
+ const hoy = todayStr();
+ diaLibreActual = { items: [], fecha: hoy };
+ try{
+  const snap = await athleteRef.get();
+  const guardado = snap.exists && snap.data().diasLibres && snap.data().diasLibres[hoy];
+  if(guardado && guardado.items) diaLibreActual.items = guardado.items;
+ }catch(err){ console.warn("No se pudo cargar el dia libre existente:", err); }
+ document.getElementById("diaLibreModal")?.remove();
+ const m = document.createElement("div");
+ m.id = "diaLibreModal"; m.className = "modal on";
+ m.innerHTML = `<div class="card" style="max-width:500px;margin:40px auto;padding:20px">
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div style="font-weight:700;font-size:16px">✈️ Día libre / viaje</div>
+    <button id="dlCerrar" style="background:none;border:none;color:var(--tx);font-size:20px;cursor:pointer">✕</button>
+   </div>
+   <input id="dlBuscar" placeholder="Buscar alimento..." style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--tx);margin-bottom:8px">
+   <div id="dlResultados" style="max-height:160px;overflow-y:auto;margin-bottom:10px"></div>
+   <div style="font-weight:600;font-size:13px;margin-bottom:6px">Agregado hoy:</div>
+   <div id="dlLista" style="margin-bottom:10px"></div>
+   <div id="dlTotales" style="padding:10px;background:var(--card2);border-radius:8px;margin-bottom:12px;font-size:13px"></div>
+   <button id="dlGuardar" class="add" style="width:100%">Guardar registro del día</button>
+  </div>`;
+ document.body.appendChild(m);
+ document.getElementById("dlCerrar").onclick = ()=>m.remove();
+ document.getElementById("dlBuscar").oninput = e=>renderResultadosDiaLibre(e.target.value);
+ document.getElementById("dlGuardar").onclick = guardarDiaLibre;
+ renderListaDiaLibre();
+}
+function renderResultadosDiaLibre(query){
+ const box = document.getElementById("dlResultados");
+ if(!query || query.length < 2){ box.innerHTML = ""; return; }
+ const q = query.toLowerCase();
+ const matches = Object.keys(ALIM_LIBRE).filter(n=>n.toLowerCase().includes(q)).slice(0,8);
+ box.innerHTML = matches.map((n,i)=>{
+  const [kcal,p,c,g] = ALIM_LIBRE[n];
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line);gap:6px">
+    <span style="font-size:13px;flex:1">${n} <span style="color:var(--mu);font-size:11px">(${kcal} kcal x1)</span></span>
+    <input type="number" step="0.5" min="0.25" value="1" data-porcion="${i}" style="width:48px;padding:3px;border-radius:6px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:12px">
+    <button class="dx" data-add-alim="${n}" data-idx="${i}" style="font-size:11px">+ Agregar</button>
+   </div>`;
+ }).join("") || `<div style="color:var(--mu);font-size:12px;padding:6px">Sin resultados</div>`;
+ box.querySelectorAll("[data-add-alim]").forEach(btn=>{
+  btn.onclick = ()=>{
+   const nombre = btn.dataset.addAlim;
+   const idx = btn.dataset.idx;
+   const porcionInput = box.querySelector(`[data-porcion="${idx}"]`);
+   const porcion = Math.max(0.25, +porcionInput.value || 1);
+   const [kcal,p,c,g] = ALIM_LIBRE[nombre];
+   diaLibreActual.items.push({
+    nombre: porcion===1 ? nombre : nombre+" x"+porcion,
+    kcal: kcal*porcion, p: p*porcion, c: c*porcion, g: g*porcion
+   });
+   renderListaDiaLibre();
+   document.getElementById("dlBuscar").value = "";
+   box.innerHTML = "";
+  };
+ });
+}
+function renderListaDiaLibre(){
+ const box = document.getElementById("dlLista");
+ if(!diaLibreActual.items.length){
+  box.innerHTML = `<div style="color:var(--mu);font-size:12px">Nada agregado todavía</div>`;
+ } else {
+  box.innerHTML = diaLibreActual.items.map((it,i)=>
+   `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12.5px">
+     <span>${it.nombre}</span>
+     <span style="display:flex;gap:8px;align-items:center">${it.kcal} kcal
+      <button data-quitar="${i}" style="background:none;border:none;color:var(--fa);cursor:pointer">✕</button></span>
+    </div>`
+  ).join("");
+  box.querySelectorAll("[data-quitar]").forEach(btn=>{
+   btn.onclick = ()=>{ diaLibreActual.items.splice(+btn.dataset.quitar,1); renderListaDiaLibre(); };
+  });
+ }
+ const tot = diaLibreActual.items.reduce((a,it)=>({kcal:a.kcal+it.kcal,p:a.p+it.p,c:a.c+it.c,g:a.g+it.g}),{kcal:0,p:0,c:0,g:0});
+ const objetivo = (mealWindows[0] && mealWindows[0].macros) || null;
+ if(objetivo){
+  const faltaKcal = Math.round(objetivo.kcal - tot.kcal);
+  const faltaP = Math.round((objetivo.proteinG||0) - tot.p);
+  const faltaC = Math.round((objetivo.carbG||0) - tot.c);
+  const faltaG = Math.round((objetivo.fatG||0) - tot.g);
+  document.getElementById("dlTotales").innerHTML =
+   `<b>${Math.round(tot.kcal)} kcal</b> de ${objetivo.kcal} kcal objetivo · ${faltaKcal>=0?"faltan "+faltaKcal:"te pasaste "+Math.abs(faltaKcal)} kcal<br>
+    Proteína: ${Math.round(tot.p)}g de ${objetivo.proteinG||0}g · ${faltaP>=0?"faltan "+faltaP+"g":"pasado "+Math.abs(faltaP)+"g"}<br>
+    Carbos: ${Math.round(tot.c)}g de ${objetivo.carbG||0}g · Grasas: ${Math.round(tot.g)}g de ${objetivo.fatG||0}g`;
+ } else {
+  document.getElementById("dlTotales").innerHTML =
+   `<b>${Math.round(tot.kcal)} kcal</b> · ${Math.round(tot.p)}g proteína · ${Math.round(tot.c)}g carbos · ${Math.round(tot.g)}g grasas`;
+ }
+}
+async function guardarDiaLibre(){
+ if(!diaLibreActual.items.length){ showToast("Agrega al menos un alimento", true); return; }
+ const tot = diaLibreActual.items.reduce((a,it)=>({kcal:a.kcal+it.kcal,p:a.p+it.p,c:a.c+it.c,g:a.g+it.g}),{kcal:0,p:0,c:0,g:0});
+ try{
+  await athleteRef.set({ diasLibres: { [diaLibreActual.fecha]: { items: diaLibreActual.items, totales: tot } } }, { merge:true });
+  showToast("Guardado ✓ · sigue agregando si quieres");
+ }catch(err){ showToast("Error al guardar: "+err.message, true); }
+}
+document.addEventListener("click", e=>{ if(e.target.id==="btnDiaLibre") abrirDiaLibre(); });
 function showToast(msg, isError){
   let t = document.getElementById('debugToast');
   if(!t){
