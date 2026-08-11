@@ -663,8 +663,14 @@ const ALIM_LIBRE = {
  "ensalada de tomate":[35,1,6,1], "ensalada mixta con aceite":[90,1.5,8,6]
 };
 let diaLibreActual = { items: [], fecha: null };
-function abrirDiaLibre(){
- diaLibreActual = { items: [], fecha: todayStr() };
+async function abrirDiaLibre(){
+ const hoy = todayStr();
+ diaLibreActual = { items: [], fecha: hoy };
+ try{
+  const snap = await athleteRef.get();
+  const guardado = snap.exists && snap.data().diasLibres && snap.data().diasLibres[hoy];
+  if(guardado && guardado.items) diaLibreActual.items = guardado.items;
+ }catch(err){ console.warn("No se pudo cargar el dia libre existente:", err); }
  document.getElementById("diaLibreModal")?.remove();
  const m = document.createElement("div");
  m.id = "diaLibreModal"; m.className = "modal on";
@@ -753,8 +759,7 @@ async function guardarDiaLibre(){
  const tot = diaLibreActual.items.reduce((a,it)=>({kcal:a.kcal+it.kcal,p:a.p+it.p,c:a.c+it.c,g:a.g+it.g}),{kcal:0,p:0,c:0,g:0});
  try{
   await athleteRef.set({ diasLibres: { [diaLibreActual.fecha]: { items: diaLibreActual.items, totales: tot } } }, { merge:true });
-  showToast("Día libre registrado ✓");
-  document.getElementById("diaLibreModal")?.remove();
+  showToast("Guardado ✓ · sigue agregando si quieres");
  }catch(err){ showToast("Error al guardar: "+err.message, true); }
 }
 document.addEventListener("click", e=>{ if(e.target.id==="btnDiaLibre") abrirDiaLibre(); });
