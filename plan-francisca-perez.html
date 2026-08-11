@@ -684,8 +684,20 @@ function renderListaDiaLibre(){
   });
  }
  const tot = diaLibreActual.items.reduce((a,it)=>({kcal:a.kcal+it.kcal,p:a.p+it.p,c:a.c+it.c,g:a.g+it.g}),{kcal:0,p:0,c:0,g:0});
- document.getElementById("dlTotales").innerHTML =
-  `<b>${Math.round(tot.kcal)} kcal</b> · ${Math.round(tot.p)}g proteína · ${Math.round(tot.c)}g carbos · ${Math.round(tot.g)}g grasas`;
+ const objetivo = (mealWindows[0] && mealWindows[0].macros) || null;
+ if(objetivo){
+  const faltaKcal = Math.round(objetivo.kcal - tot.kcal);
+  const faltaP = Math.round((objetivo.proteinG||0) - tot.p);
+  const faltaC = Math.round((objetivo.carbG||0) - tot.c);
+  const faltaG = Math.round((objetivo.fatG||0) - tot.g);
+  document.getElementById("dlTotales").innerHTML =
+   `<b>${Math.round(tot.kcal)} kcal</b> de ${objetivo.kcal} kcal objetivo · ${faltaKcal>=0?"faltan "+faltaKcal:"te pasaste "+Math.abs(faltaKcal)} kcal<br>
+    Proteína: ${Math.round(tot.p)}g de ${objetivo.proteinG||0}g · ${faltaP>=0?"faltan "+faltaP+"g":"pasado "+Math.abs(faltaP)+"g"}<br>
+    Carbos: ${Math.round(tot.c)}g de ${objetivo.carbG||0}g · Grasas: ${Math.round(tot.g)}g de ${objetivo.fatG||0}g`;
+ } else {
+  document.getElementById("dlTotales").innerHTML =
+   `<b>${Math.round(tot.kcal)} kcal</b> · ${Math.round(tot.p)}g proteína · ${Math.round(tot.c)}g carbos · ${Math.round(tot.g)}g grasas`;
+ }
 }
 async function guardarDiaLibre(){
  if(!diaLibreActual.items.length){ showToast("Agrega al menos un alimento", true); return; }
