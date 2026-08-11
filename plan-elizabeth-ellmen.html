@@ -744,7 +744,7 @@ function renderListaDiaLibre(){
  }
 }
 async function guardarDiaLibre(){
- if(!diaLibreActual.items.length){ showToast("Agrega al menos un alimento", true); return; }
+ // se permite guardar vacio para poder corregir errores (borra el registro de hoy)
  const tot = diaLibreActual.items.reduce((a,it)=>({kcal:a.kcal+it.kcal,p:a.p+it.p,c:a.c+it.c,g:a.g+it.g}),{kcal:0,p:0,c:0,g:0});
  try{
   await athleteRef.set({ diasLibres: { [diaLibreActual.fecha]: { items: diaLibreActual.items, totales: tot } } }, { merge:true });
