@@ -623,6 +623,10 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
    <div id="homeProspectos"></div>
   </div>
   <div class="sec">
+   <div class="st">Próximos vencimientos <span class="aux">todos los atletas, ordenados por fecha de acceso más próxima</span></div>
+   <div id="homeVencimientos"></div>
+  </div>
+  <div class="sec">
    <div class="st">Seguimiento de anamnesis <span class="aux">estado de cada ficha, filtrable por atleta y estado</span></div>
    <div class="segkpis">
     <div class="segkpi tot"><b id="segKTotal">—</b><span>Total</span></div>
@@ -1373,6 +1377,18 @@ function msgWhatsApp(a, tipo){
    txt = `Hola ${nom}, actualicé tu plan. Lo puedes ver aquí: ${url}`; break;
   case "seguimiento":
    txt = `Hola ${nom}, ¿cómo vas con los entrenamientos de esta semana? Cuéntame cómo te has sentido.`; break;
+  case "vencimiento": {
+   let diasVence = null;
+   if(a.vence){ const dv=new Date(a.vence+"T12:00:00"); diasVence = Math.round((dv-hoy)/86400000); }
+   if(diasVence===null || diasVence<0){
+    txt = `Hola ${nom}, tu plan ya venció. ¿Renovamos para que sigas entrenando sin interrupciones?`;
+   } else if(diasVence===0){
+    txt = `Hola ${nom}, tu plan vence hoy. ¿Renovamos para que sigas entrenando sin interrupciones?`;
+   } else {
+    txt = `Hola ${nom}, tu plan vence en ${diasVence} día${diasVence===1?"":"s"}. ¿Renovamos para que sigas entrenando sin interrupciones?`;
+   }
+   break;
+  }
   case "libre":
    txt = ""; break;
   default:
@@ -4094,10 +4110,14 @@ function pintarHome(){
    }
   }
   const dVen = diasHasta(a.vence);
-  if(dVen!==null && dVen>=0 && dVen<=30){
-   alertas.push({p:dVen<=14?0:2, ini:a.ini, id:a.id,
-    txt:`Acceso de <b>${a.n.split(" ")[0]}</b> vence`,
-    sub:`en ${dVen} días`, acc:"ficha", tipo:"acceso"});
+  if(dVen!==null && dVen<=10){
+   const urgente = dVen<=3;
+   const sub = dVen>0 ? `en ${dVen} día${dVen===1?"":"s"}`
+     : dVen===0 ? "vence hoy"
+     : `vencido hace ${-dVen} día${-dVen===1?"":"s"}`;
+   alertas.push({p:urgente?0:1, ini:a.ini, id:a.id,
+    txt:`Plan de <b>${a.n.split(" ")[0]}</b> ${dVen<0?"vencido":"por vencer"}`,
+    sub, acc:"wa", tipo:"vencimiento"});
   }
   const ua = ultimaActividad(a.id);
   if(ua && ua.dias>=5){
@@ -4216,6 +4236,27 @@ function pintarHome(){
     </div>`;
   }).join("");
  } else { secP.style.display = "none"; }
+
+ /* ── Próximos vencimientos ── */
+ const cVen = document.getElementById("homeVencimientos");
+ if(cVen){
+  const conFechaVence = ATLETAS.filter(a=>a.vence).map(a=>({a, d:diasHasta(a.vence)})).sort((x,y)=>x.d-y.d);
+  const sinFechaVence = ATLETAS.filter(a=>!a.vence);
+  cVen.innerHTML = conFechaVence.map(({a,d})=>{
+   const cls = d<=3 ? "p0" : d<=10 ? "p1" : "p2";
+   const txt = d>0 ? `en ${d} día${d===1?"":"s"}`
+     : d===0 ? "vence hoy"
+     : `vencido hace ${-d} día${-d===1?"":"s"}`;
+   return `<div class="hrowa ${cls}" data-ir="${a.id}">
+     <div class="hav">${a.ini}</div>
+     <div class="hinfo"><div class="ht">${a.n}</div><div class="hs">${txt}</div></div>
+    </div>`;
+  }).join("") + sinFechaVence.map(a=>`
+   <div class="hrowa" data-ir="${a.id}">
+    <div class="hav">${a.ini}</div>
+    <div class="hinfo"><div class="ht">${a.n}</div><div class="hs">sin fecha de acceso registrada</div></div>
+   </div>`).join("");
+ }
 
  /* ── Números de cabecera ── */
  document.getElementById("numActivos").textContent = activos.length;
