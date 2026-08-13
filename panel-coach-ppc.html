@@ -4145,7 +4145,7 @@ function pintarHome(){
  const cAt = document.getElementById("homeAtencion");
  if(!cAt) return;
  cAt.innerHTML = alertas.length
-  ? alertas.slice(0,8).map(al=>`
+  ? alertas.map(al=>`
     <div class="hrowa p${al.p}" data-ir="${al.id}">
      <div class="hav">${al.ini}</div>
      <div class="hinfo"><div class="ht">${al.txt}</div><div class="hs">${al.sub}</div></div>
