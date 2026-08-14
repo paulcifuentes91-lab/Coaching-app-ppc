@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Idioma
+
+Responde siempre en español, independientemente del idioma en que esté escrito el mensaje del usuario.
+
 ## What this is
 
 Pro Performance Coach (PPC) — a personal-training coaching platform built as a set of **static, self-contained HTML files** (vanilla JS, no framework, no bundler). Firebase (Firestore + Auth) is the only backend, loaded via CDN `<script>` tags directly in each HTML file (`firebase-app-compat.js`, `firebase-firestore-compat.js`, `firebase-auth-compat.js`). There is no build step — files are edited directly and deployed as-is.
