@@ -1088,7 +1088,7 @@ function videoSearchUrl(name){
 function computeCurrentWeek(){
   if(!planStartDate) return null;
   const start = new Date(planStartDate + 'T00:00:00');
-  const now = new Date();
+  const now = new Date(todayStr() + 'T00:00:00');
   const diffDays = Math.floor((now - start) / 86400000);
   if(diffDays < 0) return null; // el plan aún no empieza
   const week = Math.floor(diffDays / 7) + 1;
@@ -1218,7 +1218,7 @@ function renderCheckBanner(){
   if(!planCheckDate){ el.style.display='none'; return; }
   const _yaChk = (typeof progressLog !== 'undefined' && progressLog) ? progressLog.some(function(e){ return e && e.date && e.date >= planCheckDate; }) : false;
   if(_yaChk){ el.style.display='none'; return; }
-  const today = new Date(); today.setHours(0,0,0,0);
+  const today = new Date(todayStr() + 'T00:00:00');
   const chk = new Date(planCheckDate + 'T00:00:00');
   const diff = Math.round((chk - today) / 86400000);
   let msg = null, bg = '#3a2e10', color = '#E0C23D';
