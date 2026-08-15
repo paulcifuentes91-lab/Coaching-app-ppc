@@ -1451,9 +1451,9 @@ function okAviso(btn){const o=btn.parentElement.querySelector(".ok");
  if(o){o.classList.add("on");setTimeout(()=>o.classList.remove("on"),1800);}}
 
 /* ═══════════ SIDEBAR ═══════════ */
-/* Total de insignias planeadas para el sistema de logros (fase 1 implementa 5; el
-   contador "X/16" en la lista de atletas muestra ganadas-de-las-implementadas sobre
-   este total futuro, no sobre 5, para que no haya que tocar la UI en cada fase nueva) */
+/* Total de insignias del sistema de logros (fase 1 + fase 2 = 16, ya completas
+   en las apps de atleta). Constante separada del conteo real por si en el futuro
+   se agregan mas fases sin tener que tocar esta UI. */
 const TOTAL_INSIGNIAS_PLANEADAS = 16;
 function pintarLista(filtro=""){
  const f=filtro.toLowerCase();

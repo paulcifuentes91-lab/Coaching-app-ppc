@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css" rel="stylesheet">
 <style>
   :root{
     --bg:#14171B; --surface:#1D2126; --surface-2:#262B31; --border:#2E333A;
@@ -208,7 +209,8 @@
   </header>
 
   <div id="feelView" style="display:none">
-    <div class="card" id="feelCard" style="margin-top:14px"></div>
+    <div class="card" id="logrosCard" style="margin-top:14px"></div>
+    <div class="card" id="feelCard" style="margin-top:12px"></div>
     <div class="card" id="analysisCard" style="margin-top:12px;display:none"></div>
     <div class="card" id="feelHistoryCard" style="margin-top:12px;display:none"></div>
     <div class="card" id="anamnesisCard" style="margin-top:12px;display:none"></div>
@@ -474,6 +476,11 @@ let progressPhotos = [];
 let healthLog = {};
 let exercisePRs = {};
 let dataReady = false;
+let insignias = {};
+let _tienePrimeraFoto = false;
+let _fechaPrimeraFoto = null;
+let diasLibres = {};
+let _fechasConFoto = new Set();
 
 const ALIM_LIBRE = {
  "manzana":[52,0.3,14,0.2], "plátano":[89,1.1,23,0.3], "naranja":[47,0.9,12,0.1],
@@ -707,6 +714,8 @@ athleteRef.onSnapshot((doc)=>{
     progressLog = data.progressLog || HISTORICAL_ENTRIES;
     mesocicloHistory = data.mesocicloHistory || {};
     dailyFeel = data.dailyFeel || {};
+    insignias = data.insignias || {};
+    diasLibres = data.diasLibres || {};
     anamnesisData = data.anamnesis || null;
     progressPhotos = data.progressPhotos || [];
     healthLog = data.healthLog || {};
@@ -765,6 +774,7 @@ athleteRef.onSnapshot((doc)=>{
   renderAnamnesis();
   renderStaticPanels();
   renderAll();
+  evaluarInsignias();
 }, (err)=>{
   document.getElementById('loadingOverlay').textContent = 'No se pudo conectar a la base de datos. Revisa tu conexión y recarga la página.';
   showToast('ERROR de conexión: ' + err.message, true);
@@ -1484,6 +1494,277 @@ function mealHistoryByDay(){
   }));
 }
 
+/* ============================================================
+   LOGROS / INSIGNIAS — Fase 1 + Fase 2 (16 insignias en 4 áreas).
+   Notas sobre proxies usados por falta de tracking más fino (documentadas
+   aquí para no repetirlas en cada chequeo):
+   - "Semana en objetivo" / "Constancia real" / "Proteína al día": esta app
+     no registra las kcal/proteína REALES que el atleta come cada día
+     (mealChecks solo marca si comió la comida planificada, no cuánto). Se
+     usa como proxy honesto "cumplió el 100% de las comidas planificadas
+     ese día", ya que esas comidas están armadas para cuadrar con el
+     objetivo calórico/proteico del bloque.
+   - "Mesociclo cumplido": usa mesocicloHistory[label].trainPct, que es un
+     promedio de TODO el historial de checks hasta ese momento (no está
+     acotado estrictamente a las fechas de ese bloque). Es la única señal
+     de "cumplimiento por mesociclo" que la app ya calcula; se documenta la
+     imprecisión en vez de construir tracking nuevo por fechas.
+   - "Seguimiento fiel": la fecha de las fotos se obtiene de las últimas 12
+     fotos ya cargadas por loadPhotoGallery() (no se hace una lectura extra
+     de Firestore para no descargar imágenes de más).
+   ============================================================ */
+const INSIGNIAS_AREAS = [
+  {area:'Entrenamiento', icon:'ti-barbell'},
+  {area:'Nutrición', icon:'ti-apple'},
+  {area:'Emocional', icon:'ti-brain'},
+  {area:'Progreso', icon:'ti-target-arrow'}
+];
+const INSIGNIAS_DEF = [
+  // Entrenamiento
+  {id:'primer_paso', area:'Entrenamiento', icon:'ti-shoe', label:'Primer paso', desc:'Completó su primer día de entrenamiento'},
+  {id:'racha_hierro', area:'Entrenamiento', icon:'ti-flame', label:'Racha de hierro', desc:'7 sesiones de entrenamiento seguidas, 100% completas'},
+  {id:'mes_acero', area:'Entrenamiento', icon:'ti-shield-check', label:'Mes de acero', desc:'4 semanas seguidas sin faltar a un día de entrenamiento programado'},
+  {id:'mesociclo_cumplido', area:'Entrenamiento', icon:'ti-flag-check', label:'Mesociclo cumplido', desc:'Terminó un mesociclo completo sin saltarse ningún día de entrenamiento'},
+  {id:'sin_excusas', area:'Entrenamiento', icon:'ti-bolt', label:'Sin excusas', desc:'Entrenó completo un día en que había registrado ánimo o energía bajos'},
+  // Nutrición
+  {id:'semana_objetivo', area:'Nutrición', icon:'ti-apple', label:'Semana en objetivo', desc:'7 días seguidos cumpliendo el 100% del plan de comidas'},
+  {id:'viajero_consciente', area:'Nutrición', icon:'ti-plane', label:'Viajero consciente', desc:'Registró un Día libre/viaje dentro de ±10% de su objetivo de calorías'},
+  {id:'constancia_real', area:'Nutrición', icon:'ti-calendar-stats', label:'Constancia real', desc:'30 días -no necesariamente seguidos- cumpliendo el 100% del plan de comidas'},
+  {id:'proteina_al_dia', area:'Nutrición', icon:'ti-egg', label:'Proteína al día', desc:'14 días seguidos cumpliendo el 100% del plan de comidas'},
+  // Emocional
+  {id:'checkin_honesto', area:'Emocional', icon:'ti-message-heart', label:'Check-in honesto', desc:'Registró ánimo y energía 7 días seguidos'},
+  {id:'rebote', area:'Emocional', icon:'ti-arrow-back-up', label:'Rebote', desc:'Registró un día de ánimo bajo y al día siguiente entrenó completo igual'},
+  {id:'mente_estable', area:'Emocional', icon:'ti-brain', label:'Mente estable', desc:'2 semanas seguidas con el estrés registrado en nivel bajo o moderado'},
+  {id:'autoconocimiento', area:'Emocional', icon:'ti-compass', label:'Autoconocimiento', desc:'30 registros de ánimo en total, acumulados'},
+  // Progreso
+  {id:'primera_foto', area:'Progreso', icon:'ti-camera', label:'Primera foto', desc:'Subió su primera foto de progreso'},
+  {id:'seguimiento_fiel', area:'Progreso', icon:'ti-camera-check', label:'Seguimiento fiel', desc:'Subió fotos de progreso en 3 chequeos seguidos'},
+  {id:'medida_a_medida', area:'Progreso', icon:'ti-ruler-2', label:'Medida a medida', desc:'Registró sus medidas corporales en 3 chequeos seguidos'}
+];
+
+// Racha de ENTRADAS ordenadas por fecha que cumplen una condición, sin exigir que
+// las fechas sean calendario-consecutivas: un ítem que no aparece en la lista (p.ej.
+// un día de descanso, o un período sin chequeo) no corta la racha, pero un ítem que
+// SÍ aparece y no cumple la condición, sí la corta.
+function rachaDeEntradas(lista, cumple, n){
+  const asc = [...lista].sort((a,b)=> a.date<b.date?-1:a.date>b.date?1:0);
+  let streak=0, fechaLogro=null;
+  asc.forEach(item=>{
+    if(cumple(item)){ streak++; if(streak>=n && !fechaLogro) fechaLogro=item.date; }
+    else streak=0;
+  });
+  return fechaLogro;
+}
+// Racha de sesiones de entreno 100% completas (envoltorio de rachaDeEntradas).
+function evaluarRachaSesiones(historial, n){
+  return rachaDeEntradas(historial, h=>h.pct===100, n);
+}
+
+// Racha de fechas estrictamente consecutivas en el calendario (diff de 1 dia).
+// Sirve para animo/nutricion, donde se espera un registro todos los dias.
+function evaluarRachaCalendario(fechas, n){
+  const asc = [...new Set(fechas)].sort();
+  let streak=0, prev=null, fechaLogro=null;
+  asc.forEach(f=>{
+    const diff = prev ? Math.round((new Date(f+'T12:00:00')-new Date(prev+'T12:00:00'))/86400000) : null;
+    streak = (diff===1) ? streak+1 : 1;
+    if(streak>=n && !fechaLogro) fechaLogro=f;
+    prev = f;
+  });
+  return fechaLogro;
+}
+
+// Cuenta fechas distintas acumuladas (no necesariamente consecutivas) y devuelve
+// la fecha en la que se alcanza la n-esima, o null si aun no llega.
+function nEsimoAcumulado(fechas, n){
+  const asc = [...new Set(fechas)].sort();
+  return asc.length>=n ? asc[n-1] : null;
+}
+
+function evaluarInsignias(){
+  const nuevas = {};
+
+  /* ── Entrenamiento ── */
+  if(!insignias.primer_paso){
+    const completos = trainHistoryByDay().filter(h=>h.pct===100).map(h=>h.date).sort();
+    if(completos.length) nuevas.primer_paso = completos[0];
+  }
+
+  if(!insignias.racha_hierro){
+    const f = evaluarRachaSesiones(trainHistoryByDay(), 7);
+    if(f) nuevas.racha_hierro = f;
+  }
+
+  if(!insignias.mes_acero){
+    const semanal = Math.max(1, days.length);
+    const f = evaluarRachaSesiones(trainHistoryByDay(), semanal*4);
+    if(f) nuevas.mes_acero = f;
+  }
+
+  if(!insignias.mesociclo_cumplido){
+    const huboBloqueCompleto = Object.keys(mesocicloHistory)
+      .filter(l=> l!==mesocicloLabel)
+      .some(l=> mesocicloHistory[l] && mesocicloHistory[l].trainPct>=100);
+    if(huboBloqueCompleto) nuevas.mesociclo_cumplido = todayStr();
+  }
+
+  if(!insignias.sin_excusas){
+    const fechasBajon = new Set(Object.keys(dailyFeel).filter(f=>{
+      const d = dailyFeel[f];
+      return d && ((d.animo!=null && d.animo<=2) || (d.energia!=null && d.energia<=2));
+    }));
+    const fecha = trainHistoryByDay().filter(h=>h.pct===100 && fechasBajon.has(h.date)).map(h=>h.date).sort()[0];
+    if(fecha) nuevas.sin_excusas = fecha;
+  }
+
+  /* ── Nutrición ── */
+  if(!insignias.semana_objetivo){
+    const fechas = mealHistoryByDay().filter(h=>h.pct===100).map(h=>h.date);
+    const f = evaluarRachaCalendario(fechas, 7);
+    if(f) nuevas.semana_objetivo = f;
+  }
+
+  if(!insignias.viajero_consciente){
+    const objetivoKcal = MEAL_PLAN_MACROS && MEAL_PLAN_MACROS.kcal;
+    if(objetivoKcal){
+      const fechas = Object.keys(diasLibres).filter(f=>{
+        const t = diasLibres[f] && diasLibres[f].totales;
+        return t && (Math.abs(t.kcal - objetivoKcal) / objetivoKcal) <= 0.10;
+      }).sort();
+      if(fechas.length) nuevas.viajero_consciente = fechas[0];
+    }
+  }
+
+  if(!insignias.constancia_real){
+    const fechas = mealHistoryByDay().filter(h=>h.pct===100).map(h=>h.date);
+    const f = nEsimoAcumulado(fechas, 30);
+    if(f) nuevas.constancia_real = f;
+  }
+
+  if(!insignias.proteina_al_dia){
+    const fechas = mealHistoryByDay().filter(h=>h.pct===100).map(h=>h.date);
+    const f = evaluarRachaCalendario(fechas, 14);
+    if(f) nuevas.proteina_al_dia = f;
+  }
+
+  /* ── Emocional ── */
+  if(!insignias.checkin_honesto){
+    const fechas = Object.keys(dailyFeel).filter(f=> dailyFeel[f] && dailyFeel[f].animo && dailyFeel[f].energia);
+    const f = evaluarRachaCalendario(fechas, 7);
+    if(f) nuevas.checkin_honesto = f;
+  }
+
+  if(!insignias.rebote){
+    const fechasCompletas = new Set(trainHistoryByDay().filter(h=>h.pct===100).map(h=>h.date));
+    const fechasBajoAnimo = Object.keys(dailyFeel).filter(f=> dailyFeel[f] && dailyFeel[f].animo!=null && dailyFeel[f].animo<=2).sort();
+    for(const f of fechasBajoAnimo){
+      const sig = new Date(f+'T12:00:00'); sig.setDate(sig.getDate()+1);
+      const sigStr = sig.toISOString().slice(0,10);
+      if(fechasCompletas.has(sigStr)){ nuevas.rebote = sigStr; break; }
+    }
+  }
+
+  if(!insignias.mente_estable){
+    const fechas = Object.keys(dailyFeel).filter(f=> dailyFeel[f] && dailyFeel[f].estres!=null && dailyFeel[f].estres<=3);
+    const f = evaluarRachaCalendario(fechas, 14);
+    if(f) nuevas.mente_estable = f;
+  }
+
+  if(!insignias.autoconocimiento){
+    const fechas = Object.keys(dailyFeel).filter(f=> dailyFeel[f] && dailyFeel[f].animo!=null);
+    const f = nEsimoAcumulado(fechas, 30);
+    if(f) nuevas.autoconocimiento = f;
+  }
+
+  /* ── Progreso ── */
+  if(!insignias.primera_foto && _tienePrimeraFoto){
+    nuevas.primera_foto = _fechaPrimeraFoto || todayStr();
+  }
+
+  if(!insignias.seguimiento_fiel){
+    const f = rachaDeEntradas(progressLog, entry=> _fechasConFoto.has(entry.date), 3);
+    if(f) nuevas.seguimiento_fiel = f;
+  }
+
+  if(!insignias.medida_a_medida){
+    const tieneMedidas = entry => entry.waist!=null || entry.arm!=null || entry.thigh!=null || entry.bodyFatPct!=null || !!entry.skinfolds;
+    const f = rachaDeEntradas(progressLog, tieneMedidas, 3);
+    if(f) nuevas.medida_a_medida = f;
+  }
+
+  if(Object.keys(nuevas).length){
+    insignias = Object.assign({}, insignias, nuevas);
+    saveField('insignias', insignias);
+    renderLogros();
+  }
+}
+
+function renderLogros(){
+  const el = document.getElementById('logrosCard');
+  if(!el) return;
+  const total = INSIGNIAS_DEF.filter(b=> insignias && insignias[b.id]).length;
+  el.innerHTML = `
+    <div class="section-label" style="margin:0 0 12px">🏅 Logros <span style="color:var(--text-faint);font-weight:500;text-transform:none;letter-spacing:normal">(${total}/${INSIGNIAS_DEF.length})</span></div>
+    ${INSIGNIAS_AREAS.map(ar=>{
+      const badges = INSIGNIAS_DEF.filter(b=>b.area===ar.area);
+      return `
+      <div style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;">
+          <i class="ti ${ar.icon}" style="font-size:13px"></i>${ar.area}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;">
+          ${badges.map(b=>{
+            const ganada = !!(insignias && insignias[b.id]);
+            return `
+            <button type="button" data-badge-id="${b.id}" style="display:flex;flex-direction:column;align-items:center;width:60px;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;">
+              <div style="width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;
+                background:${ganada ? 'var(--accent)' : 'var(--surface-2)'};
+                color:${ganada ? '#14171B' : 'var(--text-faint)'};
+                border:1px solid ${ganada ? 'transparent' : 'var(--border)'};
+                opacity:${ganada ? '1' : '.5'};">
+                <i class="ti ${b.icon}"></i>
+              </div>
+              <div style="font-size:9.5px;text-align:center;margin-top:6px;color:${ganada ? 'var(--text)' : 'var(--text-faint)'};line-height:1.25">${b.label}</div>
+            </button>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('')}
+  `;
+  el.querySelectorAll('[data-badge-id]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const b = INSIGNIAS_DEF.find(x=>x.id===btn.dataset.badgeId);
+      if(b) abrirInfoInsignia(b);
+    });
+  });
+}
+
+function abrirInfoInsignia(b){
+  const ganada = !!(insignias && insignias[b.id]);
+  document.getElementById('insigniaModalOverlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'insigniaModalOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:997;display:flex;align-items:center;justify-content:center;padding:24px;';
+  overlay.innerHTML = `
+    <div class="card" style="max-width:320px;width:100%;text-align:center;padding:26px 20px 20px;">
+      <div style="width:64px;height:64px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:28px;
+        background:${ganada ? 'var(--accent)' : 'var(--surface-2)'};
+        color:${ganada ? '#14171B' : 'var(--text-faint)'};
+        border:1px solid ${ganada ? 'transparent' : 'var(--border)'};">
+        <i class="ti ${b.icon}"></i>
+      </div>
+      <div style="font-family:var(--font-display);font-size:19px;font-weight:600;margin-bottom:8px;">${b.label}</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.5;">${b.desc}</div>
+      <div style="font-size:11px;font-family:var(--font-mono);margin-top:12px;color:${ganada ? 'var(--accent)' : 'var(--text-faint)'};">
+        ${ganada ? ('✓ Ganada el ' + insignias[b.id]) : 'Todavía no la has ganado — ¡vas a llegar! 💪'}
+      </div>
+      <button id="insigniaModalCerrar" style="margin-top:18px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:9px 22px;border-radius:10px;font-size:13px;cursor:pointer;">Cerrar</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) overlay.remove(); });
+  document.getElementById('insigniaModalCerrar').addEventListener('click', ()=> overlay.remove());
+}
+
 function renderMealHistory(){
   const el = document.getElementById('mealHistoryCard');
   if(!el) return;
@@ -1915,6 +2196,14 @@ async function loadPhotoGallery(){
     el.innerHTML = items.map(p=>
       `<a href="${p.data}" target="_blank" style="display:block"><img src="${p.data}" style="width:72px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><div style="font-size:9px;color:var(--text-faint);text-align:center;margin-top:2px">${p.date}</div></a>`
     ).join('');
+    let hayNovedad = false;
+    if(items.length && !_tienePrimeraFoto){
+      _tienePrimeraFoto = true;
+      _fechaPrimeraFoto = items.map(p=>p.date).sort()[0] || todayStr();
+      hayNovedad = true;
+    }
+    items.forEach(p=>{ if(p.date && !_fechasConFoto.has(p.date)){ _fechasConFoto.add(p.date); hayNovedad = true; } });
+    if(hayNovedad) evaluarInsignias();
   }catch(e){ /* sin fotos aún */ }
 }
 
@@ -2045,6 +2334,7 @@ function renderAll(){
   document.getElementById('resetBtn').textContent = resetLabels[activeView];
 
   if(activeView==='feel'){
+    renderLogros();
     renderFeelCard();
     renderAnalysis();
     renderFeelHistory();
