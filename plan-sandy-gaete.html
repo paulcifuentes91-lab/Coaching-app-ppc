@@ -1335,8 +1335,6 @@ function renderCard(){
   const r = 24, circ = 2*Math.PI*r;
   const offset = circ * (1-pct);
 
-  document.documentElement.style.setProperty('--accent', day.accent || ACCENT_FALLBACK);
-
   let html = `
     <div class="card-top">
       <div class="card-title"><span class="day-tag">${day.dayTag}</span>${day.name}</div>
@@ -1498,8 +1496,6 @@ function renderMealCard(){
   const pct = total? done/total : 0;
   const r = 24, circ = 2*Math.PI*r;
   const offset = circ * (1-pct);
-
-  document.documentElement.style.setProperty('--accent', mw.accent || ACCENT_FALLBACK);
 
   let html = `
     <div class="card-top">
@@ -1789,7 +1785,6 @@ function renderProgressView(){
     <div class="wb-title">Registro de progreso</div>
     <div class="wb-desc">Registra tu peso y medidas en cada chequeo para llevar el control de tu progreso.</div>
   `;
-  document.documentElement.style.setProperty('--accent', '#5B8DEF');
 
   if(progressSubView==='loads'){
     renderLoadsCard();
@@ -2019,12 +2014,10 @@ function renderAll(){
   document.getElementById('resetBtn').textContent = resetLabels[activeView];
 
   if(activeView==='feel'){
-    document.documentElement.style.setProperty('--accent', '#8C7BFF');
     renderFeelCard();
     renderAnalysis();
     renderFeelHistory();
   } else if(activeView==='training'){
-    document.documentElement.style.setProperty('--accent', (currentDay()||{}).accent || ACCENT_FALLBACK);
     renderWeekRow();
     renderWeekBanner();
     renderTabs();
