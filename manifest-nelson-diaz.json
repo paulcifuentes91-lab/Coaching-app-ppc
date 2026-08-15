@@ -1,0 +1,24 @@
+{
+  "name": "Nelson Díaz · Pro Performance Coach",
+  "short_name": "Nelson PPC",
+  "description": "Plan de entrenamiento y nutrición de Nelson Díaz — Pro Performance Coach",
+  "start_url": "./plan-nelson-diaz.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#14171B",
+  "theme_color": "#E0C23D",
+  "lang": "es-CL",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

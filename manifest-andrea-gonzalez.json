@@ -1,0 +1,24 @@
+{
+  "name": "Andrea González · Pro Performance Coach",
+  "short_name": "Andrea PPC",
+  "description": "Plan de entrenamiento y nutrición de Andrea González — Pro Performance Coach",
+  "start_url": "./plan-andrea-gonzalez.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#14171B",
+  "theme_color": "#B8BCC4",
+  "lang": "es-CL",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

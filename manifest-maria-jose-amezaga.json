@@ -1,0 +1,24 @@
+{
+  "name": "María José Amezaga · Pro Performance Coach",
+  "short_name": "María José PPC",
+  "description": "Plan de entrenamiento y nutrición de María José Amezaga — Pro Performance Coach",
+  "start_url": "./plan-maria-jose-amezaga.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#14171B",
+  "theme_color": "#F5C518",
+  "lang": "es-CL",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

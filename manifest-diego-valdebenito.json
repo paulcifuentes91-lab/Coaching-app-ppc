@@ -1,0 +1,24 @@
+{
+  "name": "Diego Valdebenito · Pro Performance Coach",
+  "short_name": "Diego PPC",
+  "description": "Plan de entrenamiento y nutrición de Diego Valdebenito — Pro Performance Coach",
+  "start_url": "./plan-diego-valdebenito.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#14171B",
+  "theme_color": "#E67E22",
+  "lang": "es-CL",
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
