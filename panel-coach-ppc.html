@@ -1278,6 +1278,25 @@ const TIPOS_DIA = {
  "Cuádriceps y pantorrilla":"cuadriceps,pantorrilla",
  "Core y cardio":"core,cardio"
 };
+/* Empareja un string de grupos musculares (guardado como metadato del día) con la categoría de TIPOS_DIA
+   que más grupos comparte, en vez de comparar nombres visibles (los splits de ASIS usan etiquetas propias
+   como "Full body A" o "Cadena posterior" que nunca coinciden textualmente con las claves de TIPOS_DIA) */
+function mejorTipoDiaPara(gruposStr){
+ if(!gruposStr) return "";
+ const set = new Set(String(gruposStr).split(",").map(x=>x.trim()).filter(Boolean));
+ let mejor = "", mejorScore = 0;
+ for(const tipo in TIPOS_DIA){
+  const valSet = TIPOS_DIA[tipo].split(",").map(x=>x.trim());
+  const inter = valSet.reduce((n,g)=>n+(set.has(g)?1:0),0);
+  if(!inter) continue;
+  // similitud tipo Jaccard: favorece la categoría con mayor superposición relativa,
+  // no solo la que más grupos comparte en bruto (evita que categorías amplias como
+  // "Cuerpo completo" ganen por defecto frente a un match más específico y exacto)
+  const score = inter / new Set([...set, ...valSet]).size;
+  if(score > mejorScore){ mejorScore = score; mejor = tipo; }
+ }
+ return mejor;
+}
 function calcularProgresion(seriesBase, modelo){
  const m = modelo || "lineal";
  let s2, s3, s4;
@@ -1735,7 +1754,7 @@ async function renovarMesociclo(){
     <div class="lb" style="margin-bottom:6px">Días de la semana (elige tipo o "Descanso")</div>
     <div id="renovarGrillaDias" style="margin-bottom:12px">
      ${["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"].map((dia,di)=>{
-      const diaActualNombre = (act.dias[di]?.n||"").split("·").pop().trim();
+      const diaActualNombre = mejorTipoDiaPara(act.dias[di]?.grupos) || (act.dias[di]?.n||"").split("·").pop().trim();
       return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
        <span style="width:80px;font-size:12.5px;color:var(--mu)">${dia}</span>
        <select class="in" data-tipo-dia="${dia}" style="flex:1;font-size:12.5px">
@@ -1753,6 +1772,8 @@ async function renovarMesociclo(){
  document.body.appendChild(m);
  document.getElementById("renovarCerrar").onclick = ()=>m.remove();
  document.getElementById("renovarConfirmar").onclick = async ()=>{
+  const filasDia = [...document.querySelectorAll("[data-tipo-dia]")].map(sel=>({dia:sel.dataset.tipoDia, tipo:sel.value})).filter(f=>f.tipo);
+  if(!filasDia.length){ toast("Selecciona al menos un día de entreno antes de confirmar - todos quedaron en \"Descanso\""); return; }
   const fase = document.getElementById("renovarFase").value;
   const nota = document.getElementById("renovarNota").value;
   const edad = +document.getElementById("renovarEdad").value || 30;
@@ -1770,26 +1791,24 @@ async function renovarMesociclo(){
   const nuevoChk = new Date(Date.now()+semDias*86400000).toISOString().slice(0,10);
   act.ini_f = hoy; act.chk = nuevoChk;
   const disciplina = document.getElementById("renovarDisciplina")?.value || "fisicoculturismo";
-  const filasDia = [...document.querySelectorAll("[data-tipo-dia]")].map(sel=>({dia:sel.dataset.tipoDia, tipo:sel.value})).filter(f=>f.tipo);
-  if(filasDia.length){
-   const r = ASIS.generar({peso:(act.hist&&act.hist[0]&&+String(act.hist[0][1]).replace(",",".")) || 75,
-    altura:+String(act.est||170).replace(/[^0-9.]/g,"")||170, edad, sexo, act:"moderado", nivel, objetivo, dias:filasDia.length});
-   const poolDisciplina = disciplina==="crossfit" ? EJERCICIOS_CROSSFIT : disciplina==="funcional" ? EJERCICIOS_FUNCIONAL : null;
-   act.dias = filasDia.map((f,i)=>{
-    const grupos = TIPOS_DIA[f.tipo] || "cuadriceps,espalda,pecho";
-    const modelo = document.getElementById("renovarModelo")?.value || "lineal";
-    const ejEntrenamiento = poolDisciplina ? generarCircuito(poolDisciplina, i, r.seriesSesion, objetivo, nivel) : generarEjercicios(grupos, i, nivel, objetivo, r.seriesSesion, modelo);
-    const etiquetaTipo = poolDisciplina ? (disciplina==="crossfit"?"WOD":"Circuito funcional") : f.tipo;
-    return {n:`${f.dia} · ${etiquetaTipo}`,
-     secs:[
-      {n:"Calentamiento",ej:[["Movilidad articular general","5 a 10 min","accesorio",""],
-           ["Activación general","2 a 3 min","accesorio","Series livianas de aproximación"]]},
-      {n:"Entrenamiento",ej: ejEntrenamiento},
-      {n:"Estiramiento",ej:[["Elongación general","5 a 8 min","accesorio",""]]},
-      {n:"Cardio",ej: poolDisciplina ? [] : [["Caminata en cinta LISS","30 min","accesorio",r.obj.cardio]]}
-     ]};
-   });
-  }
+  const r = ASIS.generar({peso:(act.hist&&act.hist[0]&&+String(act.hist[0][1]).replace(",",".")) || 75,
+   altura:+String(act.est||170).replace(/[^0-9.]/g,"")||170, edad, sexo, act:"moderado", nivel, objetivo, dias:filasDia.length});
+  const capEl = document.querySelector("#kMax"); if(capEl){ capEl.value = r.cap; if(typeof recalcular==="function") recalcular(); }
+  const poolDisciplina = disciplina==="crossfit" ? EJERCICIOS_CROSSFIT : disciplina==="funcional" ? EJERCICIOS_FUNCIONAL : null;
+  act.dias = filasDia.map((f,i)=>{
+   const grupos = TIPOS_DIA[f.tipo] || "cuadriceps,espalda,pecho";
+   const modelo = document.getElementById("renovarModelo")?.value || "lineal";
+   const ejEntrenamiento = poolDisciplina ? generarCircuito(poolDisciplina, i, r.seriesSesion, objetivo, nivel) : generarEjercicios(grupos, i, nivel, objetivo, r.seriesSesion, modelo);
+   const etiquetaTipo = poolDisciplina ? (disciplina==="crossfit"?"WOD":"Circuito funcional") : f.tipo;
+   return {n:`${f.dia} · ${etiquetaTipo}`, grupos,
+    secs:[
+     {n:"Calentamiento",ej:[["Movilidad articular general","5 a 10 min","accesorio",""],
+          ["Activación general","2 a 3 min","accesorio","Series livianas de aproximación"]]},
+     {n:"Entrenamiento",ej: ejEntrenamiento},
+     {n:"Estiramiento",ej:[["Elongación general","5 a 8 min","accesorio",""]]},
+     {n:"Cardio",ej: poolDisciplina ? [] : [["Caminata en cinta LISS","30 min","accesorio",r.obj.cardio]]}
+    ]};
+  });
   pintarDias();
   const elFIni = document.getElementById("fIni"); if(elFIni) elFIni.value = hoy;
   const elFChk = document.getElementById("fChk"); if(elFChk) elFChk.value = nuevoChk;
@@ -1799,9 +1818,9 @@ async function renovarMesociclo(){
    const snap = await ref.get();
    const planActual = (snap.exists && snap.data().plan) || {};
    const mesos = Array.isArray(planActual.mesociclos) ? planActual.mesociclos.slice() : [];
-   mesos.push({fecha_inicio: hoy, fase, nota, dias:nDias, nivel, sexo, edad});
+   mesos.push({fecha_inicio: hoy, fase, nota, dias:filasDia.length, nivel, sexo, edad});
    const hist = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
-   hist.push({fecha: new Date().toISOString(), tipo:"entrenamiento", resumen: "Mesociclo renovado - fase: "+fase+" - "+nDias+" días"+(nota?" - "+nota:""), snapshotDays: act.dias});
+   hist.push({fecha: new Date().toISOString(), tipo:"entrenamiento", resumen: "Mesociclo renovado - fase: "+fase+" - "+filasDia.length+" días"+(nota?" - "+nota:""), snapshotDays: act.dias});
    const planFinal = Object.assign({}, planActual, {days: act.dias, startDate: hoy, checkDate: nuevoChk, mesociclos: mesos.slice(-30), historial: hist.slice(-15)});
    await ref.set({plan: planFinal}, {merge:true});
   }
@@ -2713,9 +2732,15 @@ const ASIS = {
   const protG = Math.round(d.peso*((obj.prot[0]+obj.prot[1])/2));
   const grasaG = Math.round(d.peso*(d.objetivo==="definicion"||d.objetivo==="competicion"?0.8:1.0)*(d.sexo==="f"?1.15:1.0));
   const carbG = Math.max(0, Math.round((kcal - protG*4 - grasaG*9)/4));
-  const seriesSesion = Math.round((vmin+vmax)/2 * (d.dias>=5?2.2:d.dias===4?2.6:3.2) / 1);
+  // Si proteína+grasa ya superan el objetivo calórico, carbG queda en 0 pero las kcal reales igual exceden el objetivo
+  const kcalReal = protG*4 + carbG*4 + grasaG*9;
+  const desvioPct = kcal>0 ? Math.round(((kcalReal-kcal)/kcal)*1000)/10 : 0;
+  const seriesSesionCalc = Math.round((vmin+vmax)/2 * (d.dias>=5?2.2:d.dias===4?2.6:3.2) / 1);
   const cap = d.edad>=60?22 : d.nivel==="avanzado"&&d.sexo==="m"?34 : d.nivel==="avanzado"?32 : 30;
+  // El volumen calculado no puede superar el tope por sesión: si lo excede, se ajusta al tope y se avisa
+  const seriesSesion = Math.min(seriesSesionCalc, cap);
   const avisos = [];
+  if(seriesSesionCalc > cap) avisos.push(`El volumen calculado por sesión (${seriesSesionCalc} series) superaba el tope recomendado (${cap}) y se ajustó automáticamente.`);
   if(d.edad>=55) avisos.push("A partir de los 55 conviene priorizar recuperación: 48 h entre sesiones del mismo grupo y trabajo de movilidad diario.");
   if(d.objetivo==="definicion"&&protG/d.peso<2.2) avisos.push("En déficit, subir proteína hacia 2,4 g/kg protege mejor la masa.");
   if(d.dias>=6&&d.nivel!=="avanzado") avisos.push("Seis días con nivel no avanzado suele acumular fatiga: con 4 o 5 días bien ejecutados se progresa igual o más.");
@@ -2724,7 +2749,9 @@ const ASIS = {
   if(d.peso>=90 && d.nivel==="avanzado") avisos.push("En atletas con masa magra alta la fórmula suele quedarse corta: si el peso no se mueve, subir 200-300 kcal y volver a medir en dos semanas. El gasto del InBody es mejor referencia.");
   if(d.objetivo==="competicion"&&d.dias>=5) avisos.push("Con cinco o más sesiones más cardio diario, el gasto real supera lo que estima la fórmula. Ajustar según la báscula y las fotos, no al revés.");
   if(kcal < g.bmr) avisos.push(`Las calorías objetivo (${kcal}) quedan por debajo del metabolismo basal (${g.bmr}). Revisar antes de aplicar.`);
-  return {obj,vmin,vmax,split,kcal,protG,carbG,grasaG,bmr:g.bmr,tdee:g.tdee,cap,avisos,seriesSesion,
+  if(protG*4 + grasaG*9 > kcal) avisos.push(`Los gramos de proteína (${protG} g) y grasa (${grasaG} g) configurados ya suman ${protG*4+grasaG*9} kcal, más que el objetivo de ${kcal} kcal - no queda margen para carbohidratos (quedan en 0 g). Bajar proteína o grasa antes de aplicar.`);
+  if(Math.abs(desvioPct) > 5) avisos.push(`Las calorías reales del plan (${kcalReal} kcal) se desvían ${desvioPct>0?"+":""}${desvioPct}% del objetivo (${kcal} kcal), fuera del margen de seguridad de ±5%. Revisar antes de aplicar.`);
+  return {obj,vmin,vmax,split,kcal,kcalReal,protG,carbG,grasaG,bmr:g.bmr,tdee:g.tdee,cap,avisos,seriesSesion,
    frecuencia: d.dias>=4?2:1,
    rir: this.rirNivel(obj.rir, d.nivel, d.edad), reps:obj.reps, cardio:obj.cardio, nota:obj.nota};
  }
@@ -2789,7 +2816,7 @@ document.addEventListener("click",e=>{
    return;
   }
   if(act.dias.length && !confirm("Esto reemplaza los días actuales de "+act.n+". ¿Continuar?")) return;
-  act.dias = r.split.map((s,i)=>({n:`Día ${i+1} · ${s[0]}`,
+  act.dias = r.split.map((s,i)=>({n:`Día ${i+1} · ${s[0]}`, grupos: s[1],
    secs:[
     {n:"Calentamiento",ej:[["Movilidad articular general","5 a 10 min","accesorio",""],
          ["Activación de "+s[1].split(",").map(x=>GRUPO_LB[x]||x).join(", "),"2 a 3 min","accesorio","Series livianas de aproximación"]]},
