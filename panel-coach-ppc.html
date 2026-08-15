@@ -1586,6 +1586,50 @@ function pintarMesocicloCalendario(){
   <div class="anfila"><span class="anl">Vence / renueva</span><span class="anv">${fmt(act.vence)}</span></div>`;
 }
 
+/* ── Resumen de bienestar emocional (dailyFeel) para el coach: mismos campos que renderFeelCard/renderAnalysis en la app del atleta ── */
+const FEEL_CAMPOS = [
+ ["energia","⚡ Energía"], ["sueno","😴 Sueño"], ["dolor","💢 Dolor"],
+ ["animo","🙂 Ánimo"], ["estres","🌀 Estrés"], ["motivacion","🔥 Motivación"]
+];
+function resumenBienestar(feelObj){
+ const fechas = Object.keys(feelObj||{}).filter(k=>feelObj[k]).sort().reverse();
+ if(!fechas.length) return null;
+ const ultimos = fechas.slice(0,7).map(f=>Object.assign({fecha:f}, feelObj[f]));
+ const previos = fechas.slice(7,14).map(f=>feelObj[f]);
+ const promedio = arr => {
+  const p = {};
+  FEEL_CAMPOS.forEach(([k])=>{
+   const vals = arr.map(x=>+x[k]).filter(v=>v>0);
+   p[k] = vals.length ? Math.round((vals.reduce((a,b)=>a+b,0)/vals.length)*10)/10 : null;
+  });
+  return p;
+ };
+ const promActual = promedio(ultimos);
+ const promPrevio = previos.length ? promedio(previos) : null;
+ const tendencia = {};
+ FEEL_CAMPOS.forEach(([k])=>{
+  tendencia[k] = (promActual[k]!=null && promPrevio && promPrevio[k]!=null)
+   ? Math.round((promActual[k]-promPrevio[k])*10)/10 : null;
+ });
+ return { n: fechas.length, ultimos, promedio: promActual, tendencia };
+}
+function renderBienestarHTML(resumen){
+ if(!resumen) return '<div class="v7vacio">Sin check-ins de ánimo/energía registrados todavía.</div>';
+ const fmt = iso => { const d=new Date(iso+"T12:00:00"); const M=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"]; return d.getDate()+" "+M[d.getMonth()]; };
+ const filasProm = FEEL_CAMPOS.map(([k,lb])=>{
+  const v = resumen.promedio[k];
+  const t = resumen.tendencia[k];
+  const tTxt = t==null ? "" : (t>0?" · en alza (+"+t+")":t<0?" · en baja ("+t+")":" · estable");
+  return '<div class="anfila"><span class="anl">'+lb+'</span><span class="anv">'+(v!=null?v+"/5":"-")+tTxt+'</span></div>';
+ }).join("");
+ const filasUlt = resumen.ultimos.slice(0,7).map(u=>{
+  const partes = FEEL_CAMPOS.filter(([k])=>u[k]).map(([k,lb])=>lb.split(" ")[0]+u[k]).join(" ");
+  const notaTxt = u.nota ? ' · "'+u.nota+'"' : '';
+  return '<div class="anfila"><span class="anl">'+fmt(u.fecha)+'</span><span class="anv">'+(partes||"-")+notaTxt+'</span></div>';
+ }).join("");
+ return '<div class="ansec"><div class="ansect">Promedio últimos '+resumen.ultimos.length+' check-ins <span class="aux">de '+resumen.n+' registrados en total</span></div>'+filasProm+'</div>'
+      + '<div class="ansec"><div class="ansect">Registros diarios</div>'+filasUlt+'</div>';
+}
 async function pintarPerfil(){
  const el = document.getElementById("perfilCont");
  if(!el) return;
@@ -1601,9 +1645,10 @@ async function pintarPerfil(){
   tendencia = (dif>0?"+":"")+dif.toFixed(1)+" kg vs. chequeo anterior";
  }
 
- let an = null;
- if(HOME.datos && HOME.datos[act.id] && HOME.datos[act.id].anamnesis) an = HOME.datos[act.id].anamnesis;
- else { const d = await fbTraer(act); an = d && d.anamnesis; }
+ let d = (HOME.datos && HOME.datos[act.id]) || null;
+ if(!d || !d.anamnesis) d = (await fbTraer(act)) || d;
+ const an = d && d.anamnesis;
+ const bienestar = resumenBienestar(d && d.dailyFeel);
 
  const camposClave = [
   ["edad","Edad"], ["altura","Estatura (anamnesis)"], ["objetivo","Objetivo"],
@@ -1636,6 +1681,7 @@ async function pintarPerfil(){
  html += '</div>';
  if(filasAn){ html += '<div class="ansec"><div class="ansect">De su anamnesis</div>'+filasAn+'</div>'; }
  else { html += '<div class="v7vacio" style="margin-top:14px">Sin anamnesis completada todavia.</div>'; }
+ html += renderBienestarHTML(bienestar);
  if(act.nota){ html += '<div class="ansec"><div class="ansect">Nota interna</div><div class="anfila"><span class="anv">'+act.nota+'</span></div></div>'; }
 
  el.innerHTML = html;
@@ -3087,16 +3133,17 @@ document.addEventListener("click", async e=>{
   if(!d){ if(box) box.innerHTML = '<div class="v7vacio">Sin datos en la nube todavía.</div>'; return; }
   const prog = d.progressLog||[];
   const cargas = Object.keys(d.exerciseLoads||{}).length;
-  const feel = Object.keys(d.dailyFeel||{}).length;
+  const bienestar = resumenBienestar(d.dailyFeel);
   if(box) box.innerHTML = `
    <div class="fbgrid">
     <div class="fbb"><div class="fbl">Ejercicios marcados</div><div class="fbv">${ad?ad.marcados:0}</div></div>
     <div class="fbb"><div class="fbl">Días entrenados</div><div class="fbv">${ad?ad.dias:0}</div></div>
     <div class="fbb"><div class="fbl">Cargas registradas</div><div class="fbv">${cargas}</div></div>
-    <div class="fbb"><div class="fbl">Check-ins diarios</div><div class="fbv">${feel}</div></div>
+    <div class="fbb"><div class="fbl">Check-ins diarios</div><div class="fbv">${bienestar?bienestar.n:0}</div></div>
     <div class="fbb"><div class="fbl">Chequeos en la nube</div><div class="fbv">${prog.length}</div></div>
     <div class="fbb"><div class="fbl">Último día activo</div><div class="fbv2">${ad?ad.ultimo:"—"}</div></div>
    </div>
+   <div style="margin-top:14px">${renderBienestarHTML(bienestar)}</div>
    ${d.plan&&d.plan.porCoach?`<div class="fbnota">Este atleta ya tiene un plan editado desde el panel (${(d.plan.actualizado||"").slice(0,10)}).</div>`:""}`;
   return;
  }
