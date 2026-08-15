@@ -43,6 +43,7 @@ place-items:center;font-family:var(--mono);font-size:11px;font-weight:600;color:
 .ict{font-family:var(--mono);font-size:8.5px;color:var(--fa);text-transform:uppercase;letter-spacing:.6px;
 white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pt{width:6px;height:6px;border-radius:50%;margin-left:auto;flex-shrink:0}
+.ins-badge{font-family:var(--mono);font-size:9.5px;color:var(--fa);background:var(--card2);border:1px solid var(--line);border-radius:20px;padding:2px 7px;margin-left:auto;flex-shrink:0;white-space:nowrap}
 .pt.ok{background:var(--ok)}.pt.warn{background:var(--wa)}.pt.alert{background:var(--al)}.pt.off{background:var(--fa)}
 .sbpie{padding:11px 14px;border-top:1px solid var(--line);display:flex;align-items:center;gap:9px}
 .sbpie img{width:22px;opacity:.42}
@@ -1450,13 +1451,22 @@ function okAviso(btn){const o=btn.parentElement.querySelector(".ok");
  if(o){o.classList.add("on");setTimeout(()=>o.classList.remove("on"),1800);}}
 
 /* ═══════════ SIDEBAR ═══════════ */
+/* Total de insignias planeadas para el sistema de logros (fase 1 implementa 5; el
+   contador "X/16" en la lista de atletas muestra ganadas-de-las-implementadas sobre
+   este total futuro, no sobre 5, para que no haya que tocar la UI en cada fase nueva) */
+const TOTAL_INSIGNIAS_PLANEADAS = 16;
 function pintarLista(filtro=""){
  const f=filtro.toLowerCase();
  $("#lista").innerHTML = ATLETAS.filter(a=>a.n.toLowerCase().includes(f)||a.cat.toLowerCase().includes(f))
-  .map(a=>`<div class="item ${a.id===act?.id?'on':''} ${a.estado==='pausa'?'frz':''}" data-id="${a.id}">
+  .map(a=>{
+   const dAth = HOME.datos && HOME.datos[a.id];
+   const nIns = dAth && dAth.insignias ? Object.keys(dAth.insignias).length : 0;
+   const insigniasTxt = dAth ? `<span class="ins-badge" title="Insignias ganadas">${nIns}/${TOTAL_INSIGNIAS_PLANEADAS}</span>` : "";
+   return `<div class="item ${a.id===act?.id?'on':''} ${a.estado==='pausa'?'frz':''}" data-id="${a.id}">
    <div class="av">${a.ini}</div><div style="min-width:0">
    <div class="inm">${a.n}${a.tz!=='America/Santiago'?'<span class="tg nz">'+paisCorto(a.tz)+'</span>':''}</div>
-   <div class="ict">${a.cat}</div></div><span class="pt ${a.e}"></span></div>`).join("");
+   <div class="ict">${a.cat}</div></div>${insigniasTxt}<span class="pt ${a.e}"></span></div>`;
+  }).join("");
 }
 
 /* ═══════════ CARGAR FICHA ═══════════ */
@@ -4131,6 +4141,7 @@ async function cargarDatosHome(){
  HOME.cargando = false; HOME.cargado = true;
  if(marca) marca.style.display = "none";
  pintarHome();
+ pintarLista($("#buscar")?.value || "");
 }
 
 /* Días desde el último entrenamiento marcado */

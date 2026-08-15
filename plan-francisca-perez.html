@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.46.0/dist/tabler-icons.min.css" rel="stylesheet">
 <style>
   :root{
     --bg:#14171B; --surface:#1D2126; --surface-2:#262B31; --border:#2E333A;
@@ -209,6 +210,7 @@
 
   <div id="feelView" style="display:none">
     <div class="card" id="feelCard" style="margin-top:14px"></div>
+    <div class="card" id="logrosCard" style="margin-top:12px"></div>
     <div class="card" id="analysisCard" style="margin-top:12px;display:none"></div>
     <div class="card" id="feelHistoryCard" style="margin-top:12px;display:none"></div>
     <div class="card" id="anamnesisCard" style="margin-top:12px;display:none"></div>
@@ -569,6 +571,9 @@ let healthLog = {};
 let exercisePRs = {};
 let _histSeedDone = false;
 let dataReady = false;
+let insignias = {};
+let _tienePrimeraFoto = false;
+let _fechaPrimeraFoto = null;
 
 const ALIM_LIBRE = {
  "manzana":[52,0.3,14,0.2], "plátano":[89,1.1,23,0.3], "naranja":[47,0.9,12,0.1],
@@ -813,6 +818,7 @@ athleteRef.onSnapshot((doc)=>{
     }
     mesocicloHistory = data.mesocicloHistory || {};
     dailyFeel = data.dailyFeel || {};
+    insignias = data.insignias || {};
     anamnesisData = data.anamnesis || null;
     progressPhotos = data.progressPhotos || [];
     healthLog = data.healthLog || {};
@@ -871,6 +877,7 @@ athleteRef.onSnapshot((doc)=>{
   renderAnamnesis();
   renderStaticPanels();
   renderAll();
+  evaluarInsignias();
 }, (err)=>{
   document.getElementById('loadingOverlay').textContent = 'No se pudo conectar a la base de datos. Revisa tu conexión y recarga la página.';
   showToast('ERROR de conexión: ' + err.message, true);
@@ -1590,6 +1597,111 @@ function mealHistoryByDay(){
   }));
 }
 
+/* ============================================================
+   LOGROS / INSIGNIAS — Fase 1 (5 insignias, una por área, sin cruzar datos).
+   Nota sobre "Semana en objetivo": esta app no registra las kcal/proteína
+   REALES que el atleta come cada día (mealChecks solo marca si comió la
+   comida planificada, no cuánto). Como proxy honesto se usa "cumplió el
+   100% de las comidas planificadas ese día", ya que esas comidas están
+   armadas para cuadrar con el objetivo calórico/proteico del bloque.
+   ============================================================ */
+const INSIGNIAS_DEF = [
+  {id:'primer_paso', icon:'ti-shoe', label:'Primer paso', desc:'Completó su primer día de entrenamiento'},
+  {id:'racha_hierro', icon:'ti-flame', label:'Racha de hierro', desc:'7 sesiones de entrenamiento seguidas, 100% completas'},
+  {id:'primera_foto', icon:'ti-camera', label:'Primera foto', desc:'Subió su primera foto de progreso'},
+  {id:'checkin_honesto', icon:'ti-message-heart', label:'Check-in honesto', desc:'Registró ánimo y energía 7 días seguidos'},
+  {id:'semana_objetivo', icon:'ti-apple', label:'Semana en objetivo', desc:'7 días seguidos cumpliendo el 100% del plan de comidas'}
+];
+
+// Racha de ENTRADAS consecutivas en un historial {date,pct} (sin exigir dias
+// calendario contiguos: los dias de descanso no aparecen en el historial y
+// por lo tanto no cortan la racha, pero un dia registrado e incompleto si).
+function evaluarRachaSesiones(historial, n){
+  const asc = [...historial].sort((a,b)=> a.date<b.date?-1:a.date>b.date?1:0);
+  let streak=0, fechaLogro=null;
+  asc.forEach(h=>{
+    if(h.pct===100){ streak++; if(streak>=n && !fechaLogro) fechaLogro=h.date; }
+    else streak=0;
+  });
+  return fechaLogro;
+}
+
+// Racha de fechas estrictamente consecutivas en el calendario (diff de 1 dia).
+// Sirve para animo/nutricion, donde se espera un registro todos los dias.
+function evaluarRachaCalendario(fechas, n){
+  const asc = [...new Set(fechas)].sort();
+  let streak=0, prev=null, fechaLogro=null;
+  asc.forEach(f=>{
+    const diff = prev ? Math.round((new Date(f+'T12:00:00')-new Date(prev+'T12:00:00'))/86400000) : null;
+    streak = (diff===1) ? streak+1 : 1;
+    if(streak>=n && !fechaLogro) fechaLogro=f;
+    prev = f;
+  });
+  return fechaLogro;
+}
+
+function evaluarInsignias(){
+  const nuevas = {};
+
+  if(!insignias.primer_paso){
+    const completos = trainHistoryByDay().filter(h=>h.pct===100).map(h=>h.date).sort();
+    if(completos.length) nuevas.primer_paso = completos[0];
+  }
+
+  if(!insignias.racha_hierro){
+    const f = evaluarRachaSesiones(trainHistoryByDay(), 7);
+    if(f) nuevas.racha_hierro = f;
+  }
+
+  if(!insignias.primera_foto && _tienePrimeraFoto){
+    nuevas.primera_foto = _fechaPrimeraFoto || todayStr();
+  }
+
+  if(!insignias.checkin_honesto){
+    const fechas = Object.keys(dailyFeel).filter(f=> dailyFeel[f] && dailyFeel[f].animo && dailyFeel[f].energia);
+    const f = evaluarRachaCalendario(fechas, 7);
+    if(f) nuevas.checkin_honesto = f;
+  }
+
+  if(!insignias.semana_objetivo){
+    const fechas = mealHistoryByDay().filter(h=>h.pct===100).map(h=>h.date);
+    const f = evaluarRachaCalendario(fechas, 7);
+    if(f) nuevas.semana_objetivo = f;
+  }
+
+  if(Object.keys(nuevas).length){
+    insignias = Object.assign({}, insignias, nuevas);
+    saveField('insignias', insignias);
+    renderLogros();
+  }
+}
+
+function renderLogros(){
+  const el = document.getElementById('logrosCard');
+  if(!el) return;
+  const total = INSIGNIAS_DEF.filter(b=> insignias && insignias[b.id]).length;
+  el.innerHTML = `
+    <div class="section-label" style="margin:0 0 12px">🏅 Logros <span style="color:var(--text-faint);font-weight:500;text-transform:none;letter-spacing:normal">(${total}/${INSIGNIAS_DEF.length})</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;padding-bottom:10px;">
+      ${INSIGNIAS_DEF.map(b=>{
+        const ganada = !!(insignias && insignias[b.id]);
+        const titulo = b.desc + (ganada ? (' · ganada el ' + insignias[b.id]) : ' · todavía no ganada');
+        return `
+        <div style="display:flex;flex-direction:column;align-items:center;width:62px;" title="${titulo}">
+          <div style="width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:23px;
+            background:${ganada ? 'var(--accent)' : 'var(--surface-2)'};
+            color:${ganada ? '#14171B' : 'var(--text-faint)'};
+            border:1px solid ${ganada ? 'transparent' : 'var(--border)'};
+            opacity:${ganada ? '1' : '.5'};">
+            <i class="ti ${b.icon}"></i>
+          </div>
+          <div style="font-size:9.5px;text-align:center;margin-top:6px;color:${ganada ? 'var(--text)' : 'var(--text-faint)'};line-height:1.25">${b.label}</div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
 function renderMealHistory(){
   const el = document.getElementById('mealHistoryCard');
   if(!el) return;
@@ -2021,6 +2133,11 @@ async function loadPhotoGallery(){
     el.innerHTML = items.map(p=>
       `<a href="${p.data}" target="_blank" style="display:block"><img src="${p.data}" style="width:72px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><div style="font-size:9px;color:var(--text-faint);text-align:center;margin-top:2px">${p.date}</div></a>`
     ).join('');
+    if(items.length && !_tienePrimeraFoto){
+      _tienePrimeraFoto = true;
+      _fechaPrimeraFoto = items.map(p=>p.date).sort()[0] || todayStr();
+      evaluarInsignias();
+    }
   }catch(e){ /* sin fotos aún */ }
 }
 
@@ -2152,6 +2269,7 @@ function renderAll(){
 
   if(activeView==='feel'){
     renderFeelCard();
+    renderLogros();
     renderAnalysis();
     renderFeelHistory();
   } else if(activeView==='training'){
