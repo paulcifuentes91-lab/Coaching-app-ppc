@@ -209,7 +209,7 @@
   </header>
 
   <div id="feelView" style="display:none">
-    <div class="card" id="logrosCard" style="margin-top:14px"></div>
+    <details class="card" id="logrosCard" style="margin-top:14px"></details>
     <div class="card" id="feelCard" style="margin-top:12px"></div>
     <div class="card" id="analysisCard" style="margin-top:12px;display:none"></div>
     <div class="card" id="feelHistoryCard" style="margin-top:12px;display:none"></div>
@@ -1828,11 +1828,17 @@ function evaluarInsignias(){
 }
 
 function renderLogros(){
+  // #logrosCard es un <details>: reemplazar su innerHTML (summary + cuerpo) NO
+  // afecta el atributo "open" del propio <details>, así que re-renderizar tras
+  // ganar una insignia no cierra el acordeón si el atleta lo tenía abierto.
   const el = document.getElementById('logrosCard');
   if(!el) return;
   const total = INSIGNIAS_DEF.filter(b=> insignias && insignias[b.id]).length;
   el.innerHTML = `
-    <div class="section-label" style="margin:0 0 12px">🏅 Logros <span style="color:var(--text-faint);font-weight:500;text-transform:none;letter-spacing:normal">(${total}/${INSIGNIAS_DEF.length})</span></div>
+    <summary style="font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-faint);cursor:pointer;">
+      🏅 Logros · <span style="color:var(--text)">${total}/${INSIGNIAS_DEF.length}</span>
+    </summary>
+    <div style="margin-top:12px">
     ${INSIGNIAS_AREAS.map(ar=>{
       const badges = INSIGNIAS_DEF.filter(b=>b.area===ar.area);
       return `
@@ -1858,6 +1864,7 @@ function renderLogros(){
         </div>
       </div>`;
     }).join('')}
+    </div>
   `;
   el.querySelectorAll('[data-badge-id]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
