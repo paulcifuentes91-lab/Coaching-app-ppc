@@ -209,7 +209,7 @@
   </header>
 
   <div id="feelView" style="display:none">
-    <details class="card" id="logrosCard" style="margin-top:14px"></details>
+    <details class="card" id="logrosCard" style="margin:14px auto 0;max-width:380px"></details>
     <div class="card" id="feelCard" style="margin-top:12px"></div>
     <div class="card" id="analysisCard" style="margin-top:12px;display:none"></div>
     <div class="card" id="feelHistoryCard" style="margin-top:12px;display:none"></div>
@@ -1686,15 +1686,15 @@ function renderLogros(){
   if(!el) return;
   const total = INSIGNIAS_DEF.filter(b=> insignias && insignias[b.id]).length;
   el.innerHTML = `
-    <summary style="font-family:var(--font-mono);font-size:16px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint);cursor:pointer;text-align:center;">
+    <summary style="font-family:var(--font-mono);font-size:16px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint);cursor:pointer;text-align:left;">
       🏅 Logros · <span style="color:var(--text)">${total}/${INSIGNIAS_DEF.length}</span>
     </summary>
-    <div style="margin-top:12px;text-align:center;">
+    <div style="margin-top:12px;">
     ${INSIGNIAS_AREAS.map(ar=>{
       const badges = INSIGNIAS_DEF.filter(b=>b.area===ar.area);
       return `
       <div style="margin-bottom:14px">
-        <div style="display:flex;align-items:center;justify-content:center;gap:6px;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;">
           <i class="ti ${ar.icon}" style="font-size:13px"></i>${ar.area}
         </div>
         <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:14px;">
