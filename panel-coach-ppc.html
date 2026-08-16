@@ -4191,22 +4191,50 @@ function diasHasta(iso){
  return Math.round((new Date(iso+"T12:00:00") - new Date())/86400000);
 }
 
+/* Marca como revisado el chequeo actual (a.chk) de un atleta - se llama al
+   entrar a su ficha desde la alerta "registró su chequeo". Guarda la fecha
+   de chequeo ya vista (no un simple true/false) para que, cuando se renueve
+   el mesociclo y a.chk cambie, la alerta pueda volver a aparecer para el
+   siguiente ciclo en vez de quedar silenciada para siempre. Falla en
+   silencio: si no se pudo guardar, la alerta simplemente reaparece la
+   proxima vez, sin romper nada. */
+async function marcarChequeoRevisado(a){
+ const id = FB_ID[a.id];
+ if(!id || !FB.on || !a.chk) return;
+ try{
+  await FB.db.collection("athletes").doc(id).set({ chequeoRevisadoFecha: a.chk }, { merge:true });
+  if(HOME.datos && HOME.datos[a.id]) HOME.datos[a.id].chequeoRevisadoFecha = a.chk;
+ }catch(e){ /* silencioso */ }
+}
+
 function pintarHome(){
  /* ── 1 · Atención hoy ── */
  const alertas = [];
  ATLETAS.forEach(a=>{
   if(a.estado==="pausa") return;
+  const _dHome = HOME.datos[a.id] || {};
+  /* _yaRegistro se calcula siempre (no solo dentro de la ventana de 7 dias)
+     porque tambien la usa la alerta de "chequeo completado" mas abajo, que
+     debe poder avisar aunque el chequeo se haya completado fuera de esa
+     ventana (temprano, o ya vencido). */
+  const _log = _dHome.progressLog || [];
+  const _yaEnLog = a.chk ? _log.some(e=> e && e.date && e.date >= a.chk) : false;
+  const _yaEnHist = a.chk ? (a.hist||[]).some(e=> e && e[0] && e[0] >= a.chk) : false;
+  const _yaRegistro = _yaEnLog || _yaEnHist;
   const dChk = diasHasta(a.chk);
-  if(dChk!==null && dChk>=0 && dChk<=7){
-   const _log = (HOME.datos[a.id] && HOME.datos[a.id].progressLog) || [];
-   const _yaEnLog = _log.some(e=> e && e.date && e.date >= a.chk);
-   const _yaEnHist = (a.hist||[]).some(e=> e && e[0] && e[0] >= a.chk);
-   const _yaRegistro = _yaEnLog || _yaEnHist;
-   if(!_yaRegistro){
-    alertas.push({p:dChk<=2?0:1, ini:a.ini, id:a.id,
-     txt:`Chequeo de <b>${a.n.split(" ")[0]}</b>`,
-     sub: dChk===0?"hoy":dChk===1?"mañana":`en ${dChk} días`, acc:"wa", tipo:"chequeo"});
-   }
+  if(dChk!==null && dChk>=0 && dChk<=7 && !_yaRegistro){
+   alertas.push({p:dChk<=2?0:1, ini:a.ini, id:a.id,
+    txt:`Chequeo de <b>${a.n.split(" ")[0]}</b>`,
+    sub: dChk===0?"hoy":dChk===1?"mañana":`en ${dChk} días`, acc:"wa", tipo:"chequeo"});
+  }
+  /* Chequeo COMPLETADO por el atleta y todavia no revisado por el coach.
+     chequeoRevisadoFecha guarda el valor de a.chk que ya se reviso - al
+     renovar el mesociclo (a.chk cambia) la alerta puede volver a aparecer
+     para el proximo ciclo, en vez de quedar silenciada para siempre. */
+  if(a.chk && _yaRegistro && _dHome.chequeoRevisadoFecha !== a.chk){
+   alertas.push({p:1, ini:a.ini, id:a.id,
+    txt:`<b>${a.n.split(" ")[0]}</b> registró su chequeo`,
+    sub:"pendiente de revisar", acc:"ficha", tipo:"chequeoCompletado"});
   }
   const dVen = diasHasta(a.vence);
   if(dVen!==null && dVen<=10){
@@ -4245,7 +4273,7 @@ function pintarHome(){
  if(!cAt) return;
  cAt.innerHTML = alertas.length
   ? alertas.map(al=>`
-    <div class="hrowa p${al.p}" data-ir="${al.id}">
+    <div class="hrowa p${al.p}" data-ir="${al.id}" data-tipo="${al.tipo}">
      <div class="hav">${al.ini}</div>
      <div class="hinfo"><div class="ht">${al.txt}</div><div class="hs">${al.sub}</div></div>
      <button class="hbtn" data-accion="${al.acc}" data-tipo="${al.tipo}" data-id="${al.id}">
@@ -4485,7 +4513,10 @@ document.addEventListener("click", e=>{
    const tel=(a.wa||"").replace(/[^0-9]/g,"");
    if(!tel){ toast("Falta el número de "+a.n); return; }
    window.open("https://wa.me/"+tel+"?text="+msgWhatsApp(a, t.dataset.tipo),"_blank","noopener");
-  } else { irAtleta(a); }
+  } else {
+   if(t.dataset.tipo==="chequeoCompletado") marcarChequeoRevisado(a);
+   irAtleta(a);
+  }
   return;
  }
  if(t.hasAttribute?.("data-anwa")){
@@ -4503,7 +4534,10 @@ document.addEventListener("click", e=>{
  const fila = t.closest?.("[data-ir]");
  if(fila && !t.closest("button")){
   const a = ATLETAS.find(x=>x.id===fila.dataset.ir);
-  if(a) irAtleta(a);
+  if(a){
+   if(fila.dataset.tipo==="chequeoCompletado") marcarChequeoRevisado(a);
+   irAtleta(a);
+  }
   return;
  }
  if(t.id==="volverInicio" || t.closest?.("#volverInicio")){ irInicio(); return; }
