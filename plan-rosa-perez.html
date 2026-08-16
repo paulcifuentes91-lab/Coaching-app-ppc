@@ -1261,6 +1261,41 @@ function renderHeader(){
 // Indicador de estado emocional en el header: si todavia no registro como se
 // siente hoy, invita a hacerlo; si ya lo hizo, refleja la tendencia de animo
 // de los ultimos dias. Siempre clickeable -> lleva a la vista "Como te sientes".
+// Bancos de frases del indicador de animo del header - varias por grupo para
+// que no se sienta repetitivo, manteniendo el tono de cada estado (invitacion
+// a registrar / animo alto / estable / bajo). "Mentalidad Primero": breve,
+// calido, sin sonar clinico. El caso "aun sin datos de animo" (prom==null)
+// reutiliza el mismo banco que "sin registrar hoy" porque en el fondo pide lo
+// mismo: invitar a registrar.
+const FRASES_HEADER_FEEL = {
+  sinRegistrar: ['¿Cómo te sientes hoy?', 'Cuéntanos cómo vas hoy', 'Un minuto para ti: ¿cómo estás?', 'Hoy también cuenta cómo te sientes'],
+  animoAlto: ['Buen ánimo estos días', 'Se te nota con energía', 'Vienes con todo esta semana', 'Racha de buena onda'],
+  animoEstable: ['Ánimo estable estos días', 'Vas sosteniendo el ritmo', 'Semana pareja, sigue así', 'Constancia ante todo'],
+  animoBajo: ['Ánimo bajo estos días', 'Los días difíciles también cuentan', 'Sigues aquí, eso ya es mucho', 'Registrar cómo te sientes también es avanzar']
+};
+
+// Elige una frase del banco para hoy: si ya se eligió una para este mismo
+// grupo hoy, la reutiliza (asi no cambia cada vez que se re-renderiza el
+// header dentro de la misma sesion/dia). Si hay que elegir una nueva, evita
+// repetir la ultima que se le mostro al atleta en ese grupo.
+function elegirFraseRotando(banco, grupo){
+  const diaKey = 'ppc_fraseDia_' + ATHLETE_ID + '_' + grupo + '_' + todayStr();
+  const historialKey = 'ppc_fraseUltima_' + ATHLETE_ID + '_' + grupo;
+  try{
+    const yaElegidaHoy = localStorage.getItem(diaKey);
+    if(yaElegidaHoy && banco.includes(yaElegidaHoy)) return yaElegidaHoy;
+  }catch(e){}
+  let ultima = null;
+  try{ ultima = localStorage.getItem(historialKey); }catch(e){}
+  const opciones = banco.length>1 ? banco.filter(f=>f!==ultima) : banco;
+  const elegida = opciones[Math.floor(Math.random()*opciones.length)];
+  try{
+    localStorage.setItem(diaKey, elegida);
+    localStorage.setItem(historialKey, elegida);
+  }catch(e){}
+  return elegida;
+}
+
 function renderHeaderFeel(){
   const el = document.getElementById('headerFeel');
   if(!el) return;
@@ -1268,15 +1303,15 @@ function renderHeaderFeel(){
   const yaHoy = !!(dailyFeel[hoy] && (dailyFeel[hoy].animo!=null || dailyFeel[hoy].energia!=null));
   let emoji, texto;
   if(!yaHoy){
-    emoji = '🙂'; texto = '¿Cómo te sientes hoy?';
+    emoji = '🙂'; texto = elegirFraseRotando(FRASES_HEADER_FEEL.sinRegistrar, 'sinRegistrar');
   } else {
     const fechas = Object.keys(dailyFeel).filter(f=> dailyFeel[f] && dailyFeel[f].animo!=null).sort().reverse().slice(0,3);
     const valores = fechas.map(f=>dailyFeel[f].animo);
     const prom = valores.length ? valores.reduce((a,b)=>a+b,0)/valores.length : null;
-    if(prom==null){ emoji='🙂'; texto='Registra tu ánimo'; }
-    else if(prom>=4){ emoji='😊'; texto='Buen ánimo estos días'; }
-    else if(prom>=2.5){ emoji='😐'; texto='Ánimo estable estos días'; }
-    else { emoji='😔'; texto='Ánimo bajo estos días'; }
+    if(prom==null){ emoji='🙂'; texto=elegirFraseRotando(FRASES_HEADER_FEEL.sinRegistrar, 'sinRegistrar'); }
+    else if(prom>=4){ emoji='😊'; texto=elegirFraseRotando(FRASES_HEADER_FEEL.animoAlto, 'animoAlto'); }
+    else if(prom>=2.5){ emoji='😐'; texto=elegirFraseRotando(FRASES_HEADER_FEEL.animoEstable, 'animoEstable'); }
+    else { emoji='😔'; texto=elegirFraseRotando(FRASES_HEADER_FEEL.animoBajo, 'animoBajo'); }
   }
   el.innerHTML = `<button type="button" id="headerFeelBtn" style="margin-top:8px;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:12.5px;font-weight:600;cursor:pointer;">${emoji} ${texto}</button>`;
   document.getElementById('headerFeelBtn').addEventListener('click', ()=>{
