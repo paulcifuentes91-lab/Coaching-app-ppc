@@ -202,6 +202,7 @@
     <div class="eyebrow" id="headerEyebrow">Mesociclo Julio · Fuerza + Hipertrofia · Semana 1 a 4</div>
     <h1 id="headerName">Nicole Jerez</h1>
     <p class="athlete-sub" id="headerMeta"><b>Fitness y Performance</b> · Periodo Hipertrofia · 5 sesiones semanales</p>
+    <div id="headerFeel"></div>
     <div id="expiryBanner"></div>
     <div id="checkBanner"></div>
 
@@ -900,6 +901,7 @@ function lastNDates(n){
 let headerEyebrow = DEFAULT_PLAN.eyebrow;
 let headerNombre = DEFAULT_PLAN.nombre;
 let headerMeta = DEFAULT_PLAN.meta;
+let anamnesisObjetivo = ''; // solo lectura: objetivo que el atleta puso en su anamnesis (si existe)
 let accessExpiresAt = DEFAULT_PLAN.accessExpiresAt;
 let planStartDate = DEFAULT_PLAN.startDate;
 let planCheckDate = DEFAULT_PLAN.checkDate;
@@ -1192,6 +1194,7 @@ athleteRef.onSnapshot((doc)=>{
     mesocicloHistory = data.mesocicloHistory || {};
     dailyFeel = data.dailyFeel || {};
     insignias = data.insignias || {};
+    anamnesisObjetivo = (data.anamnesis && data.anamnesis.objetivo) || '';
     diasLibres = data.diasLibres || {};
     progressPhotos = data.progressPhotos || [];
     healthLog = data.healthLog || {};
@@ -1386,6 +1389,7 @@ function renderFeelCard(){
       renderFeelCard();
       renderFeelHistory();
       renderAnalysis();
+      renderHeaderFeel();
     });
   });
   el.querySelectorAll('.emo-chip').forEach(btn=>{
@@ -1716,11 +1720,46 @@ function renderCheckBanner(){
 }
 
 function renderHeader(){
-  document.getElementById('headerEyebrow').textContent = headerEyebrow;
+  // Eyebrow: en vez del dato administrativo (mesociclo/categoría), muestra
+  // logros reales del atleta - lo que va consiguiendo, no un dato de calendario.
+  const totalGanadas = INSIGNIAS_DEF.filter(b=> insignias && insignias[b.id]).length;
+  document.getElementById('headerEyebrow').textContent = `🏅 ${totalGanadas}/${INSIGNIAS_DEF.length} logros`;
   document.getElementById('headerName').textContent = headerNombre;
-  document.getElementById('headerMeta').innerHTML = headerMeta;
+  // Meta: el objetivo que el propio atleta puso en su anamnesis, en segunda
+  // persona - si todavía no lo completó, cae al texto que escribió el coach.
+  const objetivo = (anamnesisObjetivo || '').trim();
+  document.getElementById('headerMeta').innerHTML = objetivo ? `Tu meta: ${objetivo}` : headerMeta;
+  renderHeaderFeel();
   var _sc = document.getElementById('statStrip');
   if(_sc) _sc.style.display = 'none';
+}
+
+// Indicador de estado emocional en el header: si todavia no registro como se
+// siente hoy, invita a hacerlo; si ya lo hizo, refleja la tendencia de animo
+// de los ultimos dias. Siempre clickeable -> lleva a la vista "Como te sientes".
+function renderHeaderFeel(){
+  const el = document.getElementById('headerFeel');
+  if(!el) return;
+  const hoy = todayStr();
+  const yaHoy = !!(dailyFeel[hoy] && (dailyFeel[hoy].animo!=null || dailyFeel[hoy].energia!=null));
+  let emoji, texto;
+  if(!yaHoy){
+    emoji = '🙂'; texto = '¿Cómo te sientes hoy?';
+  } else {
+    const fechas = Object.keys(dailyFeel).filter(f=> dailyFeel[f] && dailyFeel[f].animo!=null).sort().reverse().slice(0,3);
+    const valores = fechas.map(f=>dailyFeel[f].animo);
+    const prom = valores.length ? valores.reduce((a,b)=>a+b,0)/valores.length : null;
+    if(prom==null){ emoji='🙂'; texto='Registra tu ánimo'; }
+    else if(prom>=4){ emoji='😊'; texto='Buen ánimo estos días'; }
+    else if(prom>=2.5){ emoji='😐'; texto='Ánimo estable estos días'; }
+    else { emoji='😔'; texto='Ánimo bajo estos días'; }
+  }
+  el.innerHTML = `<button type="button" id="headerFeelBtn" style="margin-top:8px;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:12.5px;font-weight:600;cursor:pointer;">${emoji} ${texto}</button>`;
+  document.getElementById('headerFeelBtn').addEventListener('click', ()=>{
+    activeView = 'feel';
+    renderAll();
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
 }
 
 function renderStaticPanels(){
@@ -2157,6 +2196,7 @@ function evaluarInsignias(){
     insignias = Object.assign({}, insignias, nuevas);
     saveField('insignias', insignias);
     renderLogros();
+    renderHeader();
   }
 }
 
