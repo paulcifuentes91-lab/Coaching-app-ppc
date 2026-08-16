@@ -768,6 +768,11 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
         <label><span class="lb">Fecha meta</span><input class="in" type="date" id="fMacroMeta"></label>
       </div>
     </details>
+    <div class="sec"><div class="st">Objetivo mostrado en su app <span class="aux">aparece como "Tu meta: ..." en el encabezado - vacío = no se muestra nada</span></div>
+      <div class="campos">
+        <label><span class="lb">Texto del objetivo</span><input class="in" id="fObjetivoHeader" placeholder="ej. competir en octubre"></label>
+      </div>
+    </div>
     <div class="sec"><div class="st">Vista de calendario
       <button class="dx" id="verHistorialBtn" style="float:right;font-size:12px">Ver historial de cambios</button>
       <button class="add" id="abrirCalculadoraBtn" style="float:right;font-size:12px;margin-right:8px">Calculadora</button></div>
@@ -1497,6 +1502,7 @@ function cargar(a){
  $("#fMacroTipo").value = _macro.tipo || "mantencion";
  $("#fMacroNombre").value = _macro.nombre || "";
  $("#fMacroMeta").value = _macro.meta || "";
+ $("#fObjetivoHeader").value = a.objetivoHeader || "";
  $("#semAviso").textContent = a.ini_f ? "Hoy: "+semanaHoy(a.ini_f) : "";
  pintarDias(); pintarBloques(); _postBloques(); pintarSups(); pintarHist(); recalcular(); v7cargar(); pintarMesocicloCalendario(); pintarPerfil();
  /* Sincronizar fechas reales desde Firebase - la ATLETAS de fabrica puede estar vieja */
@@ -1515,6 +1521,7 @@ function cargar(a){
    if(c.estado && c.estado!==a.estado){ a.estado=c.estado; cambio=true; }
    if(c.estatura && c.estatura!==a.est){ a.est=c.estatura; cambio=true; }
    if(c.nota!==undefined && c.nota!==a.nota){ a.nota=c.nota; cambio=true; }
+   if(c.objetivoHeader!==undefined && c.objetivoHeader!==a.objetivoHeader){ a.objetivoHeader=c.objetivoHeader; cambio=true; }
    if(c.tipoPlan && c.tipoPlan!==a.tipoPlan){ a.tipoPlan=c.tipoPlan; cambio=true; }
    pintarDiasLibres(snap.data().diasLibres || {});
    if(c.edad && c.edad!==a.edad){ a.edad=c.edad; cambio=true; }
@@ -1538,7 +1545,7 @@ function cargar(a){
    }
    if(cambio){
     $("#fIni").value=a.ini_f; $("#fChk").value=a.chk; $("#fVence").value=a.vence;
-    $("#fEstado").value=a.estado; $("#fEst").value=a.est; $("#fNota").value=a.nota; $("#fTipoPlan").value=a.tipoPlan||"basico"; $("#fEdad").value=a.edad||""; $("#fSexo").value=a.sexo||"m"; $("#fNivel").value=a.nivel||"intermedio"; $("#fObjetivo").value=a.objetivoManual||""; $("#fSupRevision").value=a.supRevision||"";
+    $("#fEstado").value=a.estado; $("#fEst").value=a.est; $("#fNota").value=a.nota; $("#fTipoPlan").value=a.tipoPlan||"basico"; $("#fEdad").value=a.edad||""; $("#fSexo").value=a.sexo||"m"; $("#fNivel").value=a.nivel||"intermedio"; $("#fObjetivo").value=a.objetivoManual||""; $("#fSupRevision").value=a.supRevision||""; $("#fObjetivoHeader").value=a.objetivoHeader||"";
     $("#semAviso").textContent = a.ini_f ? "Hoy: "+semanaHoy(a.ini_f) : "";
     pintarMesocicloCalendario();
     pintarBloques(); _postBloques();
@@ -3031,7 +3038,8 @@ async function fbGuardarPlan(a){
   sexo: document.getElementById("fSexo")?.value || a.sexo || "m",
   nivel: document.getElementById("fNivel")?.value || a.nivel || "intermedio",
   objetivoManual: document.getElementById("fObjetivo")?.value || "",
-  supRevision: document.getElementById("fSupRevision")?.value || ""
+  supRevision: document.getElementById("fSupRevision")?.value || "",
+  objetivoHeader: document.getElementById("fObjetivoHeader")?.value.trim() || ""
  };
 
  try{

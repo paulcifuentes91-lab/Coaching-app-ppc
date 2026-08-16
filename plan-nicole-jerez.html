@@ -901,7 +901,7 @@ function lastNDates(n){
 let headerEyebrow = DEFAULT_PLAN.eyebrow;
 let headerNombre = DEFAULT_PLAN.nombre;
 let headerMeta = DEFAULT_PLAN.meta;
-let anamnesisObjetivo = ''; // solo lectura: objetivo que el atleta puso en su anamnesis (si existe)
+let headerObjetivo = ''; // texto editable por el coach (contacto.objetivoHeader) que se muestra como "Tu meta: ..." en el header - vacío = no se muestra esa línea
 let accessExpiresAt = DEFAULT_PLAN.accessExpiresAt;
 let planStartDate = DEFAULT_PLAN.startDate;
 let planCheckDate = DEFAULT_PLAN.checkDate;
@@ -1194,7 +1194,7 @@ athleteRef.onSnapshot((doc)=>{
     mesocicloHistory = data.mesocicloHistory || {};
     dailyFeel = data.dailyFeel || {};
     insignias = data.insignias || {};
-    anamnesisObjetivo = (data.anamnesis && data.anamnesis.objetivo) || '';
+    headerObjetivo = (data.contacto && data.contacto.objetivoHeader) || '';
     diasLibres = data.diasLibres || {};
     progressPhotos = data.progressPhotos || [];
     healthLog = data.healthLog || {};
@@ -1725,10 +1725,13 @@ function renderHeader(){
   const totalGanadas = INSIGNIAS_DEF.filter(b=> insignias && insignias[b.id]).length;
   document.getElementById('headerEyebrow').textContent = `🏅 ${totalGanadas}/${INSIGNIAS_DEF.length} logros`;
   document.getElementById('headerName').textContent = headerNombre;
-  // Meta: el objetivo que el propio atleta puso en su anamnesis, en segunda
-  // persona - si todavía no lo completó, cae al texto que escribió el coach.
-  const objetivo = (anamnesisObjetivo || '').trim();
-  document.getElementById('headerMeta').innerHTML = objetivo ? `Tu meta: ${objetivo}` : headerMeta;
+  // Meta: texto que el coach escribe/ajusta a mano (contacto.objetivoHeader),
+  // mostrado en segunda persona. Si está vacío, la línea entera se oculta -
+  // no queda un espacio vacío ni cae a ningún texto de respaldo.
+  const objetivo = (headerObjetivo || '').trim();
+  const elMeta = document.getElementById('headerMeta');
+  if(objetivo){ elMeta.style.display = ''; elMeta.innerHTML = `Tu meta: ${objetivo}`; }
+  else { elMeta.style.display = 'none'; elMeta.innerHTML = ''; }
   renderHeaderFeel();
   var _sc = document.getElementById('statStrip');
   if(_sc) _sc.style.display = 'none';
