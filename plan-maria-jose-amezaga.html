@@ -791,8 +791,18 @@ function dayTotalExercises(dayId){
   return t;
 }
 
+// Solo la seccion "Entrenamiento" (lo esencial de la sesion): calentamiento,
+// estiramiento y cardio quedan afuera porque suelen quedar sin marcar aunque
+// el atleta si entreno, y no deberian pesar en si un dia "cuenta" o no.
+function seccionEntrenamiento(dayId){
+  const d = days.find(x=>x.id===dayId);
+  if(!d) return null;
+  const sec = d.sections.find(s=>s.name==='Entrenamiento');
+  return sec || null;
+}
+
 function trainHistoryByDay(){
-  const perDate = {}; // { fecha: { dayId: doneCount } }
+  const perDate = {}; // { fecha: { dayId: {done, doneEsencial} } }
   Object.keys(checks).forEach(k=>{
     if(!checks[k]) return;
     const date = k.slice(0,10);
@@ -800,19 +810,32 @@ function trainHistoryByDay(){
     const rest = k.slice(11); // "w{semana}-dia-1-s-i"
     const partes = rest.split('-');
     const dayId = partes.slice(1,3).join('-');
+    const sIdx = +partes[3];
     if(!perDate[date]) perDate[date] = {};
-    perDate[date][dayId] = (perDate[date][dayId]||0) + 1;
+    if(!perDate[date][dayId]) perDate[date][dayId] = {done:0, doneEsencial:0};
+    perDate[date][dayId].done++;
+    const secEnt = seccionEntrenamiento(dayId);
+    const secEntIdx = secEnt ? days.find(x=>x.id===dayId).sections.indexOf(secEnt) : -1;
+    if(secEntIdx!==-1 && sIdx===secEntIdx) perDate[date][dayId].doneEsencial++;
   });
   return Object.keys(perDate).sort().reverse().map(date=>{
-    let done=0, total=0;
+    let done=0, total=0, doneEsencial=0, totalEsencial=0;
     const names=[];
     Object.keys(perDate[date]).forEach(dayId=>{
-      done += perDate[date][dayId];
+      done += perDate[date][dayId].done;
       total += dayTotalExercises(dayId);
+      doneEsencial += perDate[date][dayId].doneEsencial;
+      const secEnt = seccionEntrenamiento(dayId);
+      totalEsencial += secEnt ? secEnt.items.length : 0;
       const d = days.find(x=>x.id===dayId);
       if(d) names.push(d.dayTag);
     });
-    return { date, pct: total? Math.round(done/total*100) : 0, names: names.join(' + ') };
+    return {
+      date,
+      pct: total? Math.round(done/total*100) : 0,
+      pctEsencial: totalEsencial? Math.round(doneEsencial/totalEsencial*100) : 0,
+      names: names.join(' + ')
+    };
   });
 }
 
@@ -1425,9 +1448,9 @@ function mealHistoryByDay(){
    - "Semana en objetivo" / "Constancia real" / "Proteína al día": esta app
      no registra las kcal/proteína REALES que el atleta come cada día
      (mealChecks solo marca si comió la comida planificada, no cuánto). Se
-     usa como proxy honesto "cumplió el 100% de las comidas planificadas
-     ese día", ya que esas comidas están armadas para cuadrar con el
-     objetivo calórico/proteico del bloque.
+     usa como proxy honesto "cumplió el plan de comidas ese día" (ver
+     UMBRAL_DIA_CUMPLIDO), ya que esas comidas están armadas para cuadrar
+     con el objetivo calórico/proteico del bloque.
    - "Mesociclo cumplido": usa mesocicloHistory[label].trainPct, que es un
      promedio de TODO el historial de checks hasta ese momento (no está
      acotado estrictamente a las fechas de ese bloque). Es la única señal
@@ -1436,7 +1459,19 @@ function mealHistoryByDay(){
    - "Seguimiento fiel": la fecha de las fotos se obtiene de las últimas 12
      fotos ya cargadas por loadPhotoGallery() (no se hace una lectura extra
      de Firestore para no descargar imágenes de más).
-   ============================================================ */
+
+   Umbral de "día cumplido": en la práctica, casi ningún atleta tilda el
+   100% literal de cada casillero (agua, cardio opcional, etc.) aunque haya
+   entrenado o comido bien de verdad - exigir 100% exacto hace que las
+   insignias de racha (Racha de hierro, Mes de acero, Semana en objetivo,
+   Proteína al día) sean casi inalcanzables incluso para atletas consistentes.
+   UMBRAL_DIA_CUMPLIDO baja esa exigencia a una adherencia real (80%) en vez
+   de perfección de checkbox. Para entrenamiento especificamente, el % se
+   mide solo sobre la sección "Entrenamiento" (lo esencial de la sesión:
+   ver trainHistoryByDay/pctEsencial) - calentamiento, estiramiento y cardio
+   quedan afuera del cálculo porque suelen quedar sin marcar aunque el
+   atleta sí haya entrenado. */
+const UMBRAL_DIA_CUMPLIDO = 80;
 const INSIGNIAS_AREAS = [
   {area:'Entrenamiento', icon:'ti-barbell'},
   {area:'Nutrición', icon:'ti-apple'},
@@ -1479,9 +1514,10 @@ function rachaDeEntradas(lista, cumple, n){
   });
   return fechaLogro;
 }
-// Racha de sesiones de entreno 100% completas (envoltorio de rachaDeEntradas).
+// Racha de sesiones de entreno con adherencia real (envoltorio de rachaDeEntradas).
+// Usa pctEsencial (solo la seccion "Entrenamiento") contra UMBRAL_DIA_CUMPLIDO.
 function evaluarRachaSesiones(historial, n){
-  return rachaDeEntradas(historial, h=>h.pct===100, n);
+  return rachaDeEntradas(historial, h=>h.pctEsencial>=UMBRAL_DIA_CUMPLIDO, n);
 }
 
 // Racha de fechas estrictamente consecutivas en el calendario (diff de 1 dia).
@@ -1510,7 +1546,7 @@ function evaluarInsignias(){
 
   /* ── Entrenamiento ── */
   if(!insignias.primer_paso){
-    const completos = trainHistoryByDay().filter(h=>h.pct===100).map(h=>h.date).sort();
+    const completos = trainHistoryByDay().filter(h=>h.pctEsencial>=UMBRAL_DIA_CUMPLIDO).map(h=>h.date).sort();
     if(completos.length) nuevas.primer_paso = completos[0];
   }
 
@@ -1537,13 +1573,13 @@ function evaluarInsignias(){
       const d = dailyFeel[f];
       return d && ((d.animo!=null && d.animo<=2) || (d.energia!=null && d.energia<=2));
     }));
-    const fecha = trainHistoryByDay().filter(h=>h.pct===100 && fechasBajon.has(h.date)).map(h=>h.date).sort()[0];
+    const fecha = trainHistoryByDay().filter(h=>h.pctEsencial>=UMBRAL_DIA_CUMPLIDO && fechasBajon.has(h.date)).map(h=>h.date).sort()[0];
     if(fecha) nuevas.sin_excusas = fecha;
   }
 
   /* ── Nutrición ── */
   if(!insignias.semana_objetivo){
-    const fechas = mealHistoryByDay().filter(h=>h.pct===100).map(h=>h.date);
+    const fechas = mealHistoryByDay().filter(h=>h.pct>=UMBRAL_DIA_CUMPLIDO).map(h=>h.date);
     const f = evaluarRachaCalendario(fechas, 7);
     if(f) nuevas.semana_objetivo = f;
   }
@@ -1560,13 +1596,13 @@ function evaluarInsignias(){
   }
 
   if(!insignias.constancia_real){
-    const fechas = mealHistoryByDay().filter(h=>h.pct===100).map(h=>h.date);
+    const fechas = mealHistoryByDay().filter(h=>h.pct>=UMBRAL_DIA_CUMPLIDO).map(h=>h.date);
     const f = nEsimoAcumulado(fechas, 30);
     if(f) nuevas.constancia_real = f;
   }
 
   if(!insignias.proteina_al_dia){
-    const fechas = mealHistoryByDay().filter(h=>h.pct===100).map(h=>h.date);
+    const fechas = mealHistoryByDay().filter(h=>h.pct>=UMBRAL_DIA_CUMPLIDO).map(h=>h.date);
     const f = evaluarRachaCalendario(fechas, 14);
     if(f) nuevas.proteina_al_dia = f;
   }
@@ -1579,7 +1615,7 @@ function evaluarInsignias(){
   }
 
   if(!insignias.rebote){
-    const fechasCompletas = new Set(trainHistoryByDay().filter(h=>h.pct===100).map(h=>h.date));
+    const fechasCompletas = new Set(trainHistoryByDay().filter(h=>h.pctEsencial>=UMBRAL_DIA_CUMPLIDO).map(h=>h.date));
     const fechasBajoAnimo = Object.keys(dailyFeel).filter(f=> dailyFeel[f] && dailyFeel[f].animo!=null && dailyFeel[f].animo<=2).sort();
     for(const f of fechasBajoAnimo){
       const sig = new Date(f+'T12:00:00'); sig.setDate(sig.getDate()+1);
