@@ -1884,7 +1884,10 @@ async function renovarMesociclo(){
    mesos.push({fecha_inicio: hoy, fase, nota, dias:filasDia.length, nivel, sexo, edad});
    const hist = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
    hist.push({fecha: new Date().toISOString(), tipo:"entrenamiento", resumen: "Mesociclo renovado - fase: "+fase+" - "+filasDia.length+" días"+(nota?" - "+nota:""), snapshotDays: act.dias});
-   const planFinal = Object.assign({}, planActual, {days: act.dias, startDate: hoy, checkDate: nuevoChk, mesociclos: mesos.slice(-30), historial: hist.slice(-15)});
+   const MESES_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+   const fechaHoy = new Date(hoy+"T12:00:00");
+   const nuevoMesocicloLabel = MESES_ES[fechaHoy.getMonth()]+" "+fechaHoy.getFullYear();
+   const planFinal = Object.assign({}, planActual, {days: act.dias, startDate: hoy, checkDate: nuevoChk, mesocicloLabel: nuevoMesocicloLabel, mesociclos: mesos.slice(-30), historial: hist.slice(-15)});
    await ref.set({plan: planFinal}, {merge:true});
   }
   m.remove();
