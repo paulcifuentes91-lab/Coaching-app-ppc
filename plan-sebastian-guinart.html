@@ -768,13 +768,13 @@ async function abrirDiaLibre(){
  m.innerHTML = `<div class="card" style="max-width:500px;margin:40px auto;padding:20px">
    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
     <div style="font-weight:700;font-size:16px">✈️ Día libre / viaje</div>
-    <button id="dlCerrar" style="background:none;border:none;color:var(--tx);font-size:20px;cursor:pointer">✕</button>
+    <button id="dlCerrar" style="background:none;border:none;color:var(--text);font-size:20px;cursor:pointer">✕</button>
    </div>
-   <input id="dlBuscar" placeholder="Buscar alimento..." style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:var(--tx);margin-bottom:8px">
+   <input id="dlBuscar" placeholder="Buscar alimento..." style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);margin-bottom:8px">
    <div id="dlResultados" style="max-height:160px;overflow-y:auto;margin-bottom:10px"></div>
    <div style="font-weight:600;font-size:13px;margin-bottom:6px">Agregado hoy:</div>
    <div id="dlLista" style="margin-bottom:10px"></div>
-   <div id="dlTotales" style="padding:10px;background:var(--card2);border-radius:8px;margin-bottom:12px;font-size:13px"></div>
+   <div id="dlTotales" style="padding:10px;background:var(--surface-2);border-radius:8px;margin-bottom:12px;font-size:13px"></div>
    <button id="dlGuardar" class="add" style="width:100%">Guardar registro del día</button>
   </div>`;
  document.body.appendChild(m);
@@ -790,12 +790,12 @@ function renderResultadosDiaLibre(query){
  const matches = Object.keys(ALIM_LIBRE).filter(n=>n.toLowerCase().includes(q)).slice(0,8);
  box.innerHTML = matches.map((n,i)=>{
   const [kcal,p,c,g] = ALIM_LIBRE[n];
-  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 4px;border-bottom:1px solid var(--line);gap:6px">
-    <span style="font-size:13px;flex:1">${n} <span style="color:var(--mu);font-size:11px">(${kcal} kcal x1)</span></span>
-    <input type="number" step="0.5" min="0.25" value="1" data-porcion="${i}" style="width:48px;padding:3px;border-radius:6px;border:1px solid var(--line);background:var(--card2);color:var(--tx);font-size:12px">
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 4px;border-bottom:1px solid var(--border);gap:6px">
+    <span style="font-size:13px;flex:1">${n} <span style="color:var(--text-muted);font-size:11px">(${kcal} kcal x1)</span></span>
+    <input type="number" step="0.5" min="0.25" value="1" data-porcion="${i}" style="width:48px;padding:3px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:12px">
     <button class="dx" data-add-alim="${n}" data-idx="${i}" style="font-size:11px">+ Agregar</button>
    </div>`;
- }).join("") || `<div style="color:var(--mu);font-size:12px;padding:6px">Sin resultados</div>`;
+ }).join("") || `<div style="color:var(--text-muted);font-size:12px;padding:6px">Sin resultados</div>`;
  box.querySelectorAll("[data-add-alim]").forEach(btn=>{
   btn.onclick = ()=>{
    const nombre = btn.dataset.addAlim;
@@ -816,7 +816,7 @@ function renderResultadosDiaLibre(query){
 function renderListaDiaLibre(){
  const box = document.getElementById("dlLista");
  if(!diaLibreActual.items.length){
-  box.innerHTML = `<div style="color:var(--mu);font-size:12px">Nada agregado todavía</div>`;
+  box.innerHTML = `<div style="color:var(--text-muted);font-size:12px">Nada agregado todavía</div>`;
  } else {
   box.innerHTML = diaLibreActual.items.map((it,i)=>
    `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12.5px">
