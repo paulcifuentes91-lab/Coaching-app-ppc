@@ -850,8 +850,11 @@ function trainHistoryByDay(){
     });
     return {
       date,
-      pct: total? Math.round(done/total*100) : 0,
-      pctEsencial: totalEsencial? Math.round(doneEsencial/totalEsencial*100) : 0,
+      // tope en 100%: si done>total (ej. el día tenía menos ejercicios cuando
+      // se marcaron los checks que los que tiene ahora en plan.days), el
+      // porcentaje real no puede superar el 100%
+      pct: total? Math.min(100, Math.round(done/total*100)) : 0,
+      pctEsencial: totalEsencial? Math.min(100, Math.round(doneEsencial/totalEsencial*100)) : 0,
       names: names.join(' + ')
     };
   });
@@ -1519,11 +1522,10 @@ function mealHistoryByDay(){
      usa como proxy honesto "cumplió el plan de comidas ese día" (ver
      UMBRAL_DIA_CUMPLIDO), ya que esas comidas están armadas para cuadrar
      con el objetivo calórico/proteico del bloque.
-   - "Mesociclo cumplido": usa mesocicloHistory[label].trainPct, que es un
-     promedio de TODO el historial de checks hasta ese momento (no está
-     acotado estrictamente a las fechas de ese bloque). Es la única señal
-     de "cumplimiento por mesociclo" que la app ya calcula; se documenta la
-     imprecisión en vez de construir tracking nuevo por fechas.
+   - "Mesociclo cumplido": usa mesocicloHistory[label].trainPct, que es el
+     promedio de checks desde planStartDate del ciclo activo (ver
+     calcMesocicloAdherence). Sigue siendo la única señal de "cumplimiento
+     por mesociclo" que la app calcula.
    - "Seguimiento fiel": la fecha de las fotos se obtiene de las últimas 12
      fotos ya cargadas por loadPhotoGallery() (no se hace una lectura extra
      de Firestore para no descargar imágenes de más).
@@ -2002,9 +2004,13 @@ function calcAdherence(){
 }
 
 function calcMesocicloAdherence(){
-  const tHist = trainHistoryByDay();
+  // Acotado a la ventana del ciclo activo (planStartDate en adelante) — antes
+  // promediaba TODO el historial de checks sin filtrar, mezclando ciclos
+  // anteriores (ej. julio) con el ciclo activo (ej. agosto) en un solo número.
+  const desde = planStartDate;
+  const tHist = trainHistoryByDay().filter(h=> !desde || h.date >= desde);
   const trainPct = tHist.length ? Math.round(tHist.reduce((s,h)=>s+h.pct,0)/tHist.length) : 0;
-  const hist = mealHistoryByDay();
+  const hist = mealHistoryByDay().filter(h=> !desde || h.date >= desde);
   const mealPct = hist.length ? Math.round(hist.reduce((s,h)=>s+h.pct,0)/hist.length) : 0;
   return { trainPct, mealPct };
 }

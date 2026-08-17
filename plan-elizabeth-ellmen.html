@@ -189,6 +189,14 @@
     .print-day .ex-tip{font-size:10px;}
     .print-day .week-note{font-size:9.5px;padding:2px 7px;margin-top:3px;}
     .print-day .reps-chip{font-size:10.5px;padding:3px 8px;}
+    #mealCard{display:none !important;}
+    #printMeals{display:block !important;page-break-inside:avoid;break-inside:avoid;padding:14px 14px 6px;}
+    #printMeals .print-meal-block{page-break-inside:avoid;break-inside:avoid;margin-bottom:8px;}
+    #printMeals .card-title{font-size:14px;margin-bottom:3px;}
+    #printMeals .section-label{font-size:10.5px;margin:7px 0 3px;}
+    #printMeals .row{padding:3px 2px;gap:8px;}
+    #printMeals .ex-name{font-size:11.5px;}
+    #printMeals .ex-tip{font-size:9.5px;}
   }
 .day-locked-banner{background:linear-gradient(135deg,#1a3a24,#14171B);border:1px solid #4CAF7D;color:#7EE0A6;padding:12px 16px;border-radius:12px;margin:4px 0 14px;font-weight:600;font-size:14px;text-align:center;letter-spacing:.2px}
 .week-locked-banner{background:linear-gradient(135deg,#3a2a14,#14171B);border:1px solid #E0A93D;color:#F0C674;padding:12px 16px;border-radius:12px;margin:4px 0 14px;font-weight:600;font-size:14px;text-align:center;letter-spacing:.2px}
@@ -252,6 +260,7 @@
     <div class="week-row" id="mealWindowRow"></div>
 
     <main class="card" id="mealCard"></main>
+    <div id="printMeals" class="card" style="display:none"></div>
 
     <div class="card" id="mealHistoryCard" style="margin-top:12px"></div>
     <button class="add" id="btnDiaLibre" style="width:100%;margin-top:12px">✈️ Registrar día libre / viaje</button>
@@ -964,8 +973,11 @@ function trainHistoryByDay(){
     });
     return {
       date,
-      pct: total? Math.round(done/total*100) : 0,
-      pctEsencial: totalEsencial? Math.round(doneEsencial/totalEsencial*100) : 0,
+      // tope en 100%: si done>total (ej. el día tenía menos ejercicios cuando
+      // se marcaron los checks que los que tiene ahora en plan.days), el
+      // porcentaje real no puede superar el 100%
+      pct: total? Math.min(100, Math.round(done/total*100)) : 0,
+      pctEsencial: totalEsencial? Math.min(100, Math.round(doneEsencial/totalEsencial*100)) : 0,
       names: names.join(' + ')
     };
   });
@@ -1687,11 +1699,10 @@ function mealHistoryByDay(){
      usa como proxy honesto "cumplió el plan de comidas ese día" (ver
      UMBRAL_DIA_CUMPLIDO), ya que esas comidas están armadas para cuadrar
      con el objetivo calórico/proteico del bloque.
-   - "Mesociclo cumplido": usa mesocicloHistory[label].trainPct, que es un
-     promedio de TODO el historial de checks hasta ese momento (no está
-     acotado estrictamente a las fechas de ese bloque). Es la única señal
-     de "cumplimiento por mesociclo" que la app ya calcula; se documenta la
-     imprecisión en vez de construir tracking nuevo por fechas.
+   - "Mesociclo cumplido": usa mesocicloHistory[label].trainPct, que es el
+     promedio de checks desde planStartDate del ciclo activo (ver
+     calcMesocicloAdherence). Sigue siendo la única señal de "cumplimiento
+     por mesociclo" que la app calcula.
    - "Seguimiento fiel": la fecha de las fotos se obtiene de las últimas 12
      fotos ya cargadas por loadPhotoGallery() (no se hace una lectura extra
      de Firestore para no descargar imágenes de más).
@@ -2073,6 +2084,37 @@ function renderMealCard(){
   });
 }
 
+function mealWindowPrintHtml(mw){
+  let html = `<div class="card-title">${mw.label}</div>`;
+  mw.meals.forEach(meal=>{
+    html += `
+      <div class="row">
+        <div class="ex-info">
+          <div class="ex-name">${meal.name}${meal.sub? ' · '+meal.sub : ''}</div>
+          ${meal.items.map(food=>`<div class="ex-tip">· ${food}</div>`).join('')}
+        </div>
+      </div>
+    `;
+  });
+  return html;
+}
+
+function renderPrintMeals(){
+  const el = document.getElementById('printMeals');
+  if(!el) return;
+  let html = mealWindows.map(mw=> `<div class="print-meal-block">${mealWindowPrintHtml(mw)}</div>`).join('');
+  html += `
+    <div class="section-label">Hidratación</div>
+    <div class="row">
+      <div class="ex-info">
+        <div class="ex-name">💧 Agua del día completa</div>
+        <div class="ex-tip">Meta: 50 cc por kg de peso corporal al día</div>
+      </div>
+    </div>
+  `;
+  el.innerHTML = html;
+}
+
 function renderSupplementContent(){
   const el = document.getElementById('supplementContent');
   let html = '';
@@ -2170,9 +2212,13 @@ function calcAdherence(){
 }
 
 function calcMesocicloAdherence(){
-  const tHist = trainHistoryByDay();
+  // Acotado a la ventana del ciclo activo (planStartDate en adelante) — antes
+  // promediaba TODO el historial de checks sin filtrar, mezclando ciclos
+  // anteriores (ej. julio) con el ciclo activo (ej. agosto) en un solo número.
+  const desde = planStartDate;
+  const tHist = trainHistoryByDay().filter(h=> !desde || h.date >= desde);
   const trainPct = tHist.length ? Math.round(tHist.reduce((s,h)=>s+h.pct,0)/tHist.length) : 0;
-  const hist = mealHistoryByDay();
+  const hist = mealHistoryByDay().filter(h=> !desde || h.date >= desde);
   const mealPct = hist.length ? Math.round(hist.reduce((s,h)=>s+h.pct,0)/hist.length) : 0;
   return { trainPct, mealPct };
 }
@@ -2600,6 +2646,7 @@ document.getElementById('importFile').addEventListener('change',(e)=>{
 document.getElementById('printBtn').addEventListener('click',()=>{
   document.querySelectorAll('details.accordion').forEach(d=> d.open = true);
   renderPrintDays();
+  renderPrintMeals();
   setTimeout(()=> window.print(), 50);
 });
 
