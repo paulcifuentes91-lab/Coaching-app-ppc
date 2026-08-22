@@ -1322,13 +1322,24 @@ function keyFor(sIdx,iIdx){ return `${todayStr()}-w${activeWeek}-${activeDay}-${
 function loadKeyFor(sIdx,iIdx){ return `${activeDay}-${sIdx}-${iIdx}`; } // la carga (kg) persiste por ejercicio, no se reinicia por fecha
 function currentDay(){ return days.find(d=>d.id===activeDay); }
 
+/* Un ejercicio de un dia-tab se marca UNA vez por semana, en la fecha real
+   en que se entrena (keyFor usa todayStr() al togglear). Si despues se
+   vuelve a ese dia-tab en OTRA fecha de la misma semana (ej. se completo
+   el lunes y se revisa el jueves), buscar solo por la fecha de HOY nunca
+   encontraba la marca real y el dia aparecia incompleto/editable para
+   siempre. checkedFor() busca cualquier fecha de la semana activa, no solo
+   hoy. */
+function checkedFor(day, sIdx, iIdx){
+  const suffix = `-w${activeWeek}-${day.id}-${sIdx}-${iIdx}`;
+  return Object.keys(checks).some(k=> checks[k] && k.endsWith(suffix));
+}
+
 function countProgress(day){
-  const today = todayStr();
   let total=0, done=0;
   day.sections.forEach((sec,sIdx)=>{
     sec.items.forEach((it,iIdx)=>{
       total++;
-      if(checks[`${today}-w${activeWeek}-${day.id}-${sIdx}-${iIdx}`]) done++;
+      if(checkedFor(day, sIdx, iIdx)) done++;
     });
   });
   return {done,total};
@@ -1968,7 +1979,7 @@ function renderCard(){
   day.sections.forEach((sec,sIdx)=>{
     html += `<div class="section-label">${sec.name}</div>`;
     sec.items.forEach((it,iIdx)=>{
-      const checked = !!checks[keyFor(sIdx,iIdx)];
+      const checked = checkedFor(day, sIdx, iIdx);
       const isLast = iIdx===sec.items.length-1;
       const computed = computeReps(it, sec.name, isLast, activeWeek);
       html += `
@@ -2002,8 +2013,14 @@ function renderCard(){
         showToast('Día completado y bloqueado ✓');
         return;
       }
-      const k = keyFor(el.dataset.s, el.dataset.i);
-      checks[k] = !checks[k];
+      // Togglear: si ya habia una marca TRUE en alguna fecha de esta semana
+      // para este ejercicio, se apaga esa (sin importar que fecha tenga).
+      // Si no habia ninguna, se crea una nueva marcada con la fecha de HOY.
+      const day = currentDay();
+      const suffix = `-w${activeWeek}-${day.id}-${el.dataset.s}-${el.dataset.i}`;
+      const existente = Object.keys(checks).find(k=> checks[k] && k.endsWith(suffix));
+      if(existente) checks[existente] = false;
+      else checks[keyFor(el.dataset.s, el.dataset.i)] = true;
       saveField('trainingChecks', checks);
       updateMesocicloSummary();
       renderCard();
@@ -3104,8 +3121,12 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
     renderAnalysis();
     renderFeelHistory();
   } else if(activeView==='training'){
+    // El patron de clave real es "{fecha}-w{semana}-{dia}-{s}-{i}" - faltaba
+    // el segmento "-w{semana}-" asi que este boton nunca borraba nada.
+    const day = currentDay();
+    const suffix = `-w${activeWeek}-${day.id}-`;
     Object.keys(checks).forEach(k=>{
-      if(k.startsWith(`${todayStr()}-${activeDay}-`)) delete checks[k];
+      if(k.includes(suffix)) delete checks[k];
     });
     saveField('trainingChecks', checks);
     updateMesocicloSummary();
