@@ -2420,6 +2420,24 @@ function compressImage(file, maxDim, quality){
   });
 }
 
+/* Lightbox de foto completa. target="_blank" sobre un data: URI (como se
+   usaba antes) queda bloqueado en varios navegadores móviles (iOS Safari
+   en particular) por política de seguridad - por eso se arma un modal
+   propio en vez de depender de la navegación del navegador. */
+function abrirLightboxFoto(src, fecha){
+  document.getElementById('fotoModalOverlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'fotoModalOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:997;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;';
+  overlay.innerHTML = `
+    <img src="${src}" style="max-width:100%;max-height:78vh;border-radius:10px;object-fit:contain;">
+    ${fecha ? `<div style="font-size:12px;color:var(--text-faint);font-family:var(--font-mono);margin-top:12px;">${fecha}</div>` : ''}
+    <button id="fotoModalCerrar" style="margin-top:16px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:9px 22px;border-radius:10px;font-size:13px;cursor:pointer;">Cerrar</button>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) overlay.remove(); });
+  document.getElementById('fotoModalCerrar').addEventListener('click', ()=> overlay.remove());
+}
+
 async function loadPhotoGallery(){
   const el = document.getElementById('photoGallery');
   if(!el) return;
@@ -2429,7 +2447,7 @@ async function loadPhotoGallery(){
     const items = [];
     snap.forEach(d=> items.push(d.data()));
     el.innerHTML = items.map(p=>
-      `<a href="${p.data}" target="_blank" style="display:block"><img src="${p.data}" style="width:72px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><div style="font-size:9px;color:var(--text-faint);text-align:center;margin-top:2px">${p.date}</div></a>`
+      `<div style="display:block"><img src="${p.data}" data-fecha="${p.date||''}" onclick="abrirLightboxFoto(this.src, this.dataset.fecha)" style="width:72px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer;"><div style="font-size:9px;color:var(--text-faint);text-align:center;margin-top:2px">${p.date}</div></div>`
     ).join('');
     let hayNovedad = false;
     if(items.length && !_tienePrimeraFoto){
