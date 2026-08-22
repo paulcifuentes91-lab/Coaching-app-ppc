@@ -2962,12 +2962,29 @@ async function fbTraerFotos(id){
  }catch(e){ return []; }
 }
 
+/* Lightbox de foto completa. target="_blank" sobre un data: URI queda
+   bloqueado en varios navegadores por política de seguridad - por eso se
+   arma un modal propio en vez de depender de la navegación del navegador. */
+function abrirLightboxFoto(src, fecha){
+ document.getElementById('fotoModalOverlay')?.remove();
+ const overlay = document.createElement('div');
+ overlay.id = 'fotoModalOverlay';
+ overlay.style.cssText = 'position:fixed;inset:0;background:rgba(5,5,6,.86);backdrop-filter:blur(6px);z-index:997;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;';
+ overlay.innerHTML = `
+  <img src="${src}" style="max-width:100%;max-height:78vh;border-radius:10px;object-fit:contain;">
+  ${fecha ? `<div style="font-size:12px;color:var(--fa);font-family:var(--mono);margin-top:12px;">${fecha}</div>` : ''}
+  <button id="fotoModalCerrar" style="margin-top:16px;background:var(--card2);border:1px solid var(--line);color:var(--tx);padding:9px 22px;border-radius:10px;font-size:13px;cursor:pointer;">Cerrar</button>`;
+ document.body.appendChild(overlay);
+ overlay.addEventListener('click', e=>{ if(e.target===overlay) overlay.remove(); });
+ document.getElementById('fotoModalCerrar').addEventListener('click', ()=> overlay.remove());
+}
+
 function renderFotosHTML(fotos){
  if(!fotos || !fotos.length) return '<div class="fbnota" style="margin-top:14px">Sin fotos de progreso subidas todavía.</div>';
  return `<div style="margin-top:14px">
   <div class="fbl" style="margin-bottom:6px">Fotos de progreso (${fotos.length})</div>
   <div style="display:flex;flex-wrap:wrap;gap:8px">
-   ${fotos.map(p=>`<a href="${p.data}" target="_blank" style="display:block"><img src="${p.data}" style="width:72px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"><div style="font-size:9px;color:var(--fa);text-align:center;margin-top:2px">${p.date||""}</div></a>`).join('')}
+   ${fotos.map(p=>`<div style="display:block"><img src="${p.data}" data-fecha="${p.date||''}" onclick="abrirLightboxFoto(this.src, this.dataset.fecha)" style="width:72px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:pointer;"><div style="font-size:9px;color:var(--fa);text-align:center;margin-top:2px">${p.date||""}</div></div>`).join('')}
   </div>
  </div>`;
 }
