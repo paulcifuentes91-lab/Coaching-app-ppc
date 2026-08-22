@@ -2950,6 +2950,28 @@ function fbEstado(){
  else { el.className="fbe off"; el.textContent = "Sin conexión" + (FB.error? " · "+FB.error : ""); }
 }
 
+/* ── Traer las fotos de progreso que el atleta subió (subcoleccion athletes/{id}/photos,
+   mismo path/orden/limite que usa loadPhotoGallery() del lado del atleta) ── */
+async function fbTraerFotos(id){
+ if(!FB.on || !id) return [];
+ try{
+  const snap = await FB.db.collection("athletes").doc(id).collection("photos").orderBy("ts","desc").limit(12).get();
+  const items = [];
+  snap.forEach(d=> items.push(d.data()));
+  return items;
+ }catch(e){ return []; }
+}
+
+function renderFotosHTML(fotos){
+ if(!fotos || !fotos.length) return '<div class="fbnota" style="margin-top:14px">Sin fotos de progreso subidas todavía.</div>';
+ return `<div style="margin-top:14px">
+  <div class="fbl" style="margin-bottom:6px">Fotos de progreso (${fotos.length})</div>
+  <div style="display:flex;flex-wrap:wrap;gap:8px">
+   ${fotos.map(p=>`<a href="${p.data}" target="_blank" style="display:block"><img src="${p.data}" style="width:72px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"><div style="font-size:9px;color:var(--fa);text-align:center;margin-top:2px">${p.date||""}</div></a>`).join('')}
+  </div>
+ </div>`;
+}
+
 /* ── Traer lo que el atleta tiene guardado ── */
 async function fbTraer(a){
  if(!FB.on) { toast("Sin conexión a Firebase"); return null; }
@@ -3146,12 +3168,13 @@ document.addEventListener("click", async e=>{
 
  if(t.id === "fbTraer"){
   t.disabled = true; const txt=t.textContent; t.textContent = "Consultando...";
-  const d = await fbTraer(act);
+  const idFotos = FB_ID[act.id];
+  const [d, fotos] = await Promise.all([ fbTraer(act), fbTraerFotos(idFotos) ]);
   const ad = d && d.trainingChecks ? (()=>{ const k=Object.keys(d.trainingChecks).filter(x=>d.trainingChecks[x]);
     const dd=new Set(k.map(x=>x.split("-w")[0])); return {marcados:k.length, dias:dd.size, ultimo:[...dd].sort().pop()||"—"}; })() : null;
   t.disabled = false; t.textContent = txt;
   const box = document.getElementById("fbInfo");
-  if(!d){ if(box) box.innerHTML = '<div class="v7vacio">Sin datos en la nube todavía.</div>'; return; }
+  if(!d){ if(box) box.innerHTML = '<div class="v7vacio">Sin datos en la nube todavía.</div>' + renderFotosHTML(fotos); return; }
   const prog = d.progressLog||[];
   const cargas = Object.keys(d.exerciseLoads||{}).length;
   const bienestar = resumenBienestar(d.dailyFeel);
@@ -3165,7 +3188,8 @@ document.addEventListener("click", async e=>{
     <div class="fbb"><div class="fbl">Último día activo</div><div class="fbv2">${ad?ad.ultimo:"—"}</div></div>
    </div>
    <div style="margin-top:14px">${renderBienestarHTML(bienestar)}</div>
-   ${d.plan&&d.plan.porCoach?`<div class="fbnota">Este atleta ya tiene un plan editado desde el panel (${(d.plan.actualizado||"").slice(0,10)}).</div>`:""}`;
+   ${d.plan&&d.plan.porCoach?`<div class="fbnota">Este atleta ya tiene un plan editado desde el panel (${(d.plan.actualizado||"").slice(0,10)}).</div>`:""}
+   ${renderFotosHTML(fotos)}`;
   return;
  }
 });
