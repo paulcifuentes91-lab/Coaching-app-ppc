@@ -942,6 +942,7 @@ let dailyFeel = {};
 let progressPhotos = [];
 let healthLog = {};
 let exercisePRs = {};
+let loadHistory = {}; // { [loadKey]: [{date, kg}, ...] } - serie temporal real de cargas, ver loadKeyFor()
 let _histSeedDone = false;
 let dataReady = false;
 let insignias = {};
@@ -1257,6 +1258,7 @@ athleteRef.onSnapshot((doc)=>{
     progressPhotos = data.progressPhotos || [];
     healthLog = data.healthLog || {};
     exercisePRs = data.exercisePRs || {};
+    loadHistory = data.loadHistory || {};
 
     if(data.plan){
       const p = data.plan;
@@ -1296,7 +1298,7 @@ athleteRef.onSnapshot((doc)=>{
     athleteRef.set({
       trainingChecks:{}, mealChecks:{}, supplementChecks:{},
       exerciseLoads:{}, progressLog: HISTORICAL_ENTRIES,
-      mesocicloHistory:{}, dailyFeel:{}, exercisePRs:{}
+      mesocicloHistory:{}, dailyFeel:{}, exercisePRs:{}, loadHistory:{}
     });
   }
   dataReady = true;
@@ -2016,6 +2018,15 @@ function renderCard(){
 
       const num = parseFloat(String(inp.value).replace(',','.'));
       if(!isNaN(num) && num > 0){
+        // Serie temporal real: un registro por dia (si ya se edito hoy este
+        // ejercicio, se actualiza ese mismo registro en vez de duplicar).
+        const hoy = todayStr();
+        const arr = loadHistory[k] = loadHistory[k] || [];
+        const idxHoy = arr.findIndex(e=> e.date === hoy);
+        if(idxHoy >= 0) arr[idxHoy].kg = num; else arr.push({date:hoy, kg:num});
+        arr.sort((a,b)=> a.date<b.date?-1:a.date>b.date?1:0);
+        saveField('loadHistory', loadHistory);
+
         const prev = exercisePRs[k] || 0;
         if(num > prev){
           exercisePRs[k] = num;
@@ -2664,6 +2675,40 @@ function renderProgressSubRow(){
   });
 }
 
+/* Modal con la serie temporal completa (fecha + kg) de un ejercicio.
+   Los registros guardados ANTES de que existiera loadHistory no tienen
+   fecha (solo quedó el último valor sobrescrito en `loads` y el máximo en
+   `exercisePRs`) - no se puede reconstruir esa fecha, así que se muestra
+   un aviso honesto en vez de inventarla. */
+function abrirHistorialCarga(k){
+  document.getElementById('cargaModalOverlay')?.remove();
+  let nombre = 'Ejercicio';
+  outer: for(const d of days){
+    for(let sIdx=0; sIdx<d.sections.length; sIdx++){
+      const items = d.sections[sIdx].items;
+      for(let iIdx=0; iIdx<items.length; iIdx++){
+        if(`${d.id}-${sIdx}-${iIdx}` === k){ nombre = items[iIdx].name; break outer; }
+      }
+    }
+  }
+  const serie = (loadHistory[k]||[]).slice().sort((a,b)=> a.date<b.date?1:a.date>b.date?-1:0);
+  const filas = serie.length
+    ? serie.map(e=>`<div class="param-row"><span class="param-label">${e.date}</span><span class="param-value" style="font-family:var(--font-mono)">${e.kg} kg</span></div>`).join('')
+    : '<div class="p-empty">Sin historial con fecha todavía - se empezó a registrar recién ahora. El último peso y récord previos siguen arriba.</div>';
+  const overlay = document.createElement('div');
+  overlay.id = 'cargaModalOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:997;display:flex;align-items:center;justify-content:center;padding:24px;';
+  overlay.innerHTML = `
+    <div class="card" style="max-width:340px;width:100%;max-height:70vh;overflow-y:auto;padding:20px;">
+      <div style="font-family:var(--font-display);font-size:16px;font-weight:600;margin-bottom:10px;">${nombre}</div>
+      ${filas}
+      <button id="cargaModalCerrar" style="margin-top:16px;width:100%;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:9px 22px;border-radius:10px;font-size:13px;cursor:pointer;">Cerrar</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) overlay.remove(); });
+  document.getElementById('cargaModalCerrar').addEventListener('click', ()=> overlay.remove());
+}
+
 function renderLoadsCard(){
   const el = document.getElementById('loadsCard');
   let html = '';
@@ -2677,7 +2722,7 @@ function renderLoadsCard(){
         const pr = exercisePRs[k];
         if(actual || pr){
           anyData = true;
-          rows += `<div class="param-row">
+          rows += `<div class="param-row carga-row" data-k="${k}" style="cursor:pointer">
             <span class="param-label">${it.name}</span>
             <span class="param-value" style="font-family:var(--font-mono)">${actual? actual+' kg' : '—'}${pr? ` · <b style="color:var(--accent)">🏆 ${pr} kg</b>` : ''}</span>
           </div>`;
@@ -2692,7 +2737,10 @@ function renderLoadsCard(){
     el.innerHTML = `<div class="p-empty">Todavía no hay cargas registradas.<br>Anota los kg de cada ejercicio en la pestaña Entreno y aquí se irá armando tu registro (último peso usado y récord 🏆 por ejercicio).</div>`;
     return;
   }
-  el.innerHTML = `<div class="macro-note" style="margin:0 0 8px">Último kg registrado por ejercicio, y tu récord histórico (🏆).</div>` + html;
+  el.innerHTML = `<div class="macro-note" style="margin:0 0 8px">Último kg registrado por ejercicio, y tu récord histórico (🏆). Toca un ejercicio para ver el historial completo.</div>` + html;
+  el.querySelectorAll('.carga-row').forEach(row=>{
+    row.addEventListener('click', ()=> abrirHistorialCarga(row.dataset.k));
+  });
 }
 
 function renderProgressView(){
@@ -2985,6 +3033,7 @@ document.getElementById('exportBtn').addEventListener('click',()=>{
     mealChecks: mealChecks,
     supplementChecks: supplementChecks,
     exerciseLoads: loads,
+    loadHistory: loadHistory,
     progressLog: progressLog
   };
   const blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
@@ -3012,6 +3061,7 @@ document.getElementById('importFile').addEventListener('change',(e)=>{
       if(data.mealChecks) saveField('mealChecks', data.mealChecks);
       if(data.supplementChecks) saveField('supplementChecks', data.supplementChecks);
       if(data.exerciseLoads) saveField('exerciseLoads', data.exerciseLoads);
+      if(data.loadHistory) saveField('loadHistory', data.loadHistory);
       if(data.progressLog) saveField('progressLog', data.progressLog);
       alert('Datos importados.');
     }catch(err){
