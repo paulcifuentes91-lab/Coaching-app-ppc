@@ -1534,6 +1534,27 @@ function cargar(a){
    if(c.nivel && c.nivel!==a.nivel){ a.nivel=c.nivel; cambio=true; }
    if(c.objetivoManual!==undefined && c.objetivoManual!==a.objetivoManual){ a.objetivoManual=c.objetivoManual; cambio=true; }
    if(c.supRevision && c.supRevision!==a.supRevision){ a.supRevision=c.supRevision; cambio=true; }
+   /* Los DIAS DE ENTRENAMIENTO nunca se sincronizaban desde la nube aca -
+      solo fechas/contacto/nutricion. Si algo se agregaba (ej. cardio) a
+      p.days por fuera de esta sesion del panel (otra sesion, otro dia),
+      la pestaña Entrenamiento seguia mostrando la copia vieja de ATLETAS
+      y el proximo "Guardar en la nube" la pisaba, borrando lo agregado -
+      paso repetidamente con Andrea, Diego, Elizabeth, Francisca y
+      Magdalena (ver commits 5cfe903, de15388, 30389fa). */
+   const days = p.days;
+   if(Array.isArray(days) && days.length){
+    const diasReales = days.map(function(d){
+     return {
+      n: (d.dayTag ? d.dayTag+" · " : "") + (d.name||""),
+      secs: (d.sections||[]).map(function(s){
+       return { n: s.name, ej: (s.items||[]).map(function(it){ return [it.name, it.reps, it.tier, it.tip||""]; }) };
+      })
+     };
+    });
+    const actualJSONd = JSON.stringify(a.dias||[]);
+    const nuevoJSONd = JSON.stringify(diasReales);
+    if(actualJSONd !== nuevoJSONd){ a.dias = diasReales; cambio = true; }
+   }
    const mw = p.mealWindows;
    if(Array.isArray(mw)){
     const bloquesReales = mw.map(function(x){
@@ -1553,6 +1574,7 @@ function cargar(a){
     $("#fEstado").value=a.estado; $("#fEst").value=a.est; $("#fNota").value=a.nota; $("#fTipoPlan").value=a.tipoPlan||"basico"; $("#fEdad").value=a.edad||""; $("#fSexo").value=a.sexo||"m"; $("#fNivel").value=a.nivel||"intermedio"; $("#fObjetivo").value=a.objetivoManual||""; $("#fSupRevision").value=a.supRevision||""; $("#fObjetivoHeader").value=a.objetivoHeader||"";
     $("#semAviso").textContent = a.ini_f ? "Hoy: "+semanaHoy(a.ini_f) : "";
     pintarMesocicloCalendario();
+    pintarDias();
     pintarBloques(); _postBloques();
     pintarLista($("#buscar").value);
     toast("Datos actualizados desde la nube");
