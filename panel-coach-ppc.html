@@ -832,12 +832,17 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
          <option value="sed">Sedentario</option><option value="ligero">Ligero</option>
          <option value="moderado" selected>Moderado</option><option value="intenso">Intenso</option><option value="muy">Muy intenso</option>
         </select></label>
-        <label><span class="lb">Ajuste</span><select class="in" id="gnAjuste">
-          <option value="-30">Déficit 30%</option><option value="-25">Déficit 25%</option>
-          <option value="-20" selected>Déficit 20%</option><option value="-15">Déficit 15%</option>
-          <option value="-10">Déficit 10%</option><option value="0">Mantenimiento</option>
-          <option value="10">Superávit 10%</option><option value="15">Superávit 15%</option>
-          <option value="20">Superávit 20%</option></select></label>
+        <label><span class="lb">Ajuste % <span style="font-size:9px;color:var(--fa);text-transform:none;font-family:var(--mono)">(negativo=déficit, positivo=superávit)</span></span>
+          <input class="in mono" id="gnAjuste" type="number" step="5" value="-20" list="gnAjusteList">
+          <datalist id="gnAjusteList">
+           <option value="-40">Déficit 40%</option><option value="-35">Déficit 35%</option>
+           <option value="-30">Déficit 30%</option><option value="-25">Déficit 25%</option>
+           <option value="-20">Déficit 20%</option><option value="-15">Déficit 15%</option>
+           <option value="-10">Déficit 10%</option><option value="0">Mantenimiento</option>
+           <option value="10">Superávit 10%</option><option value="15">Superávit 15%</option>
+           <option value="20">Superávit 20%</option>
+          </datalist>
+        </label>
         <label><span class="lb">Comidas al día</span><select class="in" id="gnComidas">
           <option value="3">3</option><option value="4" selected>4</option>
           <option value="5">5</option><option value="6">6</option></select></label>
