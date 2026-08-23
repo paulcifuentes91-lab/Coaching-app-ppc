@@ -2979,6 +2979,28 @@ function abrirLightboxFoto(src, fecha){
  document.getElementById('fotoModalCerrar').addEventListener('click', ()=> overlay.remove());
 }
 
+/* El panel solo mostraba la CANTIDAD de chequeos en la nube (prog.length),
+   nunca el contenido real (peso, % grasa, medidas, notas) que el atleta
+   registro desde su app - "Historial" (act.hist / addChk) es un log
+   manual del coach, completamente separado de progressLog de Firestore.
+   Esta funcion muestra el progressLog real, mas reciente primero. */
+function renderProgressLogHTML(prog){
+ if(!prog || !prog.length) return '<div class="fbnota" style="margin-top:14px">Sin chequeos con datos registrados todavía.</div>';
+ const fmt = iso => { const d=new Date(iso+"T12:00:00"); const M=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"]; return d.getDate()+" "+M[d.getMonth()]; };
+ const ordenado = [...prog].sort((a,b)=> String(b.date).localeCompare(String(a.date)));
+ const filas = ordenado.map(p=>{
+  const medidas = ['waist','arm','thigh'].filter(k=>p[k]!=null).map(k=>({waist:'cintura',arm:'brazo',thigh:'muslo'}[k])+' '+p[k]+'cm').join(' · ');
+  const partes = [
+   p.weight!=null ? p.weight+' kg' : null,
+   p.bodyFatPct!=null ? p.bodyFatPct+'% grasa' : null,
+   medidas || null
+  ].filter(Boolean).join(' · ');
+  const notaTxt = p.notes ? ' · "'+p.notes+'"' : '';
+  return '<div class="anfila"><span class="anl">'+fmt(p.date)+'</span><span class="anv">'+(partes||'-')+notaTxt+'</span></div>';
+ }).join('');
+ return '<div class="ansec" style="margin-top:14px"><div class="ansect">Chequeos reales registrados por el atleta ('+prog.length+')</div>'+filas+'</div>';
+}
+
 function renderFotosHTML(fotos){
  if(!fotos || !fotos.length) return '<div class="fbnota" style="margin-top:14px">Sin fotos de progreso subidas todavía.</div>';
  return `<div style="margin-top:14px">
@@ -3206,6 +3228,7 @@ document.addEventListener("click", async e=>{
    </div>
    <div style="margin-top:14px">${renderBienestarHTML(bienestar)}</div>
    ${d.plan&&d.plan.porCoach?`<div class="fbnota">Este atleta ya tiene un plan editado desde el panel (${(d.plan.actualizado||"").slice(0,10)}).</div>`:""}
+   ${renderProgressLogHTML(prog)}
    ${renderFotosHTML(fotos)}`;
   return;
  }
