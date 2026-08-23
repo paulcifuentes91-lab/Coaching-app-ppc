@@ -7,6 +7,35 @@
 
 const CACHE_NAME = 'ppc-cache-v1';
 
+// ═══════════ NOTIFICACIONES PUSH (FCM) ═══════════
+// El SW no puede leer el firebaseConfig de la pagina (corre en otro
+// contexto/hilo) - se duplica aca, es el patron estandar de FCM Web
+// (mismo que pide la documentacion oficial para firebase-messaging-sw.js).
+// Se comparte entre los 14 atletas (mismo proyecto Firebase para todos).
+importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+  apiKey: "AIzaSyBtGeuSrw57EkNLFl4bMfkD5mGpqcwdd_I",
+  authDomain: "pro-performance-e811e.firebaseapp.com",
+  projectId: "pro-performance-e811e",
+  storageBucket: "pro-performance-e811e.firebasestorage.app",
+  messagingSenderId: "672514380516",
+  appId: "1:672514380516:web:ce69f2aece5e2f77e112f1"
+});
+
+// Mensajes en SEGUNDO PLANO (app cerrada o en otra pestaña) - los mensajes
+// en primer plano se manejan aparte, en cada plan-*.html (messaging.onMessage).
+const messaging = firebase.messaging();
+messaging.onBackgroundMessage((payload) => {
+  const n = payload.notification || {};
+  self.registration.showNotification(n.title || 'Pro Performance Coach', {
+    body: n.body || '',
+    icon: './icons/icon-192.png',
+    badge: './icons/icon-192.png'
+  });
+});
+
 self.addEventListener('install', () => {
   self.skipWaiting();
 });

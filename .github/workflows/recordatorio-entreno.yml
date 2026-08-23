@@ -1,0 +1,25 @@
+name: Recordatorio "hoy toca entrenar"
+
+on:
+  schedule:
+    - cron: "0 * * * *"   # cada hora en punto (UTC) - el script filtra por hora local de cada atleta
+  workflow_dispatch:        # permite correrlo manualmente desde GitHub para probar
+    inputs:
+      dry_run:
+        description: "Solo mostrar quién recibiría el push, sin enviar nada"
+        type: boolean
+        default: false
+
+jobs:
+  recordatorio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install firebase-admin
+      - run: node scripts/recordatorio-entreno.js
+        env:
+          FIREBASE_KEY: ${{ secrets.FIREBASE_KEY }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
