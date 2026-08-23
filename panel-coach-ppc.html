@@ -2243,10 +2243,23 @@ document.addEventListener("click",e=>{
  if(t.id==="addChk"){
   const f=$("#gFecha").value, p=$("#gPeso").value;
   if(!f||!p){toast("Necesito al menos la fecha y el peso");return;}
-  act.hist.unshift([f,p,$("#gGrasa").value,$("#gPli").value,$("#gNota").value]);
+  const grasa=$("#gGrasa").value, pli=$("#gPli").value, cin=$("#gCin").value, nota=$("#gNota").value;
+  act.hist.unshift([f,p,grasa,pli,nota]);
   act.hist.sort((a,b)=>b[0].localeCompare(a[0]));
   pintarHist();["gPeso","gGrasa","gPli","gCin","gNota"].forEach(id=>$("#"+id).value="");
-  toast("Chequeo añadido al historial de "+act.n);return;}
+  toast("Chequeo añadido al historial de "+act.n);
+  // Este boton solo actualizaba act.hist en memoria - fbGuardarChequeo()
+  // existia pero nunca se llamaba desde ningun lado, asi que nada se
+  // guardaba de verdad en la nube. Ahora persiste en el mismo progressLog
+  // real que usa el atleta (ver renderProgressLogHTML), marcado con
+  // porCoach para distinguir el origen.
+  const num = s => { const n = parseFloat(String(s||'').replace(',','.')); return isNaN(n) ? null : n; };
+  fbGuardarChequeo(act, {
+   date: f, weight: num(p), waist: num(cin), arm: null, thigh: null,
+   skinfolds: null, skinfoldsSum: num(pli), bodyFatPct: num(grasa),
+   salud: null, notes: nota || '', porCoach: true
+  });
+  return;}
  /* acciones cabecera */
  if(t.id==="btnWa"){
   const tel=(document.getElementById("fWa")?.value || act.wa || "").replace(/[^0-9]/g,"");
@@ -2990,15 +3003,18 @@ function renderProgressLogHTML(prog){
  const ordenado = [...prog].sort((a,b)=> String(b.date).localeCompare(String(a.date)));
  const filas = ordenado.map(p=>{
   const medidas = ['waist','arm','thigh'].filter(k=>p[k]!=null).map(k=>({waist:'cintura',arm:'brazo',thigh:'muslo'}[k])+' '+p[k]+'cm').join(' · ');
+  const sfSum = p.skinfolds ? Object.values(p.skinfolds).reduce((a,b)=>a+b,0) : p.skinfoldsSum;
   const partes = [
    p.weight!=null ? p.weight+' kg' : null,
    p.bodyFatPct!=null ? p.bodyFatPct+'% grasa' : null,
-   medidas || null
+   medidas || null,
+   sfSum!=null ? 'Σ '+sfSum+'mm pliegues' : null
   ].filter(Boolean).join(' · ');
   const notaTxt = p.notes ? ' · "'+p.notes+'"' : '';
-  return '<div class="anfila"><span class="anl">'+fmt(p.date)+'</span><span class="anv">'+(partes||'-')+notaTxt+'</span></div>';
+  const origenTxt = p.porCoach ? ' · agregado por el coach' : '';
+  return '<div class="anfila"><span class="anl">'+fmt(p.date)+'</span><span class="anv">'+(partes||'-')+notaTxt+origenTxt+'</span></div>';
  }).join('');
- return '<div class="ansec" style="margin-top:14px"><div class="ansect">Chequeos reales registrados por el atleta ('+prog.length+')</div>'+filas+'</div>';
+ return '<div class="ansec" style="margin-top:14px"><div class="ansect">Chequeos reales registrados ('+prog.length+')</div>'+filas+'</div>';
 }
 
 function renderFotosHTML(fotos){
