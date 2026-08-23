@@ -1115,8 +1115,26 @@ function peakBumps(){
   return { bp, ba, capped: (bp<2) };
 }
 
+/* Mismo grupo "cardio" que BD_EJ usa en el panel (panel-coach-ppc.html) para
+   clasificar ejercicios. RIR y dropset son conceptos de series de fuerza -
+   no aplican a este tipo de movimiento aunque un coach lo ponga dentro de
+   la sección "Entrenamiento" con formato "N x reps" (ej. "Salto con cuerda"
+   como accesorio de un circuito). */
+const EJERCICIOS_CARDIO = ['airbike','trote','asalto bike','assault bike','bici de aire',
+  'bicicleta','bici','spinning','caminata en cinta','liss','caminata inclinada',
+  'caminata en pendiente','caminata rapida','incline walk','cinta de correr','trotadora',
+  'caminadora','eliptica','escaladora','stair master','escalador','intervalos en bicicleta',
+  'hiit bici','marcha con rodilla alta','marcha con levantada de rodilla',
+  'marcha estacionaria','remo ergometro','rowing','salto con cuerda','saltar la cuerda',
+  'comba','skierg','ski erg','sprint en cinta','sprint'];
+function esEjercicioCardio(nombre){
+  const n = String(nombre||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  return EJERCICIOS_CARDIO.some(c => n.includes(c));
+}
+
 function computeReps(item, sectionName, isLast, week){
   if(!/^Entrenamiento/.test(sectionName)) return { text:item.reps, notes:[] };
+  if(esEjercicioCardio(item.name)) return { text:item.reps, notes:[] };
   const m = item.reps.match(/^(\d+)(\s*[×xX]\s*)(.*)$/);
   if(!m) return { text:item.reps, notes:[] };
   let baseSets = parseInt(m[1]);
