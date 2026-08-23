@@ -949,16 +949,44 @@ function keyFor(sIdx,iIdx){ return `${todayStr()}-w${activeWeek}-${activeDay}-${
 function loadKeyFor(sIdx,iIdx){ return `${activeDay}-${sIdx}-${iIdx}`; } // la carga (kg) persiste por ejercicio, no se reinicia por fecha
 function currentDay(){ return days.find(d=>d.id===activeDay); }
 
+/* Rango real de fechas (calendario) de la semana activa, segun planStartDate
+   del mesociclo EN CURSO. Null si el plan aun no tiene fecha de inicio. */
+function rangoSemanaActual(){
+  if(!planStartDate) return null;
+  const start = new Date(planStartDate + 'T00:00:00');
+  const ini = new Date(start.getTime() + (activeWeek-1)*7*86400000);
+  const fin = new Date(ini.getTime() + 6*86400000);
+  return { ini: localDateStr(ini), fin: localDateStr(fin) };
+}
+
 /* Un ejercicio de un dia-tab se marca UNA vez por semana, en la fecha real
    en que se entrena (keyFor usa todayStr() al togglear). Si despues se
    vuelve a ese dia-tab en OTRA fecha de la misma semana (ej. se completo
    el lunes y se revisa el jueves), buscar solo por la fecha de HOY nunca
    encontraba la marca real y el dia aparecia incompleto/editable para
-   siempre. checkedFor() busca cualquier fecha de la semana activa, no solo
-   hoy. */
-function checkedFor(day, sIdx, iIdx){
+   siempre.
+
+   PERO los numeros de semana (w1-w4) se reciclan en cada mesociclo nuevo -
+   buscar por "cualquier fecha con este numero de semana" (sin acotar por
+   mesociclo) hacia que checks de un mesociclo anterior con el mismo numero
+   de semana (ej. w3 de julio) se mostraran como si fueran de la semana w3
+   del mesociclo actual, marcando dias como completados sin haberse hecho.
+   entradaExistente() acota la busqueda al rango real de fechas de la
+   semana activa DEL MESOCICLO EN CURSO (rangoSemanaActual), no solo al
+   numero de semana. */
+function entradaExistente(day, sIdx, iIdx){
   const suffix = `-w${activeWeek}-${day.id}-${sIdx}-${iIdx}`;
-  return Object.keys(checks).some(k=> checks[k] && k.endsWith(suffix));
+  const rango = rangoSemanaActual();
+  return Object.keys(checks).find(k=>{
+    if(!checks[k] || !k.endsWith(suffix)) return false;
+    if(!rango) return true;
+    const fecha = k.slice(0,10);
+    return fecha >= rango.ini && fecha <= rango.fin;
+  }) || null;
+}
+
+function checkedFor(day, sIdx, iIdx){
+  return !!entradaExistente(day, sIdx, iIdx);
 }
 
 function countProgress(day){
@@ -1658,12 +1686,11 @@ function renderCard(){
         showToast('Día completado y bloqueado ✓');
         return;
       }
-      // Togglear: si ya habia una marca TRUE en alguna fecha de esta semana
-      // para este ejercicio, se apaga esa (sin importar que fecha tenga).
-      // Si no habia ninguna, se crea una nueva marcada con la fecha de HOY.
+      // Togglear: si ya habia una marca TRUE en alguna fecha DENTRO DE LA
+      // SEMANA ACTUAL (ver entradaExistente), se apaga esa. Si no habia
+      // ninguna, se crea una nueva marcada con la fecha de HOY.
       const day = currentDay();
-      const suffix = `-w${activeWeek}-${day.id}-${el.dataset.s}-${el.dataset.i}`;
-      const existente = Object.keys(checks).find(k=> checks[k] && k.endsWith(suffix));
+      const existente = entradaExistente(day, el.dataset.s, el.dataset.i);
       if(existente) checks[existente] = false;
       else checks[keyFor(el.dataset.s, el.dataset.i)] = true;
       saveField('trainingChecks', checks);
