@@ -54,7 +54,12 @@ messaging.onBackgroundMessage((payload) => {
   if (n.image) options.image = n.image;
   if (actions.length) options.actions = actions;
 
-  self.registration.showNotification(n.title || 'Pro Performance Coach', options);
+  // "return" es obligatorio: sin el, esta promesa queda sin esperar y el
+  // navegador puede matar el service worker apenas termina la parte
+  // sincrona del callback, cortando showNotification() a medio construir -
+  // el push SI llega (por eso aparecia algun indicador en el telefono) pero
+  // la ventana de la notificacion nunca se termina de mostrar.
+  return self.registration.showNotification(n.title || 'Pro Performance Coach', options);
 });
 
 // Click en la notificacion o en uno de sus botones.
