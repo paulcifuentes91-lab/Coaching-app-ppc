@@ -2,7 +2,7 @@ name: Recordatorios push
 
 on:
   schedule:
-    - cron: "0 * * * *"   # cada hora en punto (UTC) - el script filtra por hora local de cada atleta
+    - cron: "0,30 * * * *"   # cada 30 min (UTC) - hace falta la media hora para reglas como 21:30/22:30; el script filtra por hora local de cada atleta
   workflow_dispatch:        # permite correrlo manualmente desde GitHub para probar
     inputs:
       dry_run:
