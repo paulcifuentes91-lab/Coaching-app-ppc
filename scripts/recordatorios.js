@@ -57,17 +57,38 @@ const db = getFirestore();
 const messaging = getMessaging();
 
 /* ═══════════ NOTIFICACIONES RICAS (imagen + acciones + deep link) ═══════
-   Prototipo - solo para el/los atleta(s) en RICH_NOTIF_ATLETAS. El resto
-   sigue recibiendo el push plano (title/body) hasta que se decida
-   replicar. Imagen ancha y botones de accion solo se ven en Chrome/Edge/
-   Firefox (Android y desktop) - Safari (macOS e iOS, incluida PWA
-   instalada) no soporta "image" ni "actions" en absoluto y los ignora sin
-   fallar; ahi el atleta ve el push plano con icon+title+body igual, y el
-   tap abre la app (notificationclick en service-worker.js). */
-const RICH_NOTIF_ATLETAS = new Set(['paul-cifuentes-julio-2026']);
+   Probado primero solo con Paul (imagen ancha, logo real, botones de
+   accion, toast dorado en primer plano) - replicado a los 14 despues de
+   confirmar que funciona en Android/Chrome real. Imagen ancha y botones
+   de accion solo se ven en Chrome/Edge/Firefox (Android y desktop) -
+   Safari (macOS e iOS, incluida PWA instalada) no soporta "image" ni
+   "actions" en absoluto y los ignora sin fallar; ahi el atleta ve el push
+   plano con icon+title+body igual, y el tap abre la app (notificationclick
+   en service-worker.js). Mismo mapeo ID de Firestore -> archivo que usan
+   FB_ID/APP_URL en panel-coach-ppc.html. */
+const RICH_NOTIF_ATLETAS = new Set([
+  'maria-jose-amezaga-julio-2026', 'ivan-de-la-cerda-julio-2026', 'elizabeth-ellmen-julio-2026',
+  'francisca-perez-junio-2026', 'magdalena-pinto-julio-2026', 'rosa-perez-julio-2026',
+  'sandy-gaete-julio-2026', 'nicole-jerez-julio-2026', 'nelson-diaz-julio-2026',
+  'andrea-gonzalez-julio-2026', 'sebastian-guinart-julio-2026', 'diego-valdebenito-julio-2026',
+  'paul-cifuentes-julio-2026', 'juan-andres-herrera-agosto-2026'
+]);
 const BASE_URL = 'https://paulcifuentes91-lab.github.io/Coaching-app-ppc';
 const ARCHIVO_POR_ID = {
-  'paul-cifuentes-julio-2026': 'plan-paul-cifuentes.html'
+  'maria-jose-amezaga-julio-2026': 'plan-maria-jose-amezaga.html',
+  'ivan-de-la-cerda-julio-2026': 'plan-ivan-de-la-cerda.html',
+  'elizabeth-ellmen-julio-2026': 'plan-elizabeth-ellmen.html',
+  'francisca-perez-junio-2026': 'plan-francisca-perez.html',
+  'magdalena-pinto-julio-2026': 'plan-magdalena-pinto.html',
+  'rosa-perez-julio-2026': 'plan-rosa-perez.html',
+  'sandy-gaete-julio-2026': 'plan-sandy-gaete.html',
+  'nicole-jerez-julio-2026': 'plan-nicole-jerez.html',
+  'nelson-diaz-julio-2026': 'plan-nelson-diaz.html',
+  'andrea-gonzalez-julio-2026': 'plan-andrea-gonzalez.html',
+  'sebastian-guinart-julio-2026': 'plan-sebastian-guinart.html',
+  'diego-valdebenito-julio-2026': 'plan-diego-valdebenito.html',
+  'paul-cifuentes-julio-2026': 'plan-paul-cifuentes.html',
+  'juan-andres-herrera-agosto-2026': 'plan-juan.html'
 };
 // Vista a la que abre "Ver plan" segun la regla - mismos ids que activeView
 // en el cliente (feel/nutrition/training/progress).
