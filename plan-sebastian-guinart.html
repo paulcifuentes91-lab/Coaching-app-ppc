@@ -185,6 +185,7 @@
 </style>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
 </head>
 <body>
 <div id="loadingOverlay" style="position:fixed;inset:0;background:#14171B;color:#9BA1AA;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:13px;z-index:999;">Conectando con la base de datos…</div>
@@ -270,6 +271,7 @@
     <input type="file" id="importFile" accept="application/json" style="display:none">
     <button class="reset-btn" id="printBtn">🖨 Imprimir / PDF</button>
     <button class="reset-btn" id="resumenBtn">📋 Enviar resumen semanal</button>
+    <button class="reset-btn" id="notifBtn">🔔 Activar notificaciones</button>
     <p class="foot-note" id="footNote">Tu progreso se guarda en la nube (Firebase) y se sincroniza en tiempo real entre todos los dispositivos que abran esta página. Usa "Exportar datos" para tener además una copia local de respaldo.</p>
   </footer>
 
@@ -2900,6 +2902,71 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
     }
   }
 });
+
+
+/* ═══════════ NOTIFICACIONES PUSH (FCM) ═══════════
+   VAPID_KEY: clave publica de Web Push, se genera UNA VEZ en la consola de
+   Firebase (Project Settings > Cloud Messaging > Web configuration > Web
+   Push certificates > Generate key pair). Pendiente - la reemplaza el coach
+   cuando la tenga, en los 14 archivos a la vez. */
+const VAPID_KEY = 'BDpv3LURHGb23_O8gMHI9QwI0n32k9rLeW48UN7G1LO3kZSc0Jn3XzHIRVppScYmUuqwxSEPXmMCB2-LF8Zh08U';
+
+function actualizarBotonNotif(){
+  const btn = document.getElementById('notifBtn');
+  if(!btn) return;
+  if(!('Notification' in window) || !('serviceWorker' in navigator)){
+    btn.textContent = '🔔 No disponible en este navegador';
+    btn.disabled = true;
+    return;
+  }
+  if(Notification.permission === 'granted') btn.textContent = '🔔 Notificaciones activadas ✓';
+  else if(Notification.permission === 'denied') btn.textContent = '🔕 Notificaciones bloqueadas (revisa el navegador)';
+  else btn.textContent = '🔔 Activar notificaciones';
+}
+
+async function activarNotificaciones(){
+  if(!('Notification' in window) || !('serviceWorker' in navigator)){
+    showToast('Este navegador no soporta notificaciones push.', true);
+    return;
+  }
+  if(VAPID_KEY.startsWith('PENDIENTE')){
+    showToast('Notificaciones aún no configuradas por el coach.', true);
+    return;
+  }
+  try{
+    const permiso = await Notification.requestPermission();
+    if(permiso !== 'granted'){
+      showToast('No diste permiso para notificaciones.', true);
+      actualizarBotonNotif();
+      return;
+    }
+    const reg = await navigator.serviceWorker.ready;
+    const messaging = firebase.messaging();
+    const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+    if(!token){ showToast('No se pudo obtener el token de notificaciones.', true); return; }
+    await db.collection('athletes').doc(ATHLETE_ID).set({
+      fcmTokens: firebase.firestore.FieldValue.arrayUnion(token)
+    }, { merge:true });
+    showToast('✓ Notificaciones activadas');
+    actualizarBotonNotif();
+  }catch(e){
+    showToast('Error al activar notificaciones: ' + e.message, true);
+  }
+}
+
+document.getElementById('notifBtn')?.addEventListener('click', activarNotificaciones);
+actualizarBotonNotif();
+
+// Mensajes en primer plano (app abierta): se muestran como toast en vez del
+// popup nativo del navegador, consistente con el resto de la app.
+if('Notification' in window && !VAPID_KEY.startsWith('PENDIENTE')){
+  try{
+    firebase.messaging().onMessage((payload)=>{
+      const n = payload.notification || {};
+      showToast(`🔔 ${n.title || ''} ${n.body || ''}`.trim(), false);
+    });
+  }catch(e){ /* messaging no disponible en este navegador */ }
+}
 
 </script>
 <script>
