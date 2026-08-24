@@ -19,6 +19,10 @@ const { getMessaging } = require('firebase-admin/messaging');
 
 const HORA_RECORDATORIO = 8; // 8am hora local del atleta - fijo para v1
 const DRY_RUN = process.env.DRY_RUN === 'true';
+// Solo para pruebas manuales (workflow_dispatch) - salta el filtro de
+// hora/dia y envia de inmediato a quien tenga token. El cron programado
+// NUNCA pasa esta variable, asi que en produccion no tiene efecto.
+const TEST_SEND = process.env.TEST_SEND === 'true';
 
 const key = JSON.parse(process.env.FIREBASE_KEY);
 initializeApp({ credential: cert(key) });
@@ -50,21 +54,20 @@ function localHour(tz, date) {
     const nombre = (data.contacto && data.contacto.nombre) || doc.id;
 
     const hora = localHour(tz, ahora);
-    if (hora !== HORA_RECORDATORIO) {
+    if (!TEST_SEND && hora !== HORA_RECORDATORIO) {
       console.log(`${nombre} (${tz}): son las ${hora}h local, no las ${HORA_RECORDATORIO}h - se salta`);
       continue;
     }
 
     const weeklyOrder = data.plan && data.plan.weeklyOrder;
-    if (!Array.isArray(weeklyOrder) || !weeklyOrder.length) {
-      console.log(`${nombre}: sin weeklyOrder configurado - se salta`);
-      continue;
+    let dayId = null;
+    if (Array.isArray(weeklyOrder) && weeklyOrder.length) {
+      const jsDay = localWeekday(tz, ahora);
+      const mondayIdx = (jsDay + 6) % 7;
+      dayId = weeklyOrder[mondayIdx];
     }
-    const jsDay = localWeekday(tz, ahora);
-    const mondayIdx = (jsDay + 6) % 7;
-    const dayId = weeklyOrder[mondayIdx];
-    if (!dayId) {
-      console.log(`${nombre}: hoy es dia de descanso - se salta`);
+    if (!dayId && !TEST_SEND) {
+      console.log(`${nombre}: hoy es dia de descanso o sin weeklyOrder - se salta`);
       continue;
     }
 
