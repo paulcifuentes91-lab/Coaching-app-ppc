@@ -252,7 +252,7 @@ const REGLAS = [
         const archivo = ARCHIVO_POR_ID[doc.id];
         const vista = VISTA_POR_REGLA[regla.id] || 'feel';
         payloadData.image = `${BASE_URL}/icons/recordatorio-${regla.id}.png`;
-        payloadData.icon = `${BASE_URL}/icons/icon-notif-p.png`;
+        payloadData.icon = `${BASE_URL}/icons/icon-192.png`; // logo real de la marca (P con alas), no el "P" simple generado
         payloadData.url = `${BASE_URL}/${archivo}?vista=${vista}`;
         payloadData.athleteId = doc.id;
         payloadData.dedupKey = dedupKey;
