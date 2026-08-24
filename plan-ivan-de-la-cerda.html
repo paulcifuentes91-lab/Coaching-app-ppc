@@ -585,6 +585,12 @@ const DEFAULT_PLAN = {
 };
 
 let activeView = 'feel';
+// "Ver plan" de una notificacion push trae "?vista=X" (ver VISTA_POR_REGLA
+// en scripts/recordatorios.js) para abrir directo en la pestaña relevante.
+{
+  const vistaParam = new URLSearchParams(location.search).get('vista');
+  if (['feel','nutrition','training','progress'].includes(vistaParam)) activeView = vistaParam;
+}
 let activeWeek = 1;
 let activeDay = DEFAULT_PLAN.days[0].id;
 let activeMealWindow = DEFAULT_PLAN.mealWindows[0].id;
@@ -931,6 +937,25 @@ function showToast(msg, isError){
   t.textContent = msg;
   t.style.background = isError ? '#5c1a1a' : '#1a4d2e';
   t.style.color = isError ? '#ffb3b3' : '#b3ffcc';
+  t.style.opacity = '1';
+  clearTimeout(t._hideTimer);
+  t._hideTimer = setTimeout(()=>{ t.style.opacity = '0'; }, 6000);
+}
+
+/* Toast propio (elemento DOM separado de #debugToast, no se pisan estilos)
+   con la misma identidad dorada "oro liquido" de los recordatorios push
+   (iconos/branding en scripts/recordatorios.js) - en vez del verde
+   generico de "exito" que usa showToast() para todo lo demas. Solo se usa
+   para el mensaje en primer plano cuando llega un push con la app abierta. */
+function showToastPush(msg){
+  let t = document.getElementById('pushToast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'pushToast';
+    t.style.cssText = 'position:fixed;top:8px;left:8px;right:8px;z-index:99999;padding:14px;border-radius:10px;font-family:var(--font-body,monospace);font-size:13px;font-weight:700;text-align:center;transition:opacity .3s;background:linear-gradient(135deg,#2a2410,#14171B);border:1px solid #D4AF37;color:#F2D272;box-shadow:0 4px 20px rgba(0,0,0,.6),0 0 16px rgba(212,175,55,.25);';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
   t.style.opacity = '1';
   clearTimeout(t._hideTimer);
   t._hideTimer = setTimeout(()=>{ t.style.opacity = '0'; }, 6000);
@@ -3085,7 +3110,7 @@ if('Notification' in window && !VAPID_KEY.startsWith('PENDIENTE')){
       // duplicando cada notificacion - con data-only este es el unico lugar
       // que la muestra.
       const n = payload.data || {};
-      showToast(`🔔 ${n.title || ''} ${n.body || ''}`.trim(), false);
+      showToastPush(`🔔 ${n.title || ''} ${n.body || ''}`.trim());
     });
   }catch(e){ /* messaging no disponible en este navegador */ }
 }
