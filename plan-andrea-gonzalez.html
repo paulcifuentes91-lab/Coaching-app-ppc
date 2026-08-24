@@ -115,6 +115,19 @@
   .reps-chip{flex:0 0 auto;font-family:var(--font-mono);font-size:12.5px;font-weight:600;background:var(--surface-2);border-left:2px solid var(--accent);padding:5px 9px;border-radius:6px;color:var(--text);white-space:nowrap;margin-top:1px;}
   .reps-col{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:0 0 auto;}
   .load-input{width:56px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font-mono);font-size:11px;text-align:center;padding:4px 2px;}
+
+  /* Contador de series + cronómetro de descanso - estilo oro líquido
+     (mismo tono que el brillo dorado del logo/PRs), distinto del acento
+     morado de cada atleta, para que se sienta "premio" al completar. */
+  .set-row{display:flex;align-items:center;gap:7px;margin:2px 0 4px 34px;flex-wrap:wrap;}
+  .set-box{width:27px;height:27px;border-radius:8px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--text-muted);transition:all .15s ease;flex:0 0 auto;background:none;}
+  .set-box.done{background:linear-gradient(135deg,#F2D272,#D4AF37);border-color:#D4AF37;color:#14171B;box-shadow:0 0 10px rgba(212,175,55,.5);}
+  .set-box.next{border-color:#D4AF37;color:#D4AF37;box-shadow:0 0 6px rgba(212,175,55,.3);}
+  .set-btn{margin:0 0 6px 34px;background:linear-gradient(135deg,#F2D272,#D4AF37);color:#14171B;border:none;border-radius:10px;padding:8px 18px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:var(--font-body);box-shadow:0 2px 10px rgba(212,175,55,.35);}
+  .set-btn:disabled{background:var(--surface-2);color:var(--text-faint);box-shadow:none;cursor:default;}
+  .rest-timer-num{font-family:var(--font-mono);font-size:64px;font-weight:700;letter-spacing:1px;color:#F2D272;text-shadow:0 0 24px rgba(212,175,55,.6);transition:color .2s,text-shadow .2s;}
+  .rest-timer-num.done{color:#7CF29E;text-shadow:0 0 28px rgba(124,242,158,.7);animation:rt-pulse .6s ease-in-out infinite;}
+  @keyframes rt-pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
   .load-input::placeholder{color:var(--text-faint);}
 
   footer{margin-top:22px;text-align:center;}
@@ -439,6 +452,8 @@ let progressPhotos = [];
 let healthLog = {};
 let exercisePRs = {};
 let loadHistory = {}; // { [loadKey]: [{date, kg}, ...] } - serie temporal real de cargas, ver loadKeyFor()
+let setProgress = {}; // { [setProgressKeyFor]: numero de series completadas hoy } - contador de series + descanso
+let restTimerInterval = null; // id del setInterval del cronometro de descanso activo (para poder cancelarlo)
 let _histSeedDone = false;
 let dataReady = false;
 let insignias = {};
@@ -755,6 +770,7 @@ athleteRef.onSnapshot((doc)=>{
     healthLog = data.healthLog || {};
     exercisePRs = data.exercisePRs || {};
     loadHistory = data.loadHistory || {};
+    setProgress = data.setProgress || {};
 
     if(data.plan){
       const p = data.plan;
@@ -794,7 +810,7 @@ athleteRef.onSnapshot((doc)=>{
     athleteRef.set({
       trainingChecks:{}, mealChecks:{}, supplementChecks:{},
       exerciseLoads:{}, progressLog: HISTORICAL_ENTRIES,
-      mesocicloHistory:{}, dailyFeel:{}, exercisePRs:{}, loadHistory:{}
+      mesocicloHistory:{}, dailyFeel:{}, exercisePRs:{}, loadHistory:{}, setProgress:{}
     });
   }
   dataReady = true;
@@ -1486,6 +1502,92 @@ function renderTabs(){
   });
 }
 
+/* ═══════════ CONTADOR DE SERIES + CRONÓMETRO DE DESCANSO ═══════════
+   setProgress guarda, por ejercicio y por fecha real de hoy, cuántas
+   series ya se marcaron - se reinicia solo al día siguiente (nueva fecha
+   en la key), que es justo lo que significa "durante el mismo
+   entrenamiento". No existe un campo de descanso explícito por ejercicio
+   en el plan - se usa el tier ya existente (principal/accesorio, el
+   mismo que usa la periodización) para elegir la duración. */
+const DESCANSO_PRINCIPAL_SEG = 180;
+const DESCANSO_ACCESORIO_SEG = 90;
+
+function setProgressKeyFor(sIdx, iIdx){ return `${todayStr()}-${activeDay}-${sIdx}-${iIdx}`; }
+
+// Reutiliza el texto que ya arma computeReps() (siempre "N x reps...",
+// para cualquier semana/periodización) - null si el ejercicio no tiene
+// formato de series (ej. cardio por minutos), para no mostrar el
+// contador ahí. Misma exención que RIR/dropset (esEjercicioCardio).
+function seriesDeExercicio(item, sectionName, computedText){
+  if(!/^Entrenamiento/.test(sectionName)) return null;
+  if(esEjercicioCardio(item.name)) return null;
+  const m = computedText.match(/^(\d+)/);
+  return m ? parseInt(m[1]) : null;
+}
+
+function marcarSerie(sIdx, iIdx, totalSeries){
+  const k = setProgressKeyFor(sIdx, iIdx);
+  const actual = setProgress[k] || 0;
+  if(actual >= totalSeries) return;
+  setProgress[k] = actual + 1;
+  saveField('setProgress', setProgress);
+  renderCard();
+  const day = currentDay();
+  const item = day.sections[sIdx] && day.sections[sIdx].items[iIdx];
+  const nombre = (item && item.name) || 'este ejercicio';
+  const segundos = (item && item.tier === 'principal') ? DESCANSO_PRINCIPAL_SEG : DESCANSO_ACCESORIO_SEG;
+  abrirTemporizadorDescanso(segundos, nombre);
+}
+
+function desmarcarUltimaSerie(sIdx, iIdx){
+  const k = setProgressKeyFor(sIdx, iIdx);
+  const actual = setProgress[k] || 0;
+  if(actual <= 0) return;
+  setProgress[k] = actual - 1;
+  saveField('setProgress', setProgress);
+  renderCard();
+}
+
+function abrirTemporizadorDescanso(segundos, nombreEjercicio){
+  if(restTimerInterval){ clearInterval(restTimerInterval); restTimerInterval = null; }
+  document.getElementById('restTimerOverlay')?.remove();
+  let restante = segundos;
+  const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'restTimerOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:998;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;';
+  overlay.innerHTML = `
+    <div style="font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;color:var(--text-faint);text-transform:uppercase;margin-bottom:6px;">Descanso · ${nombreEjercicio}</div>
+    <div class="rest-timer-num" id="restTimerNum">${fmt(restante)}</div>
+    <button id="restTimerCerrar" style="margin-top:26px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:9px 24px;border-radius:10px;font-size:13px;cursor:pointer;">Saltar descanso</button>
+  `;
+  document.body.appendChild(overlay);
+
+  const cerrar = () => {
+    if(restTimerInterval){ clearInterval(restTimerInterval); restTimerInterval = null; }
+    overlay.remove();
+  };
+  document.getElementById('restTimerCerrar').addEventListener('click', cerrar);
+
+  restTimerInterval = setInterval(() => {
+    restante--;
+    const numEl = document.getElementById('restTimerNum');
+    if(!numEl){ clearInterval(restTimerInterval); restTimerInterval = null; return; }
+    if(restante <= 0){
+      numEl.textContent = '¡Listo! 💪';
+      numEl.classList.add('done');
+      clearInterval(restTimerInterval);
+      restTimerInterval = null;
+      if(navigator.vibrate) navigator.vibrate([200,100,200,100,300]);
+      const btn = document.getElementById('restTimerCerrar');
+      if(btn) btn.textContent = 'Cerrar';
+    } else {
+      numEl.textContent = fmt(restante);
+    }
+  }, 1000);
+}
+
 function renderCard(){
   const day = currentDay();
   const {done,total} = countProgress(day);
@@ -1524,6 +1626,8 @@ function renderCard(){
       const checked = checkedFor(day, sIdx, iIdx);
       const isLast = iIdx===sec.items.length-1;
       const computed = computeReps(it, sec.name, isLast, activeWeek);
+      const totalSeries = seriesDeExercicio(it, sec.name, computed.text);
+      const progresoSeries = totalSeries ? (setProgress[setProgressKeyFor(sIdx,iIdx)] || 0) : 0;
       html += `
         <div class="row">
           <div class="chk ${checked?'checked':''}" data-s="${sIdx}" data-i="${iIdx}">${ICON_CHECK}</div>
@@ -1538,6 +1642,17 @@ function renderCard(){
             <a class="vid-link" href="${videoSearchUrl(it.name)}" target="_blank" rel="noopener">▶ técnica</a>
           </div>
         </div>
+        ${totalSeries ? `
+        <div class="set-row" data-s="${sIdx}" data-i="${iIdx}" data-total="${totalSeries}">
+          ${Array.from({length:totalSeries},(_,si)=>{
+            const doneBox = si < progresoSeries;
+            const isNext = si === progresoSeries;
+            return `<div class="set-box ${doneBox?'done':''} ${isNext?'next':''}" data-set="${si}">${doneBox?'✓':si+1}</div>`;
+          }).join('')}
+        </div>
+        <button class="set-btn" data-s="${sIdx}" data-i="${iIdx}" data-total="${totalSeries}" ${progresoSeries>=totalSeries?'disabled':''}>
+          ${progresoSeries>=totalSeries ? 'Series completadas ✓' : `Marcar serie ${progresoSeries+1}`}
+        </button>` : ''}
       `;
     });
   });
@@ -1567,6 +1682,19 @@ function renderCard(){
       renderCard();
       renderTrainHistory();
     });
+  });
+  card.querySelectorAll('.set-box').forEach(box=>{
+    box.addEventListener('click', ()=>{
+      const row = box.closest('.set-row');
+      const sIdx = row.dataset.s, iIdx = row.dataset.i, total = +row.dataset.total;
+      const actual = setProgress[setProgressKeyFor(sIdx,iIdx)] || 0;
+      const si = +box.dataset.set;
+      if(si === actual) marcarSerie(sIdx, iIdx, total);
+      else if(si === actual - 1) desmarcarUltimaSerie(sIdx, iIdx);
+    });
+  });
+  card.querySelectorAll('.set-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> marcarSerie(btn.dataset.s, btn.dataset.i, +btn.dataset.total));
   });
   card.querySelectorAll('.load-input').forEach(inp=>{
     inp.addEventListener('change',()=>{
