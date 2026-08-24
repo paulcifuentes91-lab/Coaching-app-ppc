@@ -2906,7 +2906,11 @@ actualizarBotonNotif();
 if('Notification' in window && !VAPID_KEY.startsWith('PENDIENTE')){
   try{
     firebase.messaging().onMessage((payload)=>{
-      const n = payload.notification || {};
+      // data-only (ver scripts/recordatorios.js): un payload "notification"
+      // hace que FCM muestre el push automaticamente ADEMAS de este toast,
+      // duplicando cada notificacion - con data-only este es el unico lugar
+      // que la muestra.
+      const n = payload.data || {};
       showToast(`🔔 ${n.title || ''} ${n.body || ''}`.trim(), false);
     });
   }catch(e){ /* messaging no disponible en este navegador */ }

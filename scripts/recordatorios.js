@@ -217,7 +217,13 @@ const REGLAS = [
       }
 
       try {
-        const resp = await messaging.sendEachForMulticast({ tokens, notification: { title, body } });
+        // data-only (NO "notification"): un payload "notification" hace que
+        // FCM muestre el push automaticamente en el service worker, ADEMAS
+        // de que nuestro propio onBackgroundMessage/onMessage tambien lo
+        // muestra - resultado: cada push llegaba duplicado. Con data-only
+        // FCM no muestra nada por su cuenta; el cliente es el unico que
+        // decide como y cuando mostrarlo.
+        const resp = await messaging.sendEachForMulticast({ tokens, data: { title, body } });
         enviados++;
         const malos = [];
         resp.responses.forEach((r, i) => { if (!r.success) malos.push(tokens[i]); });

@@ -26,9 +26,13 @@ firebase.initializeApp({
 
 // Mensajes en SEGUNDO PLANO (app cerrada o en otra pestaña) - los mensajes
 // en primer plano se manejan aparte, en cada plan-*.html (messaging.onMessage).
+// El servidor (scripts/recordatorios.js) manda el payload como "data", NO
+// "notification" - un payload "notification" hace que FCM muestre el push
+// automaticamente ADEMAS de este handler, duplicando cada notificacion.
+// Con data-only, este es el UNICO lugar que decide mostrarla.
 const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
-  const n = payload.notification || {};
+  const n = payload.data || {};
   self.registration.showNotification(n.title || 'Pro Performance Coach', {
     body: n.body || '',
     icon: './icons/icon-192.png',
