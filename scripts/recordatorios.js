@@ -8,13 +8,28 @@
    los mismos datos ya traidos - ninguna regla hace lecturas adicionales a
    Firestore, así que agregar reglas no multiplica las consultas.
 
+   VENTANA DE TIEMPO, no hora exacta: diagnostico confirmado con datos
+   reales (24-ago) - GitHub Actions NO respeta el cron "0,30 * * * *" con
+   precision de minuto (corrio a las 02:49, 04:00, 05:20, 06:05... casi
+   nunca en :00/:30, con huecos de 45 a 95 min). Exigir hora exacta daba
+   CERO envios reales en 11 corridas seguidas, con hasta 5 atletas ya
+   activados. Ahora cada regla dispara si la hora local del atleta cae
+   dentro de VENTANA_MIN minutos de cualquiera de sus horas objetivo.
+
+   Como la ventana puede coincidir en mas de una corrida del cron (ej. el
+   cron pasa dos veces dentro de la misma ventana de ±20 min), se guarda
+   en athletes/{id}.recordatoriosEnviados un registro de que YA se envio
+   esa regla+hora+fecha, para no duplicar. La key incluye la fecha local
+   del atleta, asi que se resetea sola al dia siguiente sin necesitar
+   limpieza (mismo patron que otros campos de este proyecto, ej. checks).
+
    Cada regla define:
-   - horas: horarios "HH:MM" (hora local del atleta, contacto.zonaHoraria)
-     en los que puede dispararse.
+   - horas: horarios "HH:MM" objetivo (hora local del atleta,
+     contacto.zonaHoraria) - VENTANA_MIN minutos de tolerancia alrededor.
    - condicion(data, tz, ahora): opcional. Si la regla depende de datos del
      atleta (ej. si hoy es dia de entreno), devuelve el contexto a pasar a
      armar(), o un valor falsy para saltarse esa regla. Sin condicion, la
-     regla se dispara siempre que coincida la hora.
+     regla se dispara siempre que coincida la ventana.
    - armar(ctx): arma {title, body} del push.
 
    Reutiliza el MISMO mapeo dia-de-semana que usa el cliente
@@ -40,6 +55,22 @@ const key = JSON.parse(process.env.FIREBASE_KEY);
 initializeApp({ credential: cert(key) });
 const db = getFirestore();
 const messaging = getMessaging();
+
+// Tolerancia alrededor de cada hora objetivo, para absorber el drift real
+// del cron de GitHub Actions (ver diagnostico arriba).
+const VENTANA_MIN = 20;
+
+function minutosDelDia(horaStr) {
+  const [h, m] = horaStr.split(':').map(Number);
+  return h * 60 + m;
+}
+
+// Hora objetivo (de regla.horas) mas cercana a la hora actual, si esta
+// dentro de VENTANA_MIN minutos - null si ninguna cae en rango.
+function horaObjetivoEnVentana(horaActualStr, horasObjetivo) {
+  const actual = minutosDelDia(horaActualStr);
+  return horasObjetivo.find(h => Math.abs(actual - minutosDelDia(h)) <= VENTANA_MIN) || null;
+}
 
 // Mismo mapeo que localWeekday() en el cliente: Dom=0..Sab=6
 function localWeekday(tz, date) {
@@ -159,10 +190,18 @@ const REGLAS = [
     const tz = (data.contacto && data.contacto.zonaHoraria) || 'America/Santiago';
     const nombre = (data.contacto && data.contacto.nombre) || doc.id;
     const hora = localTimeStr(tz, ahora);
+    const fechaLocal = localDateStr(tz, ahora);
+    const enviadosPrevios = data.recordatoriosEnviados || {};
 
     for (const regla of REGLAS) {
-      const coincideHora = TEST_SEND || regla.horas.includes(hora);
-      if (!coincideHora) continue;
+      const horaObjetivo = TEST_SEND ? regla.horas[0] : horaObjetivoEnVentana(hora, regla.horas);
+      if (!horaObjetivo) continue;
+
+      const dedupKey = `${fechaLocal}-${regla.id}-${horaObjetivo}`;
+      if (!TEST_SEND && enviadosPrevios[dedupKey]) {
+        console.log(`${nombre} [${regla.id}]: ya se envió hoy en la ventana de ${horaObjetivo} - se salta`);
+        continue;
+      }
 
       const ctx = regla.condicion ? regla.condicion(data, tz, ahora) : true;
       if (!ctx && !TEST_SEND) {
@@ -173,7 +212,7 @@ const REGLAS = [
       const { title, body } = regla.armar(ctx);
 
       if (DRY_RUN) {
-        console.log(`[DRY RUN] ${nombre} [${regla.id}] (${tz}, ${hora}): "${title}" / "${body}" a ${tokens.length} token(s)`);
+        console.log(`[DRY RUN] ${nombre} [${regla.id}] (${tz}, ${hora}, objetivo ${horaObjetivo}): "${title}" / "${body}" a ${tokens.length} token(s)`);
         continue;
       }
 
@@ -182,9 +221,9 @@ const REGLAS = [
         enviados++;
         const malos = [];
         resp.responses.forEach((r, i) => { if (!r.success) malos.push(tokens[i]); });
-        if (malos.length) {
-          await doc.ref.update({ fcmTokens: FieldValue.arrayRemove(...malos) });
-        }
+        const actualizacion = { recordatoriosEnviados: { [dedupKey]: true } };
+        if (malos.length) actualizacion.fcmTokens = FieldValue.arrayRemove(...malos);
+        await doc.ref.set(actualizacion, { merge: true });
         console.log(`${nombre} [${regla.id}]: enviado a ${resp.successCount}/${tokens.length} dispositivo(s)${malos.length ? `, ${malos.length} token(s) invalido(s) removido(s)` : ''}`);
       } catch (e) {
         console.error(`${nombre} [${regla.id}]: ERROR al enviar -`, e.message);
