@@ -31,6 +31,10 @@ const DRY_RUN = process.env.DRY_RUN === 'true';
 // token. El cron programado NUNCA pasa esta variable, asi que en
 // produccion no tiene efecto.
 const TEST_SEND = process.env.TEST_SEND === 'true';
+// Opcional, solo junto con TEST_SEND: limita la prueba a un unico
+// documento de Firestore (ej. "sandy-gaete-julio-2026") en vez de a
+// todos los que tengan token.
+const TEST_ATHLETE = process.env.TEST_ATHLETE || '';
 
 const key = JSON.parse(process.env.FIREBASE_KEY);
 initializeApp({ credential: cert(key) });
@@ -146,6 +150,7 @@ const REGLAS = [
   let conToken = 0, enviados = 0;
 
   for (const doc of snap.docs) {
+    if (TEST_ATHLETE && doc.id !== TEST_ATHLETE) continue;
     const data = doc.data();
     const tokens = data.fcmTokens;
     if (!Array.isArray(tokens) || !tokens.length) continue;

@@ -13,6 +13,10 @@ on:
         description: "Enviar YA todas las reglas a quien tenga token, sin esperar su hora/día (solo pruebas manuales)"
         type: boolean
         default: false
+      test_athlete:
+        description: "Junto con test_send: limitar la prueba a un solo atleta (ID de Firestore, ej. sandy-gaete-julio-2026). Vacío = todos los que tengan token."
+        type: string
+        default: ""
 
 jobs:
   recordatorios:
@@ -28,3 +32,4 @@ jobs:
           FIREBASE_KEY: ${{ secrets.FIREBASE_KEY }}
           DRY_RUN: ${{ inputs.dry_run || 'false' }}
           TEST_SEND: ${{ inputs.test_send || 'false' }}
+          TEST_ATHLETE: ${{ inputs.test_athlete || '' }}
