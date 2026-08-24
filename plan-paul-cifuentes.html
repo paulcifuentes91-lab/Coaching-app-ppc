@@ -323,6 +323,12 @@ const DEFAULT_PLAN = {
 };
 
 let activeView = 'feel';
+// "Ver plan" de una notificacion push trae "?vista=X" (ver VISTA_POR_REGLA
+// en scripts/recordatorios.js) para abrir directo en la pestaña relevante.
+{
+  const vistaParam = new URLSearchParams(location.search).get('vista');
+  if (['feel','nutrition','training','progress'].includes(vistaParam)) activeView = vistaParam;
+}
 let activeWeek = 1;
 let activeDay = DEFAULT_PLAN.days[0].id;
 let activeMealWindow = DEFAULT_PLAN.mealWindows[0].id;

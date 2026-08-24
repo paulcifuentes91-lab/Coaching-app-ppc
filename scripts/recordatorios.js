@@ -56,6 +56,30 @@ initializeApp({ credential: cert(key) });
 const db = getFirestore();
 const messaging = getMessaging();
 
+/* ═══════════ NOTIFICACIONES RICAS (imagen + acciones + deep link) ═══════
+   Prototipo - solo para el/los atleta(s) en RICH_NOTIF_ATLETAS. El resto
+   sigue recibiendo el push plano (title/body) hasta que se decida
+   replicar. Imagen ancha y botones de accion solo se ven en Chrome/Edge/
+   Firefox (Android y desktop) - Safari (macOS e iOS, incluida PWA
+   instalada) no soporta "image" ni "actions" en absoluto y los ignora sin
+   fallar; ahi el atleta ve el push plano con icon+title+body igual, y el
+   tap abre la app (notificationclick en service-worker.js). */
+const RICH_NOTIF_ATLETAS = new Set(['paul-cifuentes-julio-2026']);
+const BASE_URL = 'https://paulcifuentes91-lab.github.io/Coaching-app-ppc';
+const ARCHIVO_POR_ID = {
+  'paul-cifuentes-julio-2026': 'plan-paul-cifuentes.html'
+};
+// Vista a la que abre "Ver plan" segun la regla - mismos ids que activeView
+// en el cliente (feel/nutrition/training/progress).
+const VISTA_POR_REGLA = {
+  entreno: 'training',
+  agua_comida: 'nutrition',
+  motivacion: 'feel',
+  como_te_sientes: 'feel',
+  descanso: 'feel',
+  chequeo_proximo: 'progress'
+};
+
 // Tolerancia alrededor de cada hora objetivo, para absorber el drift real
 // del cron de GitHub Actions (ver diagnostico arriba).
 const VENTANA_MIN = 20;
@@ -216,14 +240,30 @@ const REGLAS = [
         continue;
       }
 
+      // data-only (NO "notification"): un payload "notification" hace que
+      // FCM muestre el push automaticamente en el service worker, ADEMAS de
+      // que nuestro propio onBackgroundMessage/onMessage tambien lo
+      // muestra - resultado: cada push llegaba duplicado. Con data-only FCM
+      // no muestra nada por su cuenta; el cliente es el unico que decide
+      // como y cuando mostrarlo. Todos los valores de "data" deben ser
+      // string (requisito de FCM) - actions va serializado como JSON.
+      const payloadData = { title, body };
+      if (RICH_NOTIF_ATLETAS.has(doc.id) && ARCHIVO_POR_ID[doc.id]) {
+        const archivo = ARCHIVO_POR_ID[doc.id];
+        const vista = VISTA_POR_REGLA[regla.id] || 'feel';
+        payloadData.image = `${BASE_URL}/icons/recordatorio-${regla.id}.png`;
+        payloadData.icon = `${BASE_URL}/icons/icon-notif-p.png`;
+        payloadData.url = `${BASE_URL}/${archivo}?vista=${vista}`;
+        payloadData.athleteId = doc.id;
+        payloadData.dedupKey = dedupKey;
+        payloadData.actions = JSON.stringify([
+          { action: 'marcar_hecho', title: '✓ Marcar hecho' },
+          { action: 'ver_plan', title: 'Ver plan' }
+        ]);
+      }
+
       try {
-        // data-only (NO "notification"): un payload "notification" hace que
-        // FCM muestre el push automaticamente en el service worker, ADEMAS
-        // de que nuestro propio onBackgroundMessage/onMessage tambien lo
-        // muestra - resultado: cada push llegaba duplicado. Con data-only
-        // FCM no muestra nada por su cuenta; el cliente es el unico que
-        // decide como y cuando mostrarlo.
-        const resp = await messaging.sendEachForMulticast({ tokens, data: { title, body } });
+        const resp = await messaging.sendEachForMulticast({ tokens, data: payloadData });
         enviados++;
         const malos = [];
         resp.responses.forEach((r, i) => { if (!r.success) malos.push(tokens[i]); });

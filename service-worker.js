@@ -14,15 +14,17 @@ const CACHE_NAME = 'ppc-cache-v1';
 // Se comparte entre los 14 atletas (mismo proyecto Firebase para todos).
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js');
 
-firebase.initializeApp({
+const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBtGeuSrw57EkNLFl4bMfkD5mGpqcwdd_I",
   authDomain: "pro-performance-e811e.firebaseapp.com",
   projectId: "pro-performance-e811e",
   storageBucket: "pro-performance-e811e.firebasestorage.app",
   messagingSenderId: "672514380516",
   appId: "1:672514380516:web:ce69f2aece5e2f77e112f1"
-});
+};
+firebase.initializeApp(FIREBASE_CONFIG);
 
 // Mensajes en SEGUNDO PLANO (app cerrada o en otra pestaña) - los mensajes
 // en primer plano se manejan aparte, en cada plan-*.html (messaging.onMessage).
@@ -30,15 +32,71 @@ firebase.initializeApp({
 // "notification" - un payload "notification" hace que FCM muestre el push
 // automaticamente ADEMAS de este handler, duplicando cada notificacion.
 // Con data-only, este es el UNICO lugar que decide mostrarla.
+//
+// "image" (imagen ancha) y "actions" (botones) solo los soportan Chrome/
+// Edge/Firefox - Safari (macOS e iOS) los ignora sin fallar, el atleta ve
+// el push normal con icon+title+body igual. No hace falta detectar el
+// navegador: simplemente se omiten esas opciones si el payload no las trae
+// (hoy solo se mandan para el atleta del prototipo, ver RICH_NOTIF_ATLETAS
+// en recordatorios.js).
 const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   const n = payload.data || {};
-  self.registration.showNotification(n.title || 'Pro Performance Coach', {
+  let actions = [];
+  try { actions = n.actions ? JSON.parse(n.actions) : []; } catch (e) { /* payload sin acciones */ }
+
+  const options = {
     body: n.body || '',
-    icon: './icons/icon-192.png',
-    badge: './icons/icon-192.png'
-  });
+    icon: n.icon || './icons/icon-192.png',
+    badge: './icons/icon-192.png',
+    data: n // se reusa en notificationclick (url, athleteId, dedupKey)
+  };
+  if (n.image) options.image = n.image;
+  if (actions.length) options.actions = actions;
+
+  self.registration.showNotification(n.title || 'Pro Performance Coach', options);
 });
+
+// Click en la notificacion o en uno de sus botones.
+// "marcar_hecho": escribe la confirmacion directo en Firestore, SIN abrir
+// la app - el atleta no tiene que hacer nada mas.
+// "ver_plan" o tap en el cuerpo (sin action): abre/enfoca la app en la
+// pestaña relevante (n.url ya trae "?vista=...", ver VISTA_POR_REGLA en
+// recordatorios.js). Si ya hay una pestaña de esa app abierta, la enfoca
+// en vez de abrir una nueva.
+self.addEventListener('notificationclick', (event) => {
+  const n = event.notification.data || {};
+  event.notification.close();
+
+  if (event.action === 'marcar_hecho') {
+    event.waitUntil(marcarHechoEnFirestore(n));
+    return;
+  }
+
+  const url = n.url || './';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      const destino = new URL(url, self.location.href);
+      for (const client of windowClients) {
+        if (new URL(client.url).pathname === destino.pathname && 'focus' in client) {
+          if ('navigate' in client) client.navigate(url);
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) return clients.openWindow(url);
+    })
+  );
+});
+
+async function marcarHechoEnFirestore(n) {
+  if (!n.athleteId || !n.dedupKey) return;
+  try {
+    const db = firebase.firestore();
+    await db.collection('athletes').doc(n.athleteId).set({
+      recordatorioConfirmaciones: { [n.dedupKey]: true }
+    }, { merge: true });
+  } catch (e) { /* silencioso - no hay UI en el SW para mostrar el error */ }
+}
 
 self.addEventListener('install', () => {
   self.skipWaiting();
