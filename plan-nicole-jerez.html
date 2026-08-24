@@ -2012,9 +2012,11 @@ function renderTabs(){
    setProgress guarda, por ejercicio y por fecha real de hoy, cuántas
    series ya se marcaron - se reinicia solo al día siguiente (nueva fecha
    en la key), que es justo lo que significa "durante el mismo
-   entrenamiento". No existe un campo de descanso por ejercicio en el plan
-   hoy, así que se usa un valor fijo razonable para todos. */
-const DESCANSO_DEFECTO_SEG = 90;
+   entrenamiento". No existe un campo de descanso explícito por ejercicio
+   en el plan - se usa el tier ya existente (principal/accesorio, el
+   mismo que usa la periodización) para elegir la duración. */
+const DESCANSO_PRINCIPAL_SEG = 180;
+const DESCANSO_ACCESORIO_SEG = 90;
 
 function setProgressKeyFor(sIdx, iIdx){ return `${todayStr()}-${activeDay}-${sIdx}-${iIdx}`; }
 
@@ -2037,8 +2039,10 @@ function marcarSerie(sIdx, iIdx, totalSeries){
   saveField('setProgress', setProgress);
   renderCard();
   const day = currentDay();
-  const nombre = (day.sections[sIdx] && day.sections[sIdx].items[iIdx] && day.sections[sIdx].items[iIdx].name) || 'este ejercicio';
-  abrirTemporizadorDescanso(DESCANSO_DEFECTO_SEG, nombre);
+  const item = day.sections[sIdx] && day.sections[sIdx].items[iIdx];
+  const nombre = (item && item.name) || 'este ejercicio';
+  const segundos = (item && item.tier === 'principal') ? DESCANSO_PRINCIPAL_SEG : DESCANSO_ACCESORIO_SEG;
+  abrirTemporizadorDescanso(segundos, nombre);
 }
 
 function desmarcarUltimaSerie(sIdx, iIdx){
