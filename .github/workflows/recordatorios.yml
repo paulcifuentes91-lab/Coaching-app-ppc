@@ -1,4 +1,4 @@
-name: Recordatorio "hoy toca entrenar"
+name: Recordatorios push
 
 on:
   schedule:
@@ -6,16 +6,16 @@ on:
   workflow_dispatch:        # permite correrlo manualmente desde GitHub para probar
     inputs:
       dry_run:
-        description: "Solo mostrar quién recibiría el push, sin enviar nada"
+        description: "Solo mostrar quién recibiría cada push, sin enviar nada"
         type: boolean
         default: false
       test_send:
-        description: "Enviar YA a quien tenga token, sin esperar su hora/día (solo pruebas manuales)"
+        description: "Enviar YA todas las reglas a quien tenga token, sin esperar su hora/día (solo pruebas manuales)"
         type: boolean
         default: false
 
 jobs:
-  recordatorio:
+  recordatorios:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: "24"
       - run: npm install firebase-admin
-      - run: node scripts/recordatorio-entreno.js
+      - run: node scripts/recordatorios.js
         env:
           FIREBASE_KEY: ${{ secrets.FIREBASE_KEY }}
           DRY_RUN: ${{ inputs.dry_run || 'false' }}
