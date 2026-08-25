@@ -54,6 +54,17 @@
   .accordion summary::after{content:"+";font-size:16px;color:var(--text-faint);}
   .accordion[open] summary::after{content:"–";}
   .accordion .content{padding:0 14px 14px;}
+
+  /* Acordeón de ejercicios (vista Entrenamiento) - mismo <details class="accordion">
+     que ya se usa en Parámetros/Suplementación/Logros; solo se corrigen las
+     propiedades heredadas de .accordion summary (mono/mayúsculas) para que el
+     nombre del ejercicio se vea igual que siempre (.ex-name, sin tocarla). */
+  .ex-accordion summary{text-transform:none;letter-spacing:normal;font-family:var(--font-body);padding:11px 14px;}
+  .ex-summary-line{display:flex;align-items:center;gap:10px;flex:1;min-width:0;}
+  .ex-summary-line .ex-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ex-progress-badge{flex:0 0 auto;}
+  .ex-progress-badge.done{border-left-color:#D4AF37;color:#D4AF37;}
+  .ex-accordion .content .row{padding-top:10px;}
   .param-row{display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
   .param-row:last-child{border-bottom:none;}
   .param-label{color:#9BA1AA;font-weight:600;flex:0 0 38%;}
@@ -399,6 +410,7 @@ let exercisePRs = {};
 let loadHistory = {}; // { [loadKey]: [{date, kg}, ...] } - serie temporal real de cargas, ver loadKeyFor()
 let setProgress = {}; // { [setProgressKeyFor]: numero de series completadas hoy } - contador de series + descanso
 let restTimerInterval = null; // id del setInterval del cronometro de descanso activo (para poder cancelarlo)
+let expandedExercises = new Set(); // claves "sIdx-iIdx" de acordeones de ejercicio abiertos - UI efímera, no se guarda en Firestore, solo para que renderCard() no los cierre de golpe al re-renderizar (p.ej. al marcar una serie)
 let _histSeedDone = false;
 let dataReady = false;
 let insignias = {};
@@ -1592,37 +1604,55 @@ function renderCard(){
       const computed = computeReps(it, sec.name, isLast, activeWeek);
       const totalSeries = seriesDeExercicio(it, sec.name, computed.text);
       const progresoSeries = totalSeries ? (setProgress[setProgressKeyFor(sIdx,iIdx)] || 0) : 0;
+      const badgeTxt = totalSeries ? `${progresoSeries}/${totalSeries}` : (checked ? '✓' : '—');
+      const badgeDone = totalSeries ? progresoSeries>=totalSeries : checked;
+      const exKey = `${sIdx}-${iIdx}`;
       html += `
-        <div class="row">
-          <div class="chk ${checked?'checked':''}" data-s="${sIdx}" data-i="${iIdx}">${ICON_CHECK}</div>
-          <div class="ex-info" data-s="${sIdx}" data-i="${iIdx}">
-            <div class="ex-name ${checked?'done':''}">${it.name}</div>
-            ${it.tip? `<div class="ex-tip">${it.tip}</div>` : ''}
-            ${computed.notes.map(n=>`<div class="week-note">${n}</div>`).join('')}
+        <details class="accordion ex-accordion" data-k="${exKey}" ${expandedExercises.has(exKey)?'open':''}>
+          <summary>
+            <span class="ex-summary-line">
+              <span class="ex-name ${checked?'done':''}">${it.name}</span>
+              <span class="reps-chip ex-progress-badge ${badgeDone?'done':''}">${badgeTxt}</span>
+            </span>
+          </summary>
+          <div class="content">
+            <div class="row">
+              <div class="chk ${checked?'checked':''}" data-s="${sIdx}" data-i="${iIdx}">${ICON_CHECK}</div>
+              <div class="ex-info" data-s="${sIdx}" data-i="${iIdx}">
+                ${it.tip? `<div class="ex-tip">${it.tip}</div>` : ''}
+                ${computed.notes.map(n=>`<div class="week-note">${n}</div>`).join('')}
+              </div>
+              <div class="reps-col">
+                <div class="reps-chip">${computed.text}</div>
+                <input class="load-input" type="text" inputmode="decimal" placeholder="kg" value="${loads[loadKeyFor(sIdx,iIdx)]||''}" data-s="${sIdx}" data-i="${iIdx}">
+                <a class="vid-link" href="${videoSearchUrl(it.name)}" target="_blank" rel="noopener">▶ técnica</a>
+              </div>
+            </div>
+            ${totalSeries ? `
+            <div class="set-row" data-s="${sIdx}" data-i="${iIdx}" data-total="${totalSeries}">
+              ${Array.from({length:totalSeries},(_,si)=>{
+                const doneBox = si < progresoSeries;
+                const isNext = si === progresoSeries;
+                return `<div class="set-box ${doneBox?'done':''} ${isNext?'next':''}" data-set="${si}">${doneBox?'✓':si+1}</div>`;
+              }).join('')}
+            </div>
+            <button class="set-btn" data-s="${sIdx}" data-i="${iIdx}" data-total="${totalSeries}" ${progresoSeries>=totalSeries?'disabled':''}>
+              ${progresoSeries>=totalSeries ? 'Series completadas ✓' : `Marcar serie ${progresoSeries+1}`}
+            </button>` : ''}
           </div>
-          <div class="reps-col">
-            <div class="reps-chip">${computed.text}</div>
-            <input class="load-input" type="text" inputmode="decimal" placeholder="kg" value="${loads[loadKeyFor(sIdx,iIdx)]||''}" data-s="${sIdx}" data-i="${iIdx}">
-            <a class="vid-link" href="${videoSearchUrl(it.name)}" target="_blank" rel="noopener">▶ técnica</a>
-          </div>
-        </div>
-        ${totalSeries ? `
-        <div class="set-row" data-s="${sIdx}" data-i="${iIdx}" data-total="${totalSeries}">
-          ${Array.from({length:totalSeries},(_,si)=>{
-            const doneBox = si < progresoSeries;
-            const isNext = si === progresoSeries;
-            return `<div class="set-box ${doneBox?'done':''} ${isNext?'next':''}" data-set="${si}">${doneBox?'✓':si+1}</div>`;
-          }).join('')}
-        </div>
-        <button class="set-btn" data-s="${sIdx}" data-i="${iIdx}" data-total="${totalSeries}" ${progresoSeries>=totalSeries?'disabled':''}>
-          ${progresoSeries>=totalSeries ? 'Series completadas ✓' : `Marcar serie ${progresoSeries+1}`}
-        </button>` : ''}
+        </details>
       `;
     });
   });
 
   const card = document.getElementById('card');
   card.innerHTML = html;
+  card.querySelectorAll('.ex-accordion').forEach(det=>{
+    det.addEventListener('toggle', ()=>{
+      if(det.open) expandedExercises.add(det.dataset.k);
+      else expandedExercises.delete(det.dataset.k);
+    });
+  });
   card.querySelectorAll('.chk, .ex-info').forEach(el=>{
     el.addEventListener('click',()=>{
       if(!isWeekEditable(activeWeek)){
