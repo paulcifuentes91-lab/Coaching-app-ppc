@@ -1308,6 +1308,37 @@ function todayTrainingDayId(){
   return (id && days.find(d=>d.id===id)) ? id : null;
 }
 
+/* Selección automática del bloque de nutrición según el día de la semana,
+   para atletas con dietas separadas por rango de días (ej. "Lunes a Jueves"
+   vs "Viernes a Domingo"). No existe un campo estructurado de días en el
+   plan - se interpreta el mismo texto del label que el coach ya escribe en
+   el panel. Si ningún bloque tiene un rango de días reconocible (el caso de
+   la mayoría de los atletas, que solo tienen un bloque único para toda la
+   semana), esta función no encuentra nada y todo sigue igual que siempre. */
+const DIAS_SEMANA_MAP = {LUNES:1,LUN:1,MARTES:2,MAR:2,MIERCOLES:3,MIER:3,MIE:3,JUEVES:4,JUE:4,VIERNES:5,VIE:5,SABADO:6,SAB:6,DOMINGO:7,DOM:7};
+function diasDeRangoEnLabel(label){
+  if(!label) return null;
+  const txt = String(label).normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();
+  const dia = '(LUNES|LUN|MARTES|MAR|MIERCOLES|MIER|MIE|JUEVES|JUE|VIERNES|VIE|SABADO|SAB|DOMINGO|DOM)';
+  const m = txt.match(new RegExp('\\b'+dia+'\\b[\\s-]*A[\\s-]*\\b'+dia+'\\b'));
+  if(!m) return null;
+  const d1 = DIAS_SEMANA_MAP[m[1]], d2 = DIAS_SEMANA_MAP[m[2]];
+  if(!d1 || !d2) return null;
+  const dias = [];
+  let d = d1;
+  while(true){ dias.push(d); if(d===d2) break; d = d===7?1:d+1; if(dias.length>7) break; }
+  return dias;
+}
+function mealWindowDeHoyId(){
+  const jsDay = localWeekday(); // 0=Dom ... 6=Sáb (zona del atleta)
+  const isoHoy = jsDay===0 ? 7 : jsDay; // 1=Lun ... 7=Dom
+  for(const mw of mealWindows){
+    const dias = diasDeRangoEnLabel(mw.label);
+    if(dias && dias.includes(isoHoy)) return mw.id;
+  }
+  return null;
+}
+
 let autoSelectedOnce = false;
 function autoSelectCurrentPosition(){
   if(autoSelectedOnce) return; // solo al cargar; después el atleta navega libre
@@ -1316,6 +1347,8 @@ function autoSelectCurrentPosition(){
   if(w) activeWeek = w;
   const dId = todayTrainingDayId();
   if(dId) activeDay = dId;
+  const mwId = mealWindowDeHoyId();
+  if(mwId) activeMealWindow = mwId;
 }
 
 function renderCheckReminder(){
