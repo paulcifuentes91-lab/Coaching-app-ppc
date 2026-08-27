@@ -1,0 +1,19 @@
+name: Respaldo diario de atletas
+
+on:
+  schedule:
+    - cron: "0 9 * * *"   # una vez al dia (09:00 UTC ≈ madrugada en Chile), fuera de horario de uso activo
+  workflow_dispatch:      # permite correrlo manualmente desde GitHub para probar
+
+jobs:
+  respaldo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: npm install firebase-admin
+      - run: node scripts/respaldos.js
+        env:
+          FIREBASE_KEY: ${{ secrets.FIREBASE_KEY }}

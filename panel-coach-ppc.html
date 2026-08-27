@@ -3054,6 +3054,20 @@ function renderFotosHTML(fotos){
  </div>`;
 }
 
+/* ── Bitácora de auditoría: registra CADA cambio a un campo importante
+   (checkDate, dieta, entrenamiento) con valor anterior/nuevo, cuando y
+   desde donde - para diagnosticar rapido si algo se rompe sin tener que
+   reconstruir todo a mano (ver incidente de Diego, ago-2026). Nunca
+   bloquea ni revienta el guardado real si falla. ── */
+async function fbAuditoria(id, funcion, cambios){
+ if(!FB.on || !cambios || !cambios.length) return;
+ try{
+  await FB.db.collection("athletes").doc(id).collection("auditoria").add({
+   timestamp: new Date().toISOString(), origen: "panel", funcion, cambios
+  });
+ }catch(e){ console.warn("No se pudo registrar auditoria:", e.message); }
+}
+
 /* ── Traer lo que el atleta tiene guardado ── */
 async function fbTraer(a){
  if(!FB.on) { toast("Sin conexión a Firebase"); return null; }
@@ -3157,7 +3171,13 @@ async function fbGuardarPlan(a){
   const hist = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
   hist.push({ fecha: new Date().toISOString(), tipo: "entrenamiento", resumen: dias.length+" día(s) de entrenamiento actualizados", snapshotDays: plan.days });
   planFinal.historial = hist.slice(-30);
+  const _cambios = [];
+  if((planActual.checkDate||"") !== (plan.checkDate||"")) _cambios.push({campo:"checkDate", valorAnterior: planActual.checkDate||null, valorNuevo: plan.checkDate||null});
+  if((planActual.startDate||"") !== (plan.startDate||"")) _cambios.push({campo:"startDate", valorAnterior: planActual.startDate||null, valorNuevo: plan.startDate||null});
+  if((planActual.accessExpiresAt||"") !== (plan.accessExpiresAt||"")) _cambios.push({campo:"accessExpiresAt", valorAnterior: planActual.accessExpiresAt||null, valorNuevo: plan.accessExpiresAt||null});
+  if(JSON.stringify(planActual.days||[]) !== JSON.stringify(plan.days)) _cambios.push({campo:"entrenamiento (días)", valorAnterior: (planActual.days||[]).length+" día(s)", valorNuevo: plan.days.length+" día(s)"});
   await ref.set({ plan: planFinal, contacto }, { merge:true });
+  fbAuditoria(id, "fbGuardarPlan", _cambios);
   return true;
  }catch(e){ toast("No se pudo guardar: "+e.message); return false; }
 }
@@ -3196,11 +3216,22 @@ async function fbGuardarNutricion(a){
   ];
   const planFinal = Object.assign({}, planActual, { mealWindows: bloques, nutritionInfo, actualizado: new Date().toISOString() });
   const hist = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
-  const _totP = bloques.reduce((s,b)=>s+(+b.p||0),0), _totC = bloques.reduce((s,b)=>s+(+b.c||0),0), _totG = bloques.reduce((s,b)=>s+(+b.g||0),0);
+  // (fix: antes leia b.p/b.c/b.g, que no existen en el bloque - los macros
+  // estan en b.macros.{proteinG,carbG,fatG} - siempre daba 0 kcal/0P/0C/0G
+  // en el resumen del historial, aunque snapshotMealWindows si tenia los
+  // datos reales. Este fue el bug detras del "0 kcal" visto en el
+  // incidente de Diego, ago-2026.)
+  const _totP = bloques.reduce((s,b)=>s+(+b.macros.proteinG||0),0), _totC = bloques.reduce((s,b)=>s+(+b.macros.carbG||0),0), _totG = bloques.reduce((s,b)=>s+(+b.macros.fatG||0),0);
   const _totKcal = _totP*4 + _totC*4 + _totG*9;
   hist.push({ fecha: new Date().toISOString(), tipo: "nutricion", resumen: bloques.length+" bloque(s) · "+_totKcal+" kcal · "+_totP+"P/"+_totC+"C/"+_totG+"G", snapshotMealWindows: bloques });
   planFinal.historial = hist.slice(-30);
+  const _bloquesAntes = planActual.mealWindows || [];
+  const _kcalAntes = _bloquesAntes.reduce((s,b)=>s+(b.macros?.kcal||0),0);
+  const _cambios = [];
+  if(_kcalAntes !== _totKcal) _cambios.push({campo:"dieta (kcal totales)", valorAnterior: _kcalAntes+" kcal", valorNuevo: _totKcal+" kcal"});
+  if(_bloquesAntes.length !== bloques.length) _cambios.push({campo:"dieta (n° de bloques)", valorAnterior: _bloquesAntes.length, valorNuevo: bloques.length});
   await ref.set({ plan: planFinal }, { merge:true });
+  fbAuditoria(id, "fbGuardarNutricion", _cambios);
   return true;
  }catch(e){ toast("No se pudo guardar: "+e.message); return false; }
 }
@@ -3214,9 +3245,11 @@ async function fbGuardarChequeo(a, entrada){
   const ref = FB.db.collection("athletes").doc(id);
   const doc = await ref.get();
   const log = (doc.exists && doc.data().progressLog) ? doc.data().progressLog : [];
+  const _antes = log.length;
   log.push(entrada);
   log.sort((x,y)=> String(y.date).localeCompare(String(x.date)));
   await ref.set({ progressLog: log }, { merge:true });
+  fbAuditoria(id, "fbGuardarChequeo", [{campo:"progressLog", valorAnterior: _antes+" registro(s)", valorNuevo: (_antes+1)+" registro(s) · "+(entrada.weight!=null ? entrada.weight+"kg el "+entrada.date : entrada.date)}]);
   return true;
  }catch(e){ toast("No se pudo guardar el chequeo: "+e.message); return false; }
 }

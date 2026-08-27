@@ -762,9 +762,26 @@ function showToastPush(msg){
 
 function saveField(field, value){
   showToast('Guardando ' + field + '…', false);
-  athleteRef.set({ [field]: value, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true })
+  const _guardar = () => athleteRef.set({ [field]: value, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge:true });
+  if(field === 'progressLog'){
+    // Bitacora de auditoria: solo para progressLog (chequeos), que es el
+    // campo que fallo en el incidente de Diego (ago-2026). El "antes" se
+    // compara contra Firestore en vivo, no contra la copia local en
+    // memoria, para que el dato de auditoria sea el real.
+    athleteRef.get().then(doc=>{
+      const _antes = (doc.exists && doc.data().progressLog) ? doc.data().progressLog.length : 0;
+      return _guardar().then(()=> athleteRef.collection('auditoria').add({
+        timestamp: new Date().toISOString(), origen: 'app-atleta', funcion: 'saveField',
+        cambios: [{ campo: 'progressLog', valorAnterior: _antes+' registro(s)', valorNuevo: value.length+' registro(s)' }]
+      }).catch(()=>{}));
+    })
     .then(()=> showToast('Guardado ✓ (' + field + ')', false))
     .catch(err => showToast('ERROR: ' + err.message, true));
+  } else {
+    _guardar()
+      .then(()=> showToast('Guardado ✓ (' + field + ')', false))
+      .catch(err => showToast('ERROR: ' + err.message, true));
+  }
 }
 
 athleteRef.onSnapshot((doc)=>{
