@@ -295,29 +295,29 @@ const DEFAULT_PLAN = {
   nombre: 'Nuevo Atleta',
   meta: '<b>Categoría por definir</b> · sesiones semanales según tu plan',
   accessExpiresAt: null,
-  startDate: '2026-07-13',
+  startDate: null,
   checkDate: null,
   weeklyOrder: ['dia-1',null,null,null,null,null,null],
   statChips: [
-    {v:'4', l:'Días/sem'},
+    {v:'1', l:'Días/sem'},
     {v:'60-90 S', l:'Descanso'},
     {v:'1-2', l:'RIR'}
   ],
-  mesocicloLabel: 'Julio 2026',
+  mesocicloLabel: '',
   params: [
   ['Objetivo','Según el objetivo y categoría que definas para este atleta'],
   ['Frecuencia','Según los días de entrenamiento que definas para este atleta'],
   ['Intensidad','Media-alta · RIR 1-2 (nunca al fallo absoluto)'],
   ['Formato','Superseries y circuitos — los ejercicios unidos con "+" se hacen seguidos sin descanso'],
   ['Descanso','60-90 seg entre superseries · 2 min en ejercicios de carga alta'],
-  ['Tempo','Controlado en fuerza · explosivo en pliometría y balística (swings, snatch, saltos)'],
+  ['Tempo','Según el estilo de entrenamiento que definas para este atleta'],
   ['Técnica','Prioridad absoluta — la carga sube solo con técnica sólida'],
   ['Recuperación','72 h entre los dos días de tren inferior · stretching full body obligatorio post-sesión'],
   ['Calentamiento','Nunca saltarlo — prepara articulaciones y zona media antes de la carga']
   ],
   weekMeta: [
   { n:1, label:'Semana 1 · Técnica y base', desc:'Aprende los circuitos y establece cargas conservadoras. Registra los kg de cada ejercicio para progresar sobre ellos.' },
-  { n:2, label:'Semana 2 · Progresión', desc:'Sube carga donde la técnica fue sólida (5-10%). Mantén la explosividad en swings, snatch y saltos.' },
+  { n:2, label:'Semana 2 · Progresión', desc:'Sube carga donde la técnica fue sólida (5-10%).' },
   { n:3, label:'Semana 3 · Intensificación', desc:'Cargas media-altas con RIR 1-2. Si un día llegas con fatiga alta o mal sueño, mantén la carga de la semana 2.' },
   { n:4, label:'Semana 4 · Consolidación', desc:'Cierra el mesociclo registrando tus mejores marcas. Con ese feedback programamos el siguiente bloque.' }
   ],
