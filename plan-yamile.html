@@ -565,6 +565,8 @@ athleteRef.onSnapshot((doc)=>{
     progressLog = data.progressLog || HISTORICAL_ENTRIES;
     mesocicloHistory = data.mesocicloHistory || {};
     dailyFeel = data.dailyFeel || {};
+    insignias = data.insignias || {};
+    diasLibres = data.diasLibres || {};
     anamnesisData = data.anamnesis || null;
     progressPhotos = data.progressPhotos || [];
     healthLog = data.healthLog || {};
@@ -1254,6 +1256,7 @@ function mealHistoryByDay(){
   }));
 }
 
+let insignias = {};
 let _tienePrimeraFoto = false;
 let _fechaPrimeraFoto = null;
 let diasLibres = {};
