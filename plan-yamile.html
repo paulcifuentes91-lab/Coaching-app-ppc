@@ -4,17 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Mesociclo — Yamile Abad</title>
+<link rel="manifest" href="./manifest-yamile.json">
+<meta name="theme-color" content="#E8C15C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Yamile PPC">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#14171B; --surface:#1D2126; --surface-2:#262B31; --border:#2E333A;
     --text:#F3F2EE; --text-muted:#9BA1AA; --text-faint:#666B73;
+    --accent:#E8C15C;
     --pink:#FF7FAE; --pink-soft:#FFB6D0;
     --radius:16px; --radius-sm:10px;
     --font-display:'Oswald',sans-serif; --font-body:'Inter',system-ui,-apple-system,sans-serif;
-    --font-mono:'JetBrains Mono',ui-monospace,monospace; --font-script:'Playfair Display',serif;
+    --font-mono:'JetBrains Mono',ui-monospace,monospace; --font-script:'Bebas Neue',sans-serif;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;}
@@ -25,8 +32,8 @@
 
   .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;color:var(--text-faint);text-transform:uppercase;margin-bottom:6px;}
   h1{
-    font-family:var(--font-script);font-style:italic;font-weight:700;
-    text-transform:none;font-size:34px;line-height:1.08;margin:0 0 4px;letter-spacing:.01em;
+    font-family:var(--font-script);font-style:normal;font-weight:400;
+    text-transform:uppercase;font-size:38px;line-height:1.08;margin:0 0 4px;letter-spacing:1px;
     color:var(--pink);
   }
   .name-underline{width:56px;height:3px;background:linear-gradient(90deg,var(--pink),var(--pink-soft));border-radius:3px;margin:0 0 10px;}
@@ -204,6 +211,7 @@
     <div class="eyebrow" id="headerEyebrow">Mesociclo · Fitness/General · Semana 1 a 4</div>
     <h1 id="headerName">Yamile Abad</h1>
     <p class="athlete-sub" id="headerMeta"><b>Fitness/General</b> · 3 sesiones semanales · Salud y bienestar</p>
+    <div id="headerFeel"></div>
     <div id="expiryBanner"></div>
     <div id="checkBanner"></div>
 
@@ -211,9 +219,9 @@
   </header>
 
   <div id="feelView" style="display:none">
+    <details class="card" id="logrosCard" style="margin:14px auto 0;max-width:420px"></details>
     <div class="card" id="feelCard" style="margin-top:14px"></div>
     <div class="card" id="feelHistoryCard" style="margin-top:12px;display:none"></div>
-    <div class="card" id="anamnesisCard" style="margin-top:12px;display:none"></div>
   </div>
 
   <div 
@@ -236,6 +244,7 @@
     <div class="week-row" id="mealWindowRow"></div>
     <main class="card" id="mealCard"></main>
     <div class="card" id="mealHistoryCard" style="margin-top:12px"></div>
+    <button class="add" id="btnDiaLibre" style="width:100%;margin-top:12px">✈️ Registrar día libre / viaje</button>
     <details class="accordion" style="margin-top:14px">
       <summary>Suplementación</summary>
       <div class="content" id="supplementContent"></div>
@@ -605,9 +614,9 @@ athleteRef.onSnapshot((doc)=>{
   showToast('Conectado a Firebase ✓', false);
   renderHeader();
   renderCheckBanner();
-  renderAnamnesis();
   renderStaticPanels();
   renderAll();
+  evaluarInsignias();
 }, (err)=>{
   document.getElementById('loadingOverlay').textContent = 'No se pudo conectar a la base de datos. Revisa tu conexión y recarga la página.';
   showToast('ERROR de conexión: ' + err.message, true);
@@ -831,7 +840,7 @@ function computeReps(item, sectionName, isLast, week){
 }
 
 function videoSearchUrl(name){
-  const q = encodeURIComponent(name + ' técnica ejercicio');
+  const q = encodeURIComponent(name + ' técnica ejercicio shorts');
   return `https://www.youtube.com/results?search_query=${q}`;
 }
 
@@ -905,56 +914,6 @@ function checkAccessExpiry(){
   return false;
 }
 
-
-function renderAnamnesis(){
-  const el = document.getElementById('anamnesisCard');
-  if(!el) return;
-  el.style.display = '';
-  if(anamnesisData){
-    el.innerHTML = `<div class="section-label" style="margin:0 0 4px">📋 Evaluación inicial</div>
-      <div style="font-size:12.5px;color:#4CAF7D;font-weight:600;">✓ Completada el ${anamnesisData.fecha || ''} — tu coach ya tiene tu información base.</div>`;
-    return;
-  }
-  el.innerHTML = `
-    <div class="section-label" style="margin:0 0 4px">📋 Evaluación inicial (una sola vez)</div>
-    <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;line-height:1.5;">Esta información permite a tu coach personalizar tu plan. Toma 2 minutos.</div>
-    <div class="p-form">
-      <div class="p-field"><label>Años entrenando</label><input type="number" id="an-exp" placeholder="ej. 5"></div>
-      <div class="p-field"><label>Horas de sueño habitual</label><input type="number" step="0.5" id="an-sueno" placeholder="ej. 7"></div>
-      <div class="p-field full"><label>Lesiones previas o actuales</label><input type="text" id="an-lesiones" placeholder="ej. hombro derecho 2023, ninguna actual"></div>
-      <div class="p-field full"><label>Horario laboral / rutina diaria</label><input type="text" id="an-horario" placeholder="ej. oficina 9-18, turnos rotativos..."></div>
-      <div class="p-field full"><label>Condiciones médicas o medicamentos</label><input type="text" id="an-salud" placeholder="opcional — solo lo que tu coach deba saber"></div>
-      <div class="p-field full"><label>Objetivo principal</label><input type="text" id="an-objetivo" placeholder="ej. competir en octubre, recomposición..."></div>
-      <div class="p-field full"><label>Nivel de compromiso (1 bajo · 5 total)</label>
-        <div class="feel-btns" id="an-compromiso">${[1,2,3,4,5].map(v=>`<button class="feel-btn" data-v="${v}">${v}</button>`).join('')}</div>
-      </div>
-    </div>
-    <button class="add-btn" id="an-save">✓ Enviar evaluación</button>
-  `;
-  let compromiso = null;
-  el.querySelectorAll('#an-compromiso .feel-btn').forEach(b=>{
-    b.addEventListener('click',()=>{
-      compromiso = parseInt(b.dataset.v);
-      el.querySelectorAll('#an-compromiso .feel-btn').forEach(x=>x.classList.remove('sel'));
-      b.classList.add('sel');
-    });
-  });
-  document.getElementById('an-save').addEventListener('click',()=>{
-    anamnesisData = {
-      fecha: todayStr(),
-      experienciaAnos: document.getElementById('an-exp').value || null,
-      suenoHabitual: document.getElementById('an-sueno').value || null,
-      lesiones: document.getElementById('an-lesiones').value.trim(),
-      horario: document.getElementById('an-horario').value.trim(),
-      condiciones: document.getElementById('an-salud').value.trim(),
-      objetivo: document.getElementById('an-objetivo').value.trim(),
-      compromiso
-    };
-    athleteRef.set({ anamnesis: anamnesisData }, { merge:true });
-    renderAnamnesis();
-    showToast('Evaluación enviada ✓', false);
-  });
-}
 
 function renderCheckBanner(){
   let el = document.getElementById('checkBanner');
@@ -1151,7 +1110,6 @@ function renderCard(){
   const r = 24, circ = 2*Math.PI*r;
   const offset = circ * (1-pct);
 
-  document.documentElement.style.setProperty('--accent', day.accent);
 
   let html = `
     <div class="card-top">
@@ -1297,6 +1255,530 @@ function mealHistoryByDay(){
   }));
 }
 
+let _tienePrimeraFoto = false;
+let _fechaPrimeraFoto = null;
+let diasLibres = {};
+let _fechasConFoto = new Set();
+
+const ALIM_LIBRE = {
+ "manzana":[52,0.3,14,0.2,"frutas"], "plátano":[89,1.1,23,0.3,"frutas"], "naranja":[47,0.9,12,0.1,"frutas"],
+ "sandía":[30,0.6,8,0.2,"frutas"], "uva":[69,0.7,18,0.2,"frutas"], "piña":[50,0.5,13,0.1,"frutas"],
+ "kiwi":[61,1.1,15,0.5,"frutas"], "mango":[60,0.8,15,0.4,"frutas"], "pera":[57,0.4,15,0.1,"frutas"], "durazno":[39,0.9,10,0.3,"frutas"],
+ "hamburguesa completa":[295,17,24,15,"comida_preparada"], "pizza porción":[266,11,33,10,"comida_preparada"],
+ "sushi roll (8 piezas)":[350,10,60,7,"comida_preparada"], "ensalada césar con pollo":[350,25,12,22,"comida_preparada"],
+ "pasta con salsa tomate":[220,8,40,3,"comida_preparada"], "sándwich jamón y queso":[350,18,35,15,"comida_preparada"],
+ "empanada de pino":[290,10,30,14,"comida_preparada"], "completo italiano":[420,15,35,25,"comida_preparada"],
+ "sopaipilla":[180,3,22,9,"snacks_dulces"], "taco de carne":[210,12,18,10,"comida_preparada"],
+ "papas fritas porción":[365,4,48,17,"comida_preparada"], "chocolate barra 30g":[160,2,17,9,"snacks_dulces"],
+ "helado 1 bocha":[137,2,17,7,"snacks_dulces"], "galletas dulces 4 unid":[190,2,28,8,"snacks_dulces"],
+ "yogurt griego natural":[100,10,4,5,"lacteos"], "barra de cereal":[120,2,20,4,"snacks_dulces"],
+ "frutos secos mix 30g":[180,5,8,15,"frutos_secos"], "palomitas de maíz":[120,3,20,4,"snacks_dulces"],
+ "jugo natural 250ml":[110,1,27,0.2,"bebidas"], "bebida gaseosa 350ml":[150,0,39,0,"bebidas"],
+ "café con leche":[60,3,6,2.5,"bebidas"], "cerveza 350ml":[150,1.6,13,0,"bebidas"], "vino copa 150ml":[125,0.1,4,0,"bebidas"],
+ "arroz blanco cocido 1 taza":[205,4.3,45,0.4,"cereales_legumbres"], "pollo a la plancha 150g":[248,46,0,5.4,"pollo"],
+ "pescado a la plancha 150g":[206,31,0,8,"pescados"], "huevo frito":[90,6,0.5,7,"huevos"], "pan hallulla":[220,6,42,3,"panes"],
+ "palta media unidad":[120,1.5,6,11,"frutas"], "queso laminado 2 rebanadas":[140,10,1,11,"lacteos"],
+ "tomate":[18,0.9,3.9,0.2,"verduras"], "lechuga":[15,1.4,2.9,0.2,"verduras"], "pepino":[15,0.7,3.6,0.1,"verduras"],
+ "zanahoria":[41,0.9,10,0.2,"verduras"], "brócoli":[34,2.8,7,0.4,"verduras"], "espinaca":[23,2.9,3.6,0.4,"verduras"],
+ "choclo":[86,3.2,19,1.2,"verduras"], "papa cocida":[87,2,20,0.1,"verduras"], "camote cocido":[86,1.6,20,0.1,"verduras"],
+ "quinoa cocida":[120,4.4,21,1.9,"cereales_legumbres"], "lentejas cocidas":[116,9,20,0.4,"cereales_legumbres"], "garbanzos cocidos":[164,8.9,27,2.6,"cereales_legumbres"],
+ "carne molida 150g":[280,26,0,19,"carnes"], "salmón 150g":[280,31,0,17,"pescados"], "atún en lata":[116,26,0,1,"pescados"],
+ "tofu 100g":[76,8,1.9,4.8,"cereales_legumbres"], "leche entera 1 taza":[150,8,12,8,"lacteos"], "leche descremada 1 taza":[86,8,12,0.2,"lacteos"],
+ "yogurt natural":[59,3.5,4.7,3.3,"lacteos"], "avena cruda 50g":[195,6.8,33,3.5,"cereales_legumbres"], "pan integral 1 rebanada":[80,4,15,1,"panes"],
+ "tostada marraqueta":[130,4,25,1.5,"panes"], "mantequilla 1 cdta":[35,0,0,4,"condimentos_grasas"], "mermelada 1 cda":[56,0,14,0,"condimentos_grasas"],
+ "miel 1 cda":[64,0.1,17,0,"condimentos_grasas"], "mayonesa 1 cda":[94,0.1,0.6,10,"condimentos_grasas"], "kétchup 1 cda":[15,0.2,4,0,"condimentos_grasas"],
+ "pizza margarita porción":[250,10,30,10,"comida_preparada"], "lasaña porción":[350,20,30,17,"comida_preparada"], "risotto porción":[300,8,45,10,"comida_preparada"],
+ "pad thai porción":[400,15,50,15,"comida_preparada"], "ramen tazón":[450,18,55,17,"comida_preparada"], "curry con arroz":[420,15,50,18,"comida_preparada"],
+ "burrito":[380,18,45,15,"comida_preparada"], "wrap de pollo":[320,22,30,12,"comida_preparada"], "poke bowl":[400,25,40,15,"comida_preparada"],
+ "croissant":[230,5,26,12,"snacks_dulces"], "waffle":[220,5,25,10,"snacks_dulces"], "panqueque unidad":[90,2,15,2.5,"snacks_dulces"],
+ "smoothie de frutas":[180,3,40,1,"bebidas"], "batido de proteína":[150,25,8,2,"suplementos"], "granola 40g":[180,4,25,7,"cereales_legumbres"],
+ "queso mozzarella 30g":[85,6,0.6,6.5,"lacteos"], "jamón 2 lonjas":[60,10,1,2,"fiambres"], "salame 3 lonjas":[110,6,1,9,"fiambres"],
+ "pretzel":[110,3,23,1,"snacks_dulces"], "maní 30g":[170,7,5,15,"frutos_secos"], "almendras 30g":[164,6,6,14,"frutos_secos"], "nueces 30g":[196,4.6,4,20,"frutos_secos"],
+ "aceitunas 10 unid":[50,0.3,1.3,5,"verduras"], "hummus 2 cda":[70,2,6,4.5,"condimentos_grasas"], "guacamole 2 cda":[90,1.2,5,8,"condimentos_grasas"],
+ "paella porción":[380,20,45,14,"comida_preparada"], "tapas mixtas":[300,15,25,16,"comida_preparada"], "gazpacho tazón":[70,2,10,2.5,"comida_preparada"],
+ "kebab":[450,25,35,22,"comida_preparada"], "falafel 4 unid":[280,8,30,14,"comida_preparada"], "shawarma":[420,25,35,20,"comida_preparada"],
+ "dim sum 4 piezas":[220,10,25,8,"comida_preparada"], "arroz frito porción":[350,10,55,10,"comida_preparada"], "chow mein porción":[380,14,50,12,"comida_preparada"],
+ "pho tazón":[350,20,45,8,"comida_preparada"], "bibimbap":[450,20,60,14,"comida_preparada"], "gyoza 6 piezas":[280,12,30,12,"comida_preparada"],
+ "moussaka porción":[380,18,25,22,"comida_preparada"], "goulash con papas":[400,25,30,20,"comida_preparada"], "schnitzel con papas":[450,28,35,22,"comida_preparada"],
+ "fish and chips":[550,25,55,28,"comida_preparada"], "poutine":[600,15,60,35,"comida_preparada"], "chili con carne":[350,25,25,16,"comida_preparada"],
+ "burrito bowl":[420,28,45,15,"comida_preparada"], "quesadilla":[380,18,30,20,"comida_preparada"], "nachos porción":[450,15,45,25,"comida_preparada"],
+ "chapati o tortilla":[100,3,18,2,"comida_preparada"], "dal (lentejas indias)":[180,10,25,4,"comida_preparada"], "tikka masala con arroz":[450,25,40,20,"comida_preparada"],
+ "biryani":[400,15,55,12,"comida_preparada"], "samosa 2 unid":[260,6,30,13,"comida_preparada"], "naan":[260,9,45,6,"panes"],
+ "acai bowl":[300,6,50,10,"snacks_dulces"], "chia pudding":[180,6,20,9,"snacks_dulces"], "overnight oats":[280,10,40,8,"snacks_dulces"],
+ "tostada con palta":[220,6,25,11,"comida_preparada"], "bagel con queso crema":[350,12,45,12,"snacks_dulces"], "muffin":[350,5,45,17,"snacks_dulces"],
+ "donut":[250,3,30,14,"snacks_dulces"], "brownie":[240,3,30,13,"snacks_dulces"], "cheesecake porción":[320,6,28,20,"snacks_dulces"],
+ "chips de tortilla 30g":[140,2,18,7,"snacks_dulces"], "trail mix 30g":[140,4,15,8,"frutos_secos"], "queque casero porción":[280,4,35,14,"snacks_dulces"],
+ "cereal de caja 40g":[150,3,32,1,"cereales_legumbres"], "cereal integral fibra 40g":[135,4,28,1.5,"cereales_legumbres"], "avena instantánea sobre":[130,4,23,2.5,"cereales_legumbres"],
+ "corn flakes 40g":[150,2,34,0.5,"cereales_legumbres"], "muesli 50g":[190,5,32,5,"cereales_legumbres"],
+ "leche entera 200ml":[120,6.6,9.6,6.6,"lacteos"], "leche descremada 200ml":[70,6.8,9.6,0.2,"lacteos"], "leche de almendras 200ml":[30,1,1,2.5,"lacteos"],
+ "leche de avena 200ml":[90,1,15,3,"lacteos"], "queso fresco 50g":[85,7,1.5,6,"lacteos"], "queso gouda 30g":[113,7,0.6,9,"lacteos"],
+ "requesón/cottage 100g":[98,11,3.4,4.3,"lacteos"], "yogurt bebible 200ml":[130,5,20,3,"lacteos"], "yogurt con fruta 150g":[140,5,22,3.5,"lacteos"],
+ "manjar/dulce de leche 1cda":[65,1,12,1.5,"lacteos"], "crema de leche 1cda":[52,0.3,0.4,5.5,"lacteos"],
+ "barra de proteína":[210,20,22,7,"suplementos"], "batido de proteína listo 330ml":[160,25,10,3,"suplementos"], "clara de huevo en caja 100ml":[52,11,0.7,0.2,"huevos"],
+ "pechuga de pollo a la plancha 150g":[248,46,0,5.4,"pollo"], "muslo de pollo sin piel 150g":[285,36,0,15,"pollo"],
+ "muslo de pollo con piel 150g":[335,32,0,22,"pollo"], "ala de pollo 100g":[203,19,0,14,"pollo"], "pollo asado con piel 150g":[350,30,0,25,"pollo"],
+ "pan molde blanco 1 rebanada":[70,2,13,1,"panes"], "pan molde integral 1 rebanada":[75,3,12,1.2,"panes"],
+ "pan pita":[165,5.5,33,1,"panes"], "pan de centeno 1 rebanada":[65,2.5,12,0.8,"panes"], "baguette 1 trozo":[140,4.5,27,1,"panes"],
+ "pan de molde sin gluten 1 rebanada":[80,2,15,1.5,"panes"], "pan de campo 1 rebanada":[95,3,18,1,"panes"],
+ "focaccia porción":[220,5,28,10,"panes"], "pan de ajo 1 unid":[150,3,18,7,"panes"],
+ "cazuela de vacuno":[380,28,25,18,"comida_preparada"], "cazuela de pollo":[350,26,22,16,"comida_preparada"], "pastel de choclo":[450,20,45,22,"comida_preparada"],
+ "porotos con riendas":[380,16,55,10,"comida_preparada"], "porotos granados":[320,14,50,7,"comida_preparada"], "charquicán":[280,10,35,10,"comida_preparada"],
+ "chorrillana porción compartir":[650,25,55,35,"comida_preparada"], "curanto porción":[550,35,30,30,"comida_preparada"], "pernil con papas":[500,30,35,25,"comida_preparada"],
+ "longaniza a la parrilla":[300,18,2,24,"fiambres"], "arrollado huaso 100g":[380,15,2,34,"fiambres"], "ceviche porción":[180,20,15,4,"comida_preparada"],
+ "machas a la parmesana":[280,18,8,18,"mariscos"], "chupe de mariscos":[380,20,25,20,"comida_preparada"], "mote con huesillo":[220,2,55,0.3,"comida_preparada"],
+ "humita 1 unid":[150,4,25,4,"comida_preparada"], "pantrucas":[250,8,40,6,"comida_preparada"], "tomaticán":[180,4,25,7,"comida_preparada"],
+ "ají de gallina":[400,25,30,20,"comida_preparada"], "cochayuyo con papas":[150,4,30,1,"comida_preparada"], "empanada de queso":[320,12,28,17,"comida_preparada"],
+ "pichanga porción compartir":[600,30,45,30,"comida_preparada"], "chacarero":[420,22,40,18,"comida_preparada"], "barros luco":[450,28,35,22,"comida_preparada"],
+ "barros jarpa":[420,25,35,20,"comida_preparada"], "ave palta sándwich":[380,20,32,18,"comida_preparada"], "ave mayo sándwich":[400,20,30,22,"comida_preparada"],
+ "mechada sándwich":[420,25,35,18,"comida_preparada"], "italiano sándwich":[400,18,35,20,"comida_preparada"], "hot dog completo":[380,14,30,22,"comida_preparada"],
+ "papas rellenas 2 unid":[320,10,35,15,"comida_preparada"], "kuchen porción":[320,5,40,15,"snacks_dulces"], "calzones rotos 3 unid":[220,3,30,10,"snacks_dulces"],
+ "berlín":[280,4,35,13,"snacks_dulces"], "cuchuflí":[150,2,20,7,"snacks_dulces"], "torta mil hojas porción":[380,5,45,20,"snacks_dulces"],
+ "alfajor":[180,2,25,8,"snacks_dulces"], "picarones 3 unid":[350,4,55,12,"snacks_dulces"], "sopaipillas pasadas 2 unid":[280,4,45,10,"snacks_dulces"],
+ "salmón ahumado 50g":[78,11,0,3.5,"pescados"], "reineta a la plancha":[180,28,0,7,"pescados"], "congrio frito":[280,20,15,17,"pescados"],
+ "camarones al ajillo":[220,20,3,14,"mariscos"], "jaiba porción":[100,18,2,2,"mariscos"], "pulpo a la parrilla":[180,25,2,7,"mariscos"],
+ "choritos al vapor":[150,16,6,3,"mariscos"], "erizos":[90,12,3,3,"mariscos"], "picoroco":[110,15,2,4,"mariscos"],
+ "queso mantecoso 30g":[100,7,0.5,8,"lacteos"], "queso chanco 30g":[95,7,0.3,7.5,"lacteos"], "manjar con nuez porción":[220,3,25,12,"snacks_dulces"],
+ "leche condensada 1cda":[60,1.4,10,1.6,"lacteos"], "yogurt bebible frutilla":[140,4,24,3,"lacteos"], "kéfir 200ml":[100,6,10,3.5,"lacteos"],
+ "espárragos":[20,2.2,3.9,0.1,"verduras"], "zapallo italiano":[17,1.2,3.1,0.3,"verduras"], "berenjena":[25,1,6,0.2,"verduras"],
+ "coliflor":[25,2,5,0.3,"verduras"], "acelga":[19,1.8,3.7,0.2,"verduras"], "poroto verde":[31,1.8,7,0.2,"verduras"],
+ "cebolla":[40,1.1,9,0.1,"verduras"], "ajo 3 dientes":[13,0.6,3,0,"verduras"],"pimentón":[31,1,6,0.3,"verduras"],
+ "arándanos":[57,0.7,14,0.3,"frutas"], "frutillas":[32,0.7,7.7,0.3,"frutas"], "frambuesas":[52,1.2,12,0.7,"frutas"],
+ "chirimoya":[75,1.6,18,0.6,"frutas"], "papaya":[43,0.5,11,0.3,"frutas"], "granada":[83,1.7,19,1.2,"frutas"],
+ "membrillo":[57,0.4,15,0.1,"frutas"], "higo":[74,0.8,19,0.3,"frutas"], "damasco":[48,1.4,11,0.4,"frutas"],
+ "aceite de oliva 1cda":[119,0,0,13.5,"condimentos_grasas"], "aceite vegetal 1cda":[120,0,0,14,"condimentos_grasas"], "vinagre 1cda":[3,0,0.1,0,"condimentos_grasas"],
+ "salsa soya 1cda":[10,1,1,0,"condimentos_grasas"], "salsa de tomate casera 1/2taza":[45,2,10,0.3,"condimentos_grasas"], "mostaza 1cda":[15,1,1.5,0.7,"condimentos_grasas"],
+ "arroz integral cocido":[112,2.3,24,0.9,"cereales_legumbres"], "fideos integrales cocidos":[174,7,37,0.8,"cereales_legumbres"], "polenta cocida":[70,1.7,15,0.3,"cereales_legumbres"],
+ "pisco sour":[180,0.2,20,0,"bebidas"], "piscola":[160,0,15,0,"bebidas"], "jugo de frutilla natural":[90,0.5,22,0.2,"bebidas"],
+ "agua con gas":[0,0,0,0,"bebidas"], "té helado 350ml":[90,0,22,0,"bebidas"], "chicha de manzana 200ml":[95,0,22,0,"bebidas"],
+ "vino tinto copa":[125,0.1,4,0,"bebidas"], "espumante copa 120ml":[95,0.1,3,0,"bebidas"],
+ "pastel de papa":[280,15,25,14,"comida_preparada"], "reineta apanada":[320,25,20,15,"comida_preparada"], "vacuno a lo pobre":[650,40,40,35,"comida_preparada"],
+ "lomo a lo pobre":[700,45,40,38,"comida_preparada"], "estofado de vacuno":[380,25,20,20,"comida_preparada"], "guiso de lentejas con arroz":[400,18,55,12,"comida_preparada"],
+ "sopa de verduras":[80,3,14,1,"comida_preparada"], "consomé de ave":[45,4,3,1.5,"comida_preparada"], "crema de zapallo":[150,3,20,6,"comida_preparada"],
+ "puré de papas":[180,3,30,5,"comida_preparada"], "arroz con leche":[220,5,35,6,"snacks_dulces"], "leche asada":[180,6,25,6,"snacks_dulces"],
+ "flan casero":[150,4,22,5,"snacks_dulces"], "arroz graneado 1 taza":[205,4,45,0.5,"cereales_legumbres"], "ensalada chilena":[45,1,8,1.5,"verduras"],
+ "ensalada de tomate":[35,1,6,1,"verduras"], "ensalada mixta con aceite":[90,1.5,8,6,"verduras"],
+
+ // ===== 53 ingredientes genericos agregados 2026-08-17 =====
+ // CARNES (cortes crudos/simples)
+ "lomo vetado":[250,24,0,17,"carnes"], "posta rosada":[133,22,0,4.5,"carnes"], "asiento":[172,21,0,9,"carnes"],
+ "filete de res":[143,21,0,6,"carnes"], "plateada":[175,20,0,10,"carnes"], "punta paleta":[205,19,0,14,"carnes"],
+ "huachalomo":[190,20,0,12,"carnes"], "malaya":[210,19,0,15,"carnes"], "sobrecostilla":[290,17,0,24,"carnes"],
+ "costillar":[275,18,0,22,"carnes"], "entraña":[227,19,0,16,"carnes"], "abastero":[165,21,0,8.5,"carnes"],
+ "choclillo":[140,22,0,5,"carnes"], "pulpa negra":[137,22.5,0,4.6,"carnes"], "tapapecho":[290,17,0,24,"carnes"],
+ // CERDO
+ "pierna de cerdo":[143,21,0,6,"cerdo"], "lomo de cerdo":[143,22,0,5.5,"cerdo"], "chuleta de cerdo":[160,21,0,8,"cerdo"],
+ "costillar de cerdo":[277,17,0,23,"cerdo"], "panceta":[518,9.3,0,53,"cerdo"], "pernil":[200,18,0,14,"cerdo"],
+ "filete de cerdo":[120,22,0,3,"cerdo"],
+ // CORDERO/OTROS
+ "pierna de cordero":[158,20,0,8,"cordero_otros"], "costillar de cordero":[294,16,0,25,"cordero_otros"], "chuleta de cordero":[235,18,0,18,"cordero_otros"],
+ "conejo":[173,21,0,8,"cordero_otros"],
+ // PESCADOS
+ "salmón crudo 100g":[208,20,0,13,"pescados"], "reineta cruda 100g":[105,19,0,3,"pescados"], "corvina":[95,19,0,1.5,"pescados"],
+ "merluza":[86,17,0,1.3,"pescados"], "atún fresco":[144,23,0,5,"pescados"], "jurel":[158,20,0,8,"pescados"],
+ "pejerrey":[90,17,0,2.5,"pescados"], "albacora":[121,20,0,4,"pescados"], "lenguado":[91,19,0,1.2,"pescados"],
+ "cojinova":[110,18,0,4,"pescados"],
+ // MARISCOS
+ "camarones":[99,21,0.2,1.4,"mariscos"], "langostinos":[106,20,1,1.7,"mariscos"], "calamar":[92,16,3,1.4,"mariscos"],
+ "ostras":[68,7,4,2.5,"mariscos"], "locos":[105,18,4,1.5,"mariscos"], "almejas":[74,12.8,2.6,1,"mariscos"],
+ "navajuelas":[80,13,3,1,"mariscos"],
+ // POLLO (cortes adicionales)
+ "trutro entero":[216,17,0,16,"pollo"], "trutro corto":[209,17,0,15,"pollo"], "trutro largo":[172,18,0,11,"pollo"],
+ "alitas de pollo":[203,19,0,14,"pollo"], "filete de pollo":[120,22.5,0,2.6,"pollo"], "pollo entero crudo":[215,18,0,15,"pollo"],
+ // OTROS
+ "jamón serrano":[241,31,0.5,13,"fiambres"], "pavo (pechuga cruda)":[104,24,0,1,"pollo"], "higado de vacuno":[135,20,3.9,3.6,"carnes"],
+ "riñones":[99,17,0.9,3,"carnes"]
+};
+let diaLibreActual = { items: [], fecha: null };
+async function abrirDiaLibre(){
+ const hoy = todayStr();
+ diaLibreActual = { items: [], fecha: hoy };
+ try{
+  const snap = await athleteRef.get();
+  const guardado = snap.exists && snap.data().diasLibres && snap.data().diasLibres[hoy];
+  if(guardado && guardado.items) diaLibreActual.items = guardado.items;
+ }catch(err){ console.warn("No se pudo cargar el dia libre existente:", err); }
+ document.getElementById("diaLibreModal")?.remove();
+ const m = document.createElement("div");
+ m.id = "diaLibreModal"; m.className = "modal on";
+ m.innerHTML = `<div class="card" style="max-width:500px;margin:40px auto;padding:20px">
+   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div style="font-weight:700;font-size:16px">✈️ Día libre / viaje</div>
+    <button id="dlCerrar" style="background:none;border:none;color:var(--text);font-size:20px;cursor:pointer">✕</button>
+   </div>
+   <input id="dlBuscar" placeholder="Buscar alimento..." style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);margin-bottom:8px">
+   <div id="dlResultados" style="max-height:160px;overflow-y:auto;margin-bottom:10px"></div>
+   <div style="font-weight:600;font-size:13px;margin-bottom:6px">Agregado hoy:</div>
+   <div id="dlLista" style="margin-bottom:10px"></div>
+   <div id="dlTotales" style="padding:10px;background:var(--surface-2);border-radius:8px;margin-bottom:12px;font-size:13px"></div>
+   <button id="dlGuardar" class="add" style="width:100%">Guardar registro del día</button>
+  </div>`;
+ document.body.appendChild(m);
+ document.getElementById("dlCerrar").onclick = ()=>m.remove();
+ document.getElementById("dlBuscar").oninput = e=>renderResultadosDiaLibre(e.target.value);
+ document.getElementById("dlGuardar").onclick = guardarDiaLibre;
+ renderListaDiaLibre();
+}
+function _normalizarTexto(s){
+ return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+}
+const CATEGORIA_SINONIMOS = {
+ carne:"carnes", carnes:"carnes",
+ pescado:"pescados", pescados:"pescados",
+ marisco:"mariscos", mariscos:"mariscos",
+ pollo:"pollo", pollos:"pollo", ave:"pollo", aves:"pollo",
+ cerdo:"cerdo", cerdos:"cerdo", chancho:"cerdo",
+ cordero:"cordero_otros",
+ fruta:"frutas", frutas:"frutas",
+ verdura:"verduras", verduras:"verduras", vegetal:"verduras", vegetales:"verduras",
+ lacteo:"lacteos", lacteos:"lacteos",
+ huevo:"huevos", huevos:"huevos",
+ pan:"panes", panes:"panes",
+ cereal:"cereales_legumbres", cereales:"cereales_legumbres", legumbre:"cereales_legumbres", legumbres:"cereales_legumbres",
+ dulce:"snacks_dulces", dulces:"snacks_dulces", snack:"snacks_dulces", snacks:"snacks_dulces",
+ bebida:"bebidas", bebidas:"bebidas",
+ condimento:"condimentos_grasas", condimentos:"condimentos_grasas", grasa:"condimentos_grasas", grasas:"condimentos_grasas",
+ suplemento:"suplementos", suplementos:"suplementos",
+ fiambre:"fiambres", fiambres:"fiambres",
+ plato:"comida_preparada", platos:"comida_preparada", preparado:"comida_preparada", preparados:"comida_preparada"
+};
+function renderResultadosDiaLibre(query){
+ const box = document.getElementById("dlResultados");
+ if(!query || query.length < 2){ box.innerHTML = ""; return; }
+ const q = _normalizarTexto(query.trim());
+ const catBuscada = CATEGORIA_SINONIMOS[q];
+ const matches = Object.keys(ALIM_LIBRE).filter(n=>{
+  if(_normalizarTexto(n).includes(q)) return true;
+  if(catBuscada && ALIM_LIBRE[n][4]===catBuscada) return true;
+  return false;
+ }).slice(0, catBuscada ? 30 : 8);
+ box.innerHTML = matches.map((n,i)=>{
+  const [kcal,p,c,g] = ALIM_LIBRE[n];
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 4px;border-bottom:1px solid var(--border);gap:6px">
+    <span style="font-size:13px;flex:1">${n} <span style="color:var(--text-muted);font-size:11px">(${kcal} kcal x1)</span></span>
+    <input type="number" step="0.5" min="0.25" value="1" data-porcion="${i}" style="width:48px;padding:3px;border-radius:6px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:12px">
+    <button class="dx" data-add-alim="${n}" data-idx="${i}" style="font-size:11px">+ Agregar</button>
+   </div>`;
+ }).join("") || `<div style="color:var(--text-muted);font-size:12px;padding:6px">Sin resultados</div>`;
+ box.querySelectorAll("[data-add-alim]").forEach(btn=>{
+  btn.onclick = ()=>{
+   const nombre = btn.dataset.addAlim;
+   const idx = btn.dataset.idx;
+   const porcionInput = box.querySelector(`[data-porcion="${idx}"]`);
+   const porcion = Math.max(0.25, +porcionInput.value || 1);
+   const [kcal,p,c,g] = ALIM_LIBRE[nombre];
+   diaLibreActual.items.push({
+    nombre: porcion===1 ? nombre : nombre+" x"+porcion,
+    kcal: kcal*porcion, p: p*porcion, c: c*porcion, g: g*porcion
+   });
+   renderListaDiaLibre();
+   document.getElementById("dlBuscar").value = "";
+   box.innerHTML = "";
+  };
+ });
+}
+function renderListaDiaLibre(){
+ const box = document.getElementById("dlLista");
+ if(!diaLibreActual.items.length){
+  box.innerHTML = `<div style="color:var(--text-muted);font-size:12px">Nada agregado todavía</div>`;
+ } else {
+  box.innerHTML = diaLibreActual.items.map((it,i)=>
+   `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12.5px">
+     <span>${it.nombre}</span>
+     <span style="display:flex;gap:8px;align-items:center">${it.kcal} kcal
+      <button data-quitar="${i}" style="background:none;border:none;color:var(--fa);cursor:pointer">✕</button></span>
+    </div>`
+  ).join("");
+  box.querySelectorAll("[data-quitar]").forEach(btn=>{
+   btn.onclick = ()=>{ diaLibreActual.items.splice(+btn.dataset.quitar,1); renderListaDiaLibre(); };
+  });
+ }
+ const tot = diaLibreActual.items.reduce((a,it)=>({kcal:a.kcal+it.kcal,p:a.p+it.p,c:a.c+it.c,g:a.g+it.g}),{kcal:0,p:0,c:0,g:0});
+ const objetivo = (mealWindows[0] && mealWindows[0].macros) || null;
+ if(objetivo){
+  const faltaKcal = Math.round(objetivo.kcal - tot.kcal);
+  const faltaP = Math.round((objetivo.proteinG||0) - tot.p);
+  const faltaC = Math.round((objetivo.carbG||0) - tot.c);
+  const faltaG = Math.round((objetivo.fatG||0) - tot.g);
+  document.getElementById("dlTotales").innerHTML =
+   `<b>${Math.round(tot.kcal)} kcal</b> de ${objetivo.kcal} kcal objetivo · ${faltaKcal>=0?"faltan "+faltaKcal:"te pasaste "+Math.abs(faltaKcal)} kcal<br>
+    Proteína: ${Math.round(tot.p)}g de ${objetivo.proteinG||0}g · ${faltaP>=0?"faltan "+faltaP+"g":"pasado "+Math.abs(faltaP)+"g"}<br>
+    Carbos: ${Math.round(tot.c)}g de ${objetivo.carbG||0}g · Grasas: ${Math.round(tot.g)}g de ${objetivo.fatG||0}g`;
+ } else {
+  document.getElementById("dlTotales").innerHTML =
+   `<b>${Math.round(tot.kcal)} kcal</b> · ${Math.round(tot.p)}g proteína · ${Math.round(tot.c)}g carbos · ${Math.round(tot.g)}g grasas`;
+ }
+}
+async function guardarDiaLibre(){
+ // se permite guardar vacio para poder corregir errores (borra el registro de hoy)
+ const tot = diaLibreActual.items.reduce((a,it)=>({kcal:a.kcal+it.kcal,p:a.p+it.p,c:a.c+it.c,g:a.g+it.g}),{kcal:0,p:0,c:0,g:0});
+ try{
+  await athleteRef.set({ diasLibres: { [diaLibreActual.fecha]: { items: diaLibreActual.items, totales: tot } } }, { merge:true });
+  showToast("Guardado ✓ · sigue agregando si quieres");
+ }catch(err){ showToast("Error al guardar: "+err.message, true); }
+}
+document.addEventListener("click", e=>{ if(e.target.id==="btnDiaLibre") abrirDiaLibre(); });
+
+const UMBRAL_DIA_CUMPLIDO = 80;
+const INSIGNIAS_AREAS = [
+  {area:'Entrenamiento', icon:'ti-barbell'},
+  {area:'Nutrición', icon:'ti-apple'},
+  {area:'Emocional', icon:'ti-brain'},
+  {area:'Progreso', icon:'ti-target-arrow'}
+];
+const INSIGNIAS_DEF = [
+  // Entrenamiento
+  {id:'primer_paso', area:'Entrenamiento', icon:'ti-shoe', label:'Primer paso', desc:'Completó su primer día de entrenamiento'},
+  {id:'racha_hierro', area:'Entrenamiento', icon:'ti-flame', label:'Racha de hierro', desc:'7 sesiones de entrenamiento seguidas, 100% completas'},
+  {id:'mes_acero', area:'Entrenamiento', icon:'ti-shield-check', label:'Mes de acero', desc:'4 semanas seguidas sin faltar a un día de entrenamiento programado'},
+  {id:'mesociclo_cumplido', area:'Entrenamiento', icon:'ti-flag-check', label:'Mesociclo cumplido', desc:'Terminó un mesociclo completo sin saltarse ningún día de entrenamiento'},
+  {id:'sin_excusas', area:'Entrenamiento', icon:'ti-bolt', label:'Sin excusas', desc:'Entrenó completo un día en que había registrado ánimo o energía bajos'},
+  // Nutrición
+  {id:'semana_objetivo', area:'Nutrición', icon:'ti-apple', label:'Semana en objetivo', desc:'7 días seguidos cumpliendo el 100% del plan de comidas'},
+  {id:'viajero_consciente', area:'Nutrición', icon:'ti-plane', label:'Viajero consciente', desc:'Registró un Día libre/viaje dentro de ±10% de su objetivo de calorías'},
+  {id:'constancia_real', area:'Nutrición', icon:'ti-calendar-stats', label:'Constancia real', desc:'30 días -no necesariamente seguidos- cumpliendo el 100% del plan de comidas'},
+  {id:'proteina_al_dia', area:'Nutrición', icon:'ti-egg', label:'Proteína al día', desc:'14 días seguidos cumpliendo el 100% del plan de comidas'},
+  // Emocional
+  {id:'checkin_honesto', area:'Emocional', icon:'ti-message-heart', label:'Check-in honesto', desc:'Registró ánimo y energía 7 días seguidos'},
+  {id:'rebote', area:'Emocional', icon:'ti-arrow-back-up', label:'Rebote', desc:'Registró un día de ánimo bajo y al día siguiente entrenó completo igual'},
+  {id:'mente_estable', area:'Emocional', icon:'ti-brain', label:'Mente estable', desc:'2 semanas seguidas con el estrés registrado en nivel bajo o moderado'},
+  {id:'autoconocimiento', area:'Emocional', icon:'ti-compass', label:'Autoconocimiento', desc:'30 registros de ánimo en total, acumulados'},
+  // Progreso
+  {id:'primera_foto', area:'Progreso', icon:'ti-camera', label:'Primera foto', desc:'Subió su primera foto de progreso'},
+  {id:'seguimiento_fiel', area:'Progreso', icon:'ti-camera-check', label:'Seguimiento fiel', desc:'Subió fotos de progreso en 3 chequeos seguidos'},
+  {id:'medida_a_medida', area:'Progreso', icon:'ti-ruler-2', label:'Medida a medida', desc:'Registró sus medidas corporales en 3 chequeos seguidos'}
+];
+
+// Racha de ENTRADAS ordenadas por fecha que cumplen una condición, sin exigir que
+// las fechas sean calendario-consecutivas: un ítem que no aparece en la lista (p.ej.
+// un día de descanso, o un período sin chequeo) no corta la racha, pero un ítem que
+// SÍ aparece y no cumple la condición, sí la corta.
+function rachaDeEntradas(lista, cumple, n){
+  const asc = [...lista].sort((a,b)=> a.date<b.date?-1:a.date>b.date?1:0);
+  let streak=0, fechaLogro=null;
+  asc.forEach(item=>{
+    if(cumple(item)){ streak++; if(streak>=n && !fechaLogro) fechaLogro=item.date; }
+    else streak=0;
+  });
+  return fechaLogro;
+}
+// Racha de sesiones de entreno con adherencia real (envoltorio de rachaDeEntradas).
+// Usa pctEsencial (solo la seccion "Entrenamiento") contra UMBRAL_DIA_CUMPLIDO.
+function evaluarRachaSesiones(historial, n){
+  return rachaDeEntradas(historial, h=>h.pctEsencial>=UMBRAL_DIA_CUMPLIDO, n);
+}
+
+// Racha de fechas estrictamente consecutivas en el calendario (diff de 1 dia).
+// Sirve para animo/nutricion, donde se espera un registro todos los dias.
+function evaluarRachaCalendario(fechas, n){
+  const asc = [...new Set(fechas)].sort();
+  let streak=0, prev=null, fechaLogro=null;
+  asc.forEach(f=>{
+    const diff = prev ? Math.round((new Date(f+'T12:00:00')-new Date(prev+'T12:00:00'))/86400000) : null;
+    streak = (diff===1) ? streak+1 : 1;
+    if(streak>=n && !fechaLogro) fechaLogro=f;
+    prev = f;
+  });
+  return fechaLogro;
+}
+
+// Cuenta fechas distintas acumuladas (no necesariamente consecutivas) y devuelve
+// la fecha en la que se alcanza la n-esima, o null si aun no llega.
+function nEsimoAcumulado(fechas, n){
+  const asc = [...new Set(fechas)].sort();
+  return asc.length>=n ? asc[n-1] : null;
+}
+
+function evaluarInsignias(){
+  const nuevas = {};
+
+  /* ── Entrenamiento ── */
+  if(!insignias.primer_paso){
+    const completos = trainHistoryByDay().filter(h=>h.pctEsencial>=UMBRAL_DIA_CUMPLIDO).map(h=>h.date).sort();
+    if(completos.length) nuevas.primer_paso = completos[0];
+  }
+
+  if(!insignias.racha_hierro){
+    const f = evaluarRachaSesiones(trainHistoryByDay(), 7);
+    if(f) nuevas.racha_hierro = f;
+  }
+
+  if(!insignias.mes_acero){
+    const semanal = Math.max(1, days.length);
+    const f = evaluarRachaSesiones(trainHistoryByDay(), semanal*4);
+    if(f) nuevas.mes_acero = f;
+  }
+
+  if(!insignias.mesociclo_cumplido){
+    const huboBloqueCompleto = Object.keys(mesocicloHistory)
+      .filter(l=> l!==mesocicloLabel)
+      .some(l=> mesocicloHistory[l] && mesocicloHistory[l].trainPct>=100);
+    if(huboBloqueCompleto) nuevas.mesociclo_cumplido = todayStr();
+  }
+
+  if(!insignias.sin_excusas){
+    const fechasBajon = new Set(Object.keys(dailyFeel).filter(f=>{
+      const d = dailyFeel[f];
+      return d && ((d.animo!=null && d.animo<=2) || (d.energia!=null && d.energia<=2));
+    }));
+    const fecha = trainHistoryByDay().filter(h=>h.pctEsencial>=UMBRAL_DIA_CUMPLIDO && fechasBajon.has(h.date)).map(h=>h.date).sort()[0];
+    if(fecha) nuevas.sin_excusas = fecha;
+  }
+
+  /* ── Nutrición ── */
+  if(!insignias.semana_objetivo){
+    const fechas = mealHistoryByDay().filter(h=>h.pct>=UMBRAL_DIA_CUMPLIDO).map(h=>h.date);
+    const f = evaluarRachaCalendario(fechas, 7);
+    if(f) nuevas.semana_objetivo = f;
+  }
+
+  if(!insignias.viajero_consciente){
+    const objetivoKcal = MEAL_PLAN_MACROS && MEAL_PLAN_MACROS.kcal;
+    if(objetivoKcal){
+      const fechas = Object.keys(diasLibres).filter(f=>{
+        const t = diasLibres[f] && diasLibres[f].totales;
+        return t && (Math.abs(t.kcal - objetivoKcal) / objetivoKcal) <= 0.10;
+      }).sort();
+      if(fechas.length) nuevas.viajero_consciente = fechas[0];
+    }
+  }
+
+  if(!insignias.constancia_real){
+    const fechas = mealHistoryByDay().filter(h=>h.pct>=UMBRAL_DIA_CUMPLIDO).map(h=>h.date);
+    const f = nEsimoAcumulado(fechas, 30);
+    if(f) nuevas.constancia_real = f;
+  }
+
+  if(!insignias.proteina_al_dia){
+    const fechas = mealHistoryByDay().filter(h=>h.pct>=UMBRAL_DIA_CUMPLIDO).map(h=>h.date);
+    const f = evaluarRachaCalendario(fechas, 14);
+    if(f) nuevas.proteina_al_dia = f;
+  }
+
+  /* ── Emocional ── */
+  if(!insignias.checkin_honesto){
+    const fechas = Object.keys(dailyFeel).filter(f=> dailyFeel[f] && dailyFeel[f].animo && dailyFeel[f].energia);
+    const f = evaluarRachaCalendario(fechas, 7);
+    if(f) nuevas.checkin_honesto = f;
+  }
+
+  if(!insignias.rebote){
+    const fechasCompletas = new Set(trainHistoryByDay().filter(h=>h.pctEsencial>=UMBRAL_DIA_CUMPLIDO).map(h=>h.date));
+    const fechasBajoAnimo = Object.keys(dailyFeel).filter(f=> dailyFeel[f] && dailyFeel[f].animo!=null && dailyFeel[f].animo<=2).sort();
+    for(const f of fechasBajoAnimo){
+      const sig = new Date(f+'T12:00:00'); sig.setDate(sig.getDate()+1);
+      const sigStr = sig.toISOString().slice(0,10);
+      if(fechasCompletas.has(sigStr)){ nuevas.rebote = sigStr; break; }
+    }
+  }
+
+  if(!insignias.mente_estable){
+    const fechas = Object.keys(dailyFeel).filter(f=> dailyFeel[f] && dailyFeel[f].estres!=null && dailyFeel[f].estres<=3);
+    const f = evaluarRachaCalendario(fechas, 14);
+    if(f) nuevas.mente_estable = f;
+  }
+
+  if(!insignias.autoconocimiento){
+    const fechas = Object.keys(dailyFeel).filter(f=> dailyFeel[f] && dailyFeel[f].animo!=null);
+    const f = nEsimoAcumulado(fechas, 30);
+    if(f) nuevas.autoconocimiento = f;
+  }
+
+  /* ── Progreso ── */
+  if(!insignias.primera_foto && _tienePrimeraFoto){
+    nuevas.primera_foto = _fechaPrimeraFoto || todayStr();
+  }
+
+  if(!insignias.seguimiento_fiel){
+    const f = rachaDeEntradas(progressLog, entry=> _fechasConFoto.has(entry.date), 3);
+    if(f) nuevas.seguimiento_fiel = f;
+  }
+
+  if(!insignias.medida_a_medida){
+    const tieneMedidas = entry => entry.waist!=null || entry.arm!=null || entry.thigh!=null || entry.bodyFatPct!=null || !!entry.skinfolds;
+    const f = rachaDeEntradas(progressLog, tieneMedidas, 3);
+    if(f) nuevas.medida_a_medida = f;
+  }
+
+  if(Object.keys(nuevas).length){
+    insignias = Object.assign({}, insignias, nuevas);
+    saveField('insignias', insignias);
+    renderLogros();
+    renderHeader();
+  }
+}
+
+function renderLogros(){
+  // #logrosCard es un <details>: reemplazar su innerHTML (summary + cuerpo) NO
+  // afecta el atributo "open" del propio <details>, así que re-renderizar tras
+  // ganar una insignia no cierra el acordeón si el atleta lo tenía abierto.
+  const el = document.getElementById('logrosCard');
+  if(!el) return;
+  const total = INSIGNIAS_DEF.filter(b=> insignias && insignias[b.id]).length;
+  el.innerHTML = `
+    <summary class="section-label" style="margin:0 0 4px">🏅 Logros · <span style="color:var(--text)">${total}/${INSIGNIAS_DEF.length}</span></summary>
+    <div style="margin-top:12px;">
+    ${INSIGNIAS_AREAS.map(ar=>{
+      const badges = INSIGNIAS_DEF.filter(b=>b.area===ar.area);
+      return `
+      <div style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;">
+          <i class="ti ${ar.icon}" style="font-size:13px"></i>${ar.area}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;">
+          ${badges.map(b=>{
+            const ganada = !!(insignias && insignias[b.id]);
+            return `
+            <button type="button" data-badge-id="${b.id}" style="display:flex;flex-direction:column;align-items:center;width:60px;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;">
+              <div style="width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;
+                background:${ganada ? 'var(--accent)' : 'var(--surface-2)'};
+                color:${ganada ? '#14171B' : 'var(--text-faint)'};
+                border:1px solid ${ganada ? 'transparent' : 'var(--border)'};
+                opacity:${ganada ? '1' : '.5'};">
+                <i class="ti ${b.icon}"></i>
+              </div>
+              <div style="font-size:9.5px;text-align:center;margin-top:6px;color:${ganada ? 'var(--text)' : 'var(--text-faint)'};line-height:1.25">${b.label}</div>
+            </button>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('')}
+    </div>
+  `;
+  el.querySelectorAll('[data-badge-id]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const b = INSIGNIAS_DEF.find(x=>x.id===btn.dataset.badgeId);
+      if(b) abrirInfoInsignia(b);
+    });
+  });
+}
+
+function abrirInfoInsignia(b){
+  const ganada = !!(insignias && insignias[b.id]);
+  document.getElementById('insigniaModalOverlay')?.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'insigniaModalOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:997;display:flex;align-items:center;justify-content:center;padding:24px;';
+  overlay.innerHTML = `
+    <div class="card" style="max-width:320px;width:100%;text-align:center;padding:26px 20px 20px;">
+      <div style="width:64px;height:64px;border-radius:50%;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:28px;
+        background:${ganada ? 'var(--accent)' : 'var(--surface-2)'};
+        color:${ganada ? '#14171B' : 'var(--text-faint)'};
+        border:1px solid ${ganada ? 'transparent' : 'var(--border)'};">
+        <i class="ti ${b.icon}"></i>
+      </div>
+      <div style="font-family:var(--font-display);font-size:19px;font-weight:600;margin-bottom:8px;">${b.label}</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.5;">${b.desc}</div>
+      <div style="font-size:11px;font-family:var(--font-mono);margin-top:12px;color:${ganada ? 'var(--accent)' : 'var(--text-faint)'};">
+        ${ganada ? ('✓ Ganada el ' + insignias[b.id]) : 'Todavía no la has ganado — ¡vas a llegar! 💪'}
+      </div>
+      <button id="insigniaModalCerrar" style="margin-top:18px;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:9px 22px;border-radius:10px;font-size:13px;cursor:pointer;">Cerrar</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) overlay.remove(); });
+  document.getElementById('insigniaModalCerrar').addEventListener('click', ()=> overlay.remove());
+}
+
+
 function renderMealHistory(){
   const el = document.getElementById('mealHistoryCard');
   if(!el) return;
@@ -1341,7 +1823,6 @@ function renderMealCard(){
   const r = 24, circ = 2*Math.PI*r;
   const offset = circ * (1-pct);
 
-  document.documentElement.style.setProperty('--accent', mw.accent);
 
   let html = `
     <div class="card-top">
@@ -1668,7 +2149,6 @@ function renderProgressView(){
     <div class="wb-title">Registro de progreso</div>
     <div class="wb-desc">Registra tu peso y medidas en cada chequeo para llevar el control de tu progreso.</div>
   `;
-  document.documentElement.style.setProperty('--accent', '#5B8DEF');
 
   if(progressSubView==='loads'){
     renderLoadsCard();
@@ -1786,6 +2266,14 @@ async function loadPhotoGallery(){
     el.innerHTML = items.map(p=>
       `<div style="display:block"><img src="${p.data}" data-fecha="${p.date||''}" onclick="abrirLightboxFoto(this.src, this.dataset.fecha)" style="width:72px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer;"><div style="font-size:9px;color:var(--text-faint);text-align:center;margin-top:2px">${p.date}</div></div>`
     ).join('');
+    let hayNovedad = false;
+    if(items.length && !_tienePrimeraFoto){
+      _tienePrimeraFoto = true;
+      _fechaPrimeraFoto = items.map(p=>p.date).sort()[0] || todayStr();
+      hayNovedad = true;
+    }
+    items.forEach(p=>{ if(p.date && !_fechasConFoto.has(p.date)){ _fechasConFoto.add(p.date); hayNovedad = true; } });
+    if(hayNovedad) evaluarInsignias();
   }catch(e){ /* sin fotos aún */ }
 }
 
@@ -1916,11 +2404,10 @@ function renderAll(){
   document.getElementById('resetBtn').textContent = resetLabels[activeView];
 
   if(activeView==='feel'){
-    document.documentElement.style.setProperty('--accent', '#8C7BFF');
+    renderLogros();
     renderFeelCard();
     renderFeelHistory();
   } else if(activeView==='training'){
-    document.documentElement.style.setProperty('--accent', currentDay().accent);
     renderWeekRow();
     renderWeekBanner();
     renderTabs();
