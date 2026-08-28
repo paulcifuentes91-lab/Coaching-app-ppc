@@ -197,16 +197,53 @@ def main():
         '<h1 id="headerName">Nuevo Atleta</h1>', '<h1 id="headerName">' + nombre + '</h1>', 1)
     app_html = app_html.replace(
         "nombre: 'Nuevo Atleta',", "nombre: '" + nombre + "',", 1)
+
+    manifest_nombre = "manifest-" + aid + ".json"
+    manifest_reemplazado = False
+    marcador_manifest = 'href="./manifest-CAMBIAR-ESTE-ID.json"'
+    if marcador_manifest in app_html:
+        app_html = app_html.replace(marcador_manifest, 'href="./' + manifest_nombre + '"', 1)
+        manifest_reemplazado = True
+
     with open(destino_app, "w", encoding="utf-8") as f:
         f.write(app_html)
+
+    # PWA_THEME_DEFAULT: color de acento por defecto para el manifest del
+    # atleta nuevo (dorado de marca, el mismo que usa .brand-logo). No hay
+    # una regla real de que color le toca a cada atleta - los 14 existentes
+    # tienen colores distintos elegidos a mano - asi que este es solo un
+    # punto de partida razonable; el coach puede cambiarlo despues editando
+    # el archivo manifest-{id}.json directamente.
+    PWA_THEME_DEFAULT = "#E8C15C"
+    manifest_contenido = {
+        "name": nombre + " · Pro Performance Coach",
+        "short_name": nombre.split()[0] + " PPC",
+        "description": "Plan de entrenamiento y nutrición de " + nombre + " — Pro Performance Coach",
+        "start_url": "./" + destino_app,
+        "scope": "./",
+        "display": "standalone",
+        "orientation": "portrait",
+        "background_color": "#14171B",
+        "theme_color": PWA_THEME_DEFAULT,
+        "lang": "es-CL",
+        "icons": [
+            {"src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+            {"src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png"}
+        ]
+    }
+    with open(manifest_nombre, "w", encoding="utf-8") as f:
+        json.dump(manifest_contenido, f, ensure_ascii=False, indent=2)
+        f.write("\n")
 
     print("")
     print("LISTO —", nombre, "agregado como id de panel:", aid)
     print("  Firestore / FB_ID:", fb_id_valor)
     print("  App creada:", destino_app, "(ATHLETE_ID corregido)" if reemplazado else "(revisa el ATHLETE_ID a mano)")
+    print("  Manifest creado:", manifest_nombre,
+          "(link corregido)" if manifest_reemplazado else "(revisa el <link rel=manifest> a mano)")
     print("")
     print("Sube todo con:")
-    print("  git add panel-coach-ppc.html " + destino_app)
+    print("  git add panel-coach-ppc.html " + destino_app + " " + manifest_nombre)
     print('  git commit -m "Agregar atleta: ' + nombre + '"')
     print("  git push")
 
