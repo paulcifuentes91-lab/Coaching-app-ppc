@@ -297,7 +297,7 @@ const DEFAULT_PLAN = {
   accessExpiresAt: null,
   startDate: '2026-07-13',
   checkDate: null,
-  weeklyOrder: ['dia-1','dia-2',null,'dia-3',null,'dia-4',null],
+  weeklyOrder: ['dia-1',null,null,null,null,null,null],
   statChips: [
     {v:'4', l:'Días/sem'},
     {v:'60-90 S', l:'Descanso'},
@@ -322,83 +322,9 @@ const DEFAULT_PLAN = {
   { n:4, label:'Semana 4 · Consolidación', desc:'Cierra el mesociclo registrando tus mejores marcas. Con ese feedback programamos el siguiente bloque.' }
   ],
   days: [
-  { id:'dia-1', dayTag:'Día 1', name:'Full Body · Performance', accent:'#FF7FAE',
+  { id:'dia-1', dayTag:'Día 1', name:'Entrenamiento por definir', accent:'#E8C15C',
     sections:[
-      {name:'Calentamiento', items:[
-        {name:'Salto con cuerda + movilidad', reps:'3 × 30', tip:'Movilidad articular entre series de cuerda'},
-        {name:'Abdominal soviético', reps:'3 × 20', tip:'Zona media'},
-        {name:'Crunch lateral', reps:'3 × 40', tip:'Alternando lados'}
-      ]},
-      {name:'Entrenamiento', items:[
-        {name:'Thrusters con mancuernas', reps:'3 × 12', tip:'Sentadilla + press en un movimiento fluido', tier:'principal'},
-        {name:'Swings con kettlebell', reps:'3 × 12 a 15', tip:'Cadera explosiva, brazos relajados', tier:'principal'},
-        {name:'SkiErg', reps:'3 × 20', tip:'Tracciones potentes', tier:'accesorio'},
-        {name:'DB Snatch', reps:'3 × 12', tip:'Alternando brazo · explosivo desde el suelo', tier:'principal'},
-        {name:'Push up + dips', reps:'3 × 10 + 12', tip:'Superserie sin descanso', tier:'accesorio'},
-        {name:'Windmill + remo unilateral', reps:'3 × 6 + 8', tip:'Windmill lento y controlado · remo por lado', tier:'accesorio'}
-      ]},
-      {name:'Post-entreno', items:[
-        {name:'Stretching full body', reps:'8-10 min', tip:'Énfasis en cadera, hombros y columna torácica'}
-      ]}
-    ]
-  },
-  { id:'dia-2', dayTag:'Día 2', name:'Tren Inferior A · Carga Alta', accent:'#8C7BFF',
-    sections:[
-      {name:'Calentamiento', items:[
-        {name:'Saltos suaves', reps:'2 × 20', tip:'En el lugar, progresivos'},
-        {name:'Pasos laterales con banda', reps:'2 × 12 c/lado', tip:'Activación de glúteo medio'},
-        {name:'Plancha bisagra', reps:'2 × 10', tip:'Control de zona media'}
-      ]},
-      {name:'Entrenamiento', items:[
-        {name:'Squat jump', reps:'2 × 12', tip:'Aterrizaje suave y controlado', tier:'accesorio'},
-        {name:'Peso muerto piernas rígidas con mancuernas', reps:'3 × 10', tip:'Bisagra de cadera · espalda neutra', tier:'principal'},
-        {name:'Sentadilla sumo', reps:'3 × 20', tip:'Carga al pecho o kettlebell', tier:'principal'},
-        {name:'Slam ball', reps:'3 × 5', tip:'Máxima intención de potencia', tier:'accesorio'},
-        {name:'Búlgaras', reps:'3 × 8 c/lado', tip:'Carga alta con técnica sólida', tier:'principal'},
-        {name:'Pliometría: afuera-afuera-adentro-adentro', reps:'3 × 10', tip:'Ritmo constante, contacto breve con el suelo', tier:'accesorio'},
-        {name:'Pantorrillas + saltos en escalera', reps:'3 × 15 + 10', tip:'Superserie', tier:'accesorio'}
-      ]},
-      {name:'Post-entreno', items:[
-        {name:'Stretching full body', reps:'8-10 min', tip:'Énfasis en cadena posterior y cuádriceps'}
-      ]}
-    ]
-  },
-  { id:'dia-3', dayTag:'Día 3', name:'Tren Superior A · Carga Alta', accent:'#F4D35E',
-    sections:[
-      {name:'Calentamiento', items:[
-        {name:'Salto con cuerda', reps:'3 × 20', tip:''},
-        {name:'Crunch lateral', reps:'3 × 20', tip:'Alternando lados'},
-        {name:'Nadadores', reps:'3 × 15', tip:'Boca abajo · activación de espalda baja y hombro'}
-      ]},
-      {name:'Entrenamiento', items:[
-        {name:'Pallof press + tríceps dips', reps:'3 × 10 + 20', tip:'Superserie · antirrotación + empuje', tier:'accesorio'},
-        {name:'DB Snatch unilateral + push up', reps:'3 × 6 + 12', tip:'Superserie · potencia + empuje', tier:'principal'},
-        {name:'Windmill + remo polea baja', reps:'3 × 5 + 12', tip:'Superserie · movilidad con carga + tracción', tier:'principal'},
-        {name:'Remo con mancuerna + bíceps', reps:'3 × 6 + 12', tip:'Superserie · remo pesado + curl', tier:'principal'}
-      ]},
-      {name:'Post-entreno', items:[
-        {name:'Stretching full body', reps:'8-10 min', tip:'Énfasis en hombros, pecho y antebrazos'}
-      ]}
-    ]
-  },
-  { id:'dia-4', dayTag:'Día 4', name:'Tren Inferior B · Carga Media-Alta', accent:'#4CAF7D',
-    sections:[
-      {name:'Calentamiento', items:[
-        {name:'Salto con cuerda', reps:'2 × 30', tip:''},
-        {name:'Abductor con banda', reps:'2 × 15', tip:'Activación de glúteo medio'},
-        {name:'Puente unilateral', reps:'2 × 12 c/lado', tip:'Glúteo y control pélvico'}
-      ]},
-      {name:'Entrenamiento', items:[
-        {name:'Saltos con aplauso + crunch', reps:'2 × 20', tip:'Superserie de activación', tier:'accesorio'},
-        {name:'Front squat + patada', reps:'3 × 8 + 12', tip:'Superserie · sentadilla frontal + patada de glúteo', tier:'principal'},
-        {name:'Squat + box jump', reps:'3 × 8 + 8', tip:'Superserie · fuerza + potencia', tier:'principal'},
-        {name:'Peso muerto unilateral', reps:'3 × 8 c/lado', tip:'Equilibrio y cadena posterior', tier:'principal'},
-        {name:'Estocadas unilaterales', reps:'3 × 20', tip:'Alternando o por lado según fatiga', tier:'accesorio'},
-        {name:'Pantorrillas + pliométricos', reps:'3 × 15 + 10', tip:'Superserie de cierre', tier:'accesorio'}
-      ]},
-      {name:'Post-entreno', items:[
-        {name:'Stretching full body', reps:'8-10 min', tip:'Sesión completa de elongación para cerrar la semana de pierna'}
-      ]}
+      {name:'Entrenamiento', items:[]}
     ]
   }
   ],
