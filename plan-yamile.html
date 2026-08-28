@@ -297,7 +297,7 @@ const DEFAULT_PLAN = {
   accessExpiresAt: null,
   startDate: '2026-07-13',
   checkDate: null,
-  weeklyOrder: ['dia-1','dia-2',null,'dia-3',null,'dia-4',null],
+  weeklyOrder: ['dia-1','dia-2',null,'dia-3','dia-4',null,null],
   statChips: [
     {v:'4', l:'Días/sem'},
     {v:'60-90 S', l:'Descanso'},
@@ -305,14 +305,13 @@ const DEFAULT_PLAN = {
   ],
   mesocicloLabel: 'Julio 2026',
   params: [
-  ['Objetivo','Fuerza + performance · potencia, densidad ósea y acondicionamiento metabólico'],
-  ['Frecuencia','4 sesiones semanales · Lun full body · Mar inferior A · Jue superior A · Sáb inferior B'],
+  ['Objetivo','Salud general y bienestar · fuerza funcional sin llegar al fallo'],
+  ['Frecuencia','4 sesiones semanales · Lunes cuerpo completo · Martes piernas · Jueves tren superior · Viernes glúteo y femoral'],
   ['Intensidad','Media-alta · RIR 1-2 (nunca al fallo absoluto)'],
   ['Formato','Superseries y circuitos — los ejercicios unidos con "+" se hacen seguidos sin descanso'],
   ['Descanso','60-90 seg entre superseries · 2 min en ejercicios de carga alta'],
   ['Tempo','Controlado en fuerza · explosivo en pliometría y balística (swings, snatch, saltos)'],
   ['Técnica','Prioridad absoluta — la carga sube solo con técnica sólida'],
-  ['Impacto','Pliometría y saltos incluidos deliberadamente: estímulo clave de densidad ósea a los 49 años'],
   ['Recuperación','72 h entre los dos días de tren inferior · stretching full body obligatorio post-sesión'],
   ['Calentamiento','Nunca saltarlo — prepara articulaciones y zona media antes de la carga']
   ],
@@ -323,86 +322,347 @@ const DEFAULT_PLAN = {
   { n:4, label:'Semana 4 · Consolidación', desc:'Cierra el mesociclo registrando tus mejores marcas. Con ese feedback programamos el siguiente bloque.' }
   ],
   days: [
-  { id:'dia-1', dayTag:'Día 1', name:'Full Body · Performance', accent:'#FF7FAE',
-    sections:[
-      {name:'Calentamiento', items:[
-        {name:'Salto con cuerda + movilidad', reps:'3 × 30', tip:'Movilidad articular entre series de cuerda'},
-        {name:'Abdominal soviético', reps:'3 × 20', tip:'Zona media'},
-        {name:'Crunch lateral', reps:'3 × 40', tip:'Alternando lados'}
-      ]},
-      {name:'Entrenamiento', items:[
-        {name:'Thrusters con mancuernas', reps:'3 × 12', tip:'Sentadilla + press en un movimiento fluido', tier:'principal'},
-        {name:'Swings con kettlebell', reps:'3 × 12 a 15', tip:'Cadera explosiva, brazos relajados', tier:'principal'},
-        {name:'SkiErg', reps:'3 × 20', tip:'Tracciones potentes', tier:'accesorio'},
-        {name:'DB Snatch', reps:'3 × 12', tip:'Alternando brazo · explosivo desde el suelo', tier:'principal'},
-        {name:'Push up + dips', reps:'3 × 10 + 12', tip:'Superserie sin descanso', tier:'accesorio'},
-        {name:'Windmill + remo unilateral', reps:'3 × 6 + 8', tip:'Windmill lento y controlado · remo por lado', tier:'accesorio'}
-      ]},
-      {name:'Post-entreno', items:[
-        {name:'Stretching full body', reps:'8-10 min', tip:'Énfasis en cadera, hombros y columna torácica'}
-      ]}
+  {
+    "dayTag": "Lunes",
+    "name": "Cuerpo completo",
+    "id": "dia-1",
+    "accent": "#E0C23D",
+    "sections": [
+      {
+        "name": "Calentamiento",
+        "items": [
+          {
+            "name": "Movilidad articular general",
+            "reps": "5 min",
+            "tier": "accesorio",
+            "tip": ""
+          },
+          {
+            "name": "Saltos con aplauso",
+            "reps": "3 x 20",
+            "tier": "accesorio",
+            "tip": ""
+          },
+          {
+            "name": "Mountain climbers",
+            "reps": "3 x 30",
+            "tier": "accesorio",
+            "tip": ""
+          }
+        ]
+      },
+      {
+        "name": "Entrenamiento",
+        "items": [
+          {
+            "name": "Peso muerto con trap bar",
+            "reps": "5 x 8",
+            "tier": "principal",
+            "tip": ""
+          },
+          {
+            "name": "Push press",
+            "reps": "5 x 10",
+            "tier": "principal",
+            "tip": ""
+          },
+          {
+            "name": "Push up arrodillada",
+            "reps": "4 x 8 a 12",
+            "tier": "principal",
+            "tip": ""
+          },
+          {
+            "name": "Elevaciones laterales",
+            "reps": "3 x 15",
+            "tier": "accesorio",
+            "tip": ""
+          }
+        ]
+      },
+      {
+        "name": "Estiramiento",
+        "items": [
+          {
+            "name": "Elongación general",
+            "reps": "5 min",
+            "tier": "accesorio",
+            "tip": ""
+          }
+        ]
+      },
+      {
+        "name": "Cardio",
+        "items": [
+          {
+            "name": "Caminata en cinta LISS",
+            "reps": "30 min",
+            "tier": "accesorio",
+            "tip": ""
+          }
+        ]
+      }
     ]
   },
-  { id:'dia-2', dayTag:'Día 2', name:'Tren Inferior A · Carga Alta', accent:'#8C7BFF',
-    sections:[
-      {name:'Calentamiento', items:[
-        {name:'Saltos suaves', reps:'2 × 20', tip:'En el lugar, progresivos'},
-        {name:'Pasos laterales con banda', reps:'2 × 12 c/lado', tip:'Activación de glúteo medio'},
-        {name:'Plancha bisagra', reps:'2 × 10', tip:'Control de zona media'}
-      ]},
-      {name:'Entrenamiento', items:[
-        {name:'Squat jump', reps:'2 × 12', tip:'Aterrizaje suave y controlado', tier:'accesorio'},
-        {name:'Peso muerto piernas rígidas con mancuernas', reps:'3 × 10', tip:'Bisagra de cadera · espalda neutra', tier:'principal'},
-        {name:'Sentadilla sumo', reps:'3 × 20', tip:'Carga al pecho o kettlebell', tier:'principal'},
-        {name:'Slam ball', reps:'3 × 5', tip:'Máxima intención de potencia', tier:'accesorio'},
-        {name:'Búlgaras', reps:'3 × 8 c/lado', tip:'Carga alta con técnica sólida', tier:'principal'},
-        {name:'Pliometría: afuera-afuera-adentro-adentro', reps:'3 × 10', tip:'Ritmo constante, contacto breve con el suelo', tier:'accesorio'},
-        {name:'Pantorrillas + saltos en escalera', reps:'3 × 15 + 10', tip:'Superserie', tier:'accesorio'}
-      ]},
-      {name:'Post-entreno', items:[
-        {name:'Stretching full body', reps:'8-10 min', tip:'Énfasis en cadena posterior y cuádriceps'}
-      ]}
+  {
+    "dayTag": "Martes",
+    "name": "Piernas",
+    "id": "dia-2",
+    "accent": "#5B8DEF",
+    "sections": [
+      {
+        "name": "Calentamiento",
+        "items": [
+          {
+            "name": "Movilidad articular general",
+            "reps": "5 min",
+            "tier": "accesorio",
+            "tip": ""
+          },
+          {
+            "name": "Puente unilateral",
+            "reps": "2 x 15",
+            "tier": "accesorio",
+            "tip": "Series livianas de aproximación"
+          },
+          {
+            "name": "Aductor con balón",
+            "reps": "3 X 15",
+            "tier": "accesorio",
+            "tip": "presionar con las rodillas"
+          }
+        ]
+      },
+      {
+        "name": "Entrenamiento",
+        "items": [
+          {
+            "name": "Sentadilla libre con barra",
+            "reps": "4 X 8-10",
+            "tier": "principal",
+            "tip": "Alternativa: Hack squat"
+          },
+          {
+            "name": "Peso muerto sumo",
+            "reps": "4 X 8-10",
+            "tier": "principal",
+            "tip": "Alternativa: Peso muerto rumano"
+          },
+          {
+            "name": "Patada de glúteo en polea",
+            "reps": "3 X 12-15",
+            "tier": "accesorio",
+            "tip": ""
+          },
+          {
+            "name": "Elevación de talones de pie",
+            "reps": "4 X 12-15",
+            "tier": "accesorio",
+            "tip": ""
+          }
+        ]
+      },
+      {
+        "name": "Estiramiento",
+        "items": [
+          {
+            "name": "Elongación general",
+            "reps": "5 min",
+            "tier": "accesorio",
+            "tip": ""
+          }
+        ]
+      },
+      {
+        "name": "Cardio",
+        "items": [
+          {
+            "name": "Caminata inclinada",
+            "reps": "30 min",
+            "tier": "accesorio",
+            "tip": ""
+          }
+        ]
+      }
     ]
   },
-  { id:'dia-3', dayTag:'Día 3', name:'Tren Superior A · Carga Alta', accent:'#F4D35E',
-    sections:[
-      {name:'Calentamiento', items:[
-        {name:'Salto con cuerda', reps:'3 × 20', tip:''},
-        {name:'Crunch lateral', reps:'3 × 20', tip:'Alternando lados'},
-        {name:'Nadadores', reps:'3 × 15', tip:'Boca abajo · activación de espalda baja y hombro'}
-      ]},
-      {name:'Entrenamiento', items:[
-        {name:'Pallof press + tríceps dips', reps:'3 × 10 + 20', tip:'Superserie · antirrotación + empuje', tier:'accesorio'},
-        {name:'DB Snatch unilateral + push up', reps:'3 × 6 + 12', tip:'Superserie · potencia + empuje', tier:'principal'},
-        {name:'Windmill + remo polea baja', reps:'3 × 5 + 12', tip:'Superserie · movilidad con carga + tracción', tier:'principal'},
-        {name:'Remo con mancuerna + bíceps', reps:'3 × 6 + 12', tip:'Superserie · remo pesado + curl', tier:'principal'}
-      ]},
-      {name:'Post-entreno', items:[
-        {name:'Stretching full body', reps:'8-10 min', tip:'Énfasis en hombros, pecho y antebrazos'}
-      ]}
+  {
+    "dayTag": "Jueves",
+    "name": "Tren superior",
+    "id": "dia-3",
+    "accent": "#4CAF7D",
+    "sections": [
+      {
+        "name": "Calentamiento",
+        "items": [
+          {
+            "name": "Movilidad articular general",
+            "reps": "5 min",
+            "tier": "accesorio",
+            "tip": ""
+          },
+          {
+            "name": "Crunch inverso",
+            "reps": "3 x 20",
+            "tier": "accesorio",
+            "tip": ""
+          },
+          {
+            "name": "Plancha isométrica",
+            "reps": "3 x 40 seg",
+            "tier": "accesorio",
+            "tip": ""
+          }
+        ]
+      },
+      {
+        "name": "Entrenamiento",
+        "items": [
+          {
+            "name": "Press inclinado con mancuernas",
+            "reps": "4 X 8-10",
+            "tier": "principal",
+            "tip": "Alternativa: Press inclinado con barra"
+          },
+          {
+            "name": "Jalón supino",
+            "reps": "4 X 12",
+            "tier": "accesorio",
+            "tip": "Alternativa: Jalón al pecho"
+          },
+          {
+            "name": "Elevaciones posteriores",
+            "reps": "3 X 12-15",
+            "tier": "accesorio",
+            "tip": ""
+          },
+          {
+            "name": "Curl en polea baja",
+            "reps": "4 X 8 a 10",
+            "tier": "accesorio",
+            "tip": "Alternativa: Curl concentrado"
+          },
+          {
+            "name": "Dips machine",
+            "reps": "3 X 10",
+            "tier": "principal",
+            "tip": ""
+          }
+        ]
+      },
+      {
+        "name": "Estiramiento",
+        "items": [
+          {
+            "name": "Elongación general",
+            "reps": "5 min",
+            "tier": "accesorio",
+            "tip": ""
+          }
+        ]
+      },
+      {
+        "name": "Cardio",
+        "items": [
+          {
+            "name": "Bicicleta",
+            "reps": "30 a 40 min",
+            "tier": "accesorio",
+            "tip": ""
+          }
+        ]
+      }
     ]
   },
-  { id:'dia-4', dayTag:'Día 4', name:'Tren Inferior B · Carga Media-Alta', accent:'#4CAF7D',
-    sections:[
-      {name:'Calentamiento', items:[
-        {name:'Salto con cuerda', reps:'2 × 30', tip:''},
-        {name:'Abductor con banda', reps:'2 × 15', tip:'Activación de glúteo medio'},
-        {name:'Puente unilateral', reps:'2 × 12 c/lado', tip:'Glúteo y control pélvico'}
-      ]},
-      {name:'Entrenamiento', items:[
-        {name:'Saltos con aplauso + crunch', reps:'2 × 20', tip:'Superserie de activación', tier:'accesorio'},
-        {name:'Front squat + patada', reps:'3 × 8 + 12', tip:'Superserie · sentadilla frontal + patada de glúteo', tier:'principal'},
-        {name:'Squat + box jump', reps:'3 × 8 + 8', tip:'Superserie · fuerza + potencia', tier:'principal'},
-        {name:'Peso muerto unilateral', reps:'3 × 8 c/lado', tip:'Equilibrio y cadena posterior', tier:'principal'},
-        {name:'Estocadas unilaterales', reps:'3 × 20', tip:'Alternando o por lado según fatiga', tier:'accesorio'},
-        {name:'Pantorrillas + pliométricos', reps:'3 × 15 + 10', tip:'Superserie de cierre', tier:'accesorio'}
-      ]},
-      {name:'Post-entreno', items:[
-        {name:'Stretching full body', reps:'8-10 min', tip:'Sesión completa de elongación para cerrar la semana de pierna'}
-      ]}
+  {
+    "dayTag": "Viernes",
+    "name": "Glúteo y femoral",
+    "id": "dia-4",
+    "accent": "#E07A72",
+    "sections": [
+      {
+        "name": "Calentamiento",
+        "items": [
+          {
+            "name": "Movilidad articular general",
+            "reps": "5 min",
+            "tier": "accesorio",
+            "tip": ""
+          },
+          {
+            "name": "Hiperextensiones",
+            "reps": "3 x 12",
+            "tier": "accesorio",
+            "tip": "2 seg arriba en cada rep"
+          },
+          {
+            "name": "Plancha lateral",
+            "reps": "2 x 30 seg",
+            "tier": "accesorio",
+            "tip": "codo apoyado"
+          }
+        ]
+      },
+      {
+        "name": "Entrenamiento",
+        "items": [
+          {
+            "name": "Abductor en máquina",
+            "reps": "3 X 20",
+            "tier": "accesorio",
+            "tip": ""
+          },
+          {
+            "name": "Hip thrust en máquina",
+            "reps": "5 X 10",
+            "tier": "principal",
+            "tip": ""
+          },
+          {
+            "name": "Femoral sentado",
+            "reps": "5 X 8",
+            "tier": "accesorio",
+            "tip": "Alternativa: Femoral acostado"
+          },
+          {
+            "name": "Peso muerto unilateral con mancuerna",
+            "reps": "3 X 12",
+            "tier": "principal",
+            "tip": ""
+          },
+          {
+            "name": "Patada de glúteo en máquina",
+            "reps": "3 X 15",
+            "tier": "accesorio",
+            "tip": ""
+          }
+        ]
+      },
+      {
+        "name": "Estiramiento",
+        "items": [
+          {
+            "name": "Elongación general",
+            "reps": "5 a 8 min",
+            "tier": "accesorio",
+            "tip": ""
+          }
+        ]
+      },
+      {
+        "name": "Cardio",
+        "items": [
+          {
+            "name": "Escaladora",
+            "reps": "20 a 30 min",
+            "tier": "accesorio",
+            "tip": ""
+          }
+        ]
+      }
     ]
   }
-  ],
+],
   nutritionInfo: [],
   mealWindows: [
   { id:'general', label:'Pauta general', accent:'#FF7FAE', meals:[
