@@ -966,6 +966,11 @@ let exercisePRs = {};
 let loadHistory = {}; // { [loadKey]: [{date, kg}, ...] } - serie temporal real de cargas, ver loadKeyFor()
 let setProgress = {}; // { [setProgressKeyFor]: numero de series completadas hoy } - contador de series + descanso
 let restTimerInterval = null; // id del setInterval del cronometro de descanso activo (para poder cancelarlo)
+let restTimerNotifTimeout = null; // id del setTimeout que dispara el aviso de fondo al terminar el descanso
+let restTimerEndAt = null; // timestamp (Date.now()) de cuando termina el descanso activo - referencia real, no cuenta de ticks
+let restTimerAvisado = false; // evita duplicar el aviso si dispara por 2 vias (setTimeout + visibilitychange)
+let restTimerEjercicio = ''; // nombre del ejercicio del descanso activo, para el texto del aviso
+let _audioCtxDescanso = null; // AudioContext del beep, se crea una sola vez y se reusa
 let _histSeedDone = false;
 let dataReady = false;
 let insignias = {};
@@ -2096,10 +2101,65 @@ function desmarcarUltimaSerie(sIdx, iIdx){
   renderCard();
 }
 
+/* Beep corto generado con AudioContext (sin archivo externo) - para cuando
+   el atleta tiene la app abierta en pantalla. No usar en segundo plano: el
+   audio se corta apenas el navegador suspende la pestaña. */
+function beepDescanso(){
+  try{
+    if(!_audioCtxDescanso) _audioCtxDescanso = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = _audioCtxDescanso;
+    if(ctx.state === 'suspended') ctx.resume();
+    const osc = ctx.createOscillator(), gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.4);
+  }catch(e){ /* AudioContext bloqueado por politica de autoplay - no interrumpe el resto */ }
+}
+
+/* Aviso de que el descanso terminó - en pantalla usa beep+vibración, en
+   segundo plano usa una notificación local del Service Worker (con
+   vibración) para que llegue aunque el teléfono esté bloqueado. Se dispara
+   localmente desde el dispositivo, sin depender del cron de recordatorios
+   de GitHub Actions (ver scripts/recordatorios.js) - por eso llega al
+   instante en vez de esperar la próxima corrida del cron. */
+async function avisarDescansoTerminado(nombreEjercicio){
+  if(restTimerAvisado) return;
+  restTimerAvisado = true;
+  if(document.visibilityState === 'visible'){
+    beepDescanso();
+    if(navigator.vibrate) navigator.vibrate([200,100,200,100,300]);
+    return;
+  }
+  if(Notification.permission === 'granted'){
+    try{
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification('Descanso terminado', {
+        body: nombreEjercicio ? `Ya puedes seguir con ${nombreEjercicio}` : 'Ya puedes seguir con tu siguiente serie',
+        icon: './icons/icon-192.png',
+        badge: './icons/icon-192.png',
+        vibrate: [200,100,200,100,300],
+        tag: 'descanso-terminado',
+        renotify: true
+      });
+      return;
+    }catch(e){ /* sigue al respaldo de abajo */ }
+  }
+  if(navigator.vibrate) navigator.vibrate([200,100,200,100,300]); // respaldo sin permiso de notificaciones - puede no vibrar si el documento no esta activo
+}
+
 function abrirTemporizadorDescanso(segundos, nombreEjercicio){
   if(restTimerInterval){ clearInterval(restTimerInterval); restTimerInterval = null; }
+  if(restTimerNotifTimeout){ clearTimeout(restTimerNotifTimeout); restTimerNotifTimeout = null; }
   document.getElementById('restTimerOverlay')?.remove();
   let restante = segundos;
+  restTimerEndAt = Date.now() + segundos*1000;
+  restTimerAvisado = false;
+  restTimerEjercicio = nombreEjercicio || '';
   const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
 
   const overlay = document.createElement('div');
@@ -2114,20 +2174,31 @@ function abrirTemporizadorDescanso(segundos, nombreEjercicio){
 
   const cerrar = () => {
     if(restTimerInterval){ clearInterval(restTimerInterval); restTimerInterval = null; }
+    if(restTimerNotifTimeout){ clearTimeout(restTimerNotifTimeout); restTimerNotifTimeout = null; }
+    restTimerEndAt = null;
     overlay.remove();
   };
   document.getElementById('restTimerCerrar').addEventListener('click', cerrar);
 
+  // Se agenda UNA vez, apenas arranca el descanso, para que el aviso de
+  // fondo dispare aunque la pestaña quede oculta antes de que termine el
+  // tiempo real. En segundo plano por poco tiempo (los descansos duran
+  // 60-180 seg) esto funciona bien en Chrome/Android; iOS puede retrasar o
+  // suspender este setTimeout si el bloqueo de pantalla dura mucho - por
+  // eso hay un respaldo en visibilitychange más abajo que revisa la hora
+  // real contra restTimerEndAt apenas la app vuelve a primer plano.
+  restTimerNotifTimeout = setTimeout(() => { avisarDescansoTerminado(restTimerEjercicio); }, segundos*1000);
+
   restTimerInterval = setInterval(() => {
-    restante--;
     const numEl = document.getElementById('restTimerNum');
     if(!numEl){ clearInterval(restTimerInterval); restTimerInterval = null; return; }
+    restante = Math.max(0, Math.round((restTimerEndAt - Date.now())/1000));
     if(restante <= 0){
       numEl.textContent = '¡Listo! 💪';
       numEl.classList.add('done');
       clearInterval(restTimerInterval);
       restTimerInterval = null;
-      if(navigator.vibrate) navigator.vibrate([200,100,200,100,300]);
+      avisarDescansoTerminado(restTimerEjercicio);
       const btn = document.getElementById('restTimerCerrar');
       if(btn) btn.textContent = 'Cerrar';
     } else {
@@ -2135,6 +2206,15 @@ function abrirTemporizadorDescanso(segundos, nombreEjercicio){
     }
   }, 1000);
 }
+
+// Respaldo: si el setTimeout de fondo no llegó a disparar (pestaña
+// suspendida) y la app vuelve a primer plano después de que el descanso ya
+// debería haber terminado, avisar al instante en vez de dejarlo pendiente.
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && restTimerEndAt && Date.now() >= restTimerEndAt && !restTimerAvisado){
+    avisarDescansoTerminado(restTimerEjercicio);
+  }
+});
 
 function renderCard(){
   const day = currentDay();
