@@ -375,6 +375,7 @@ function lastNDates(n){
 let headerEyebrow = DEFAULT_PLAN.eyebrow;
 let headerNombre = DEFAULT_PLAN.nombre;
 let headerMeta = DEFAULT_PLAN.meta;
+let headerObjetivo = ''; // texto editable por el coach (contacto.objetivoHeader) que se muestra como "Tu meta: ..." en el header - vacío = no se muestra esa línea
 let accessExpiresAt = DEFAULT_PLAN.accessExpiresAt;
 let planStartDate = DEFAULT_PLAN.startDate;
 let planCheckDate = DEFAULT_PLAN.checkDate;
@@ -496,6 +497,7 @@ athleteRef.onSnapshot((doc)=>{
     mesocicloHistory = data.mesocicloHistory || {};
     dailyFeel = data.dailyFeel || {};
     insignias = data.insignias || {};
+    headerObjetivo = (data.contacto && data.contacto.objetivoHeader) || '';
     diasLibres = data.diasLibres || {};
     anamnesisData = data.anamnesis || null;
     progressPhotos = data.progressPhotos || [];
@@ -966,9 +968,18 @@ function renderHeaderFeel(){
 }
 
 function renderHeader(){
-  document.getElementById('headerEyebrow').textContent = headerEyebrow;
+  // Eyebrow: en vez del dato administrativo (mesociclo/categoría), muestra
+  // logros reales del atleta - lo que va consiguiendo, no un dato de calendario.
+  const totalGanadas = INSIGNIAS_DEF.filter(b=> insignias && insignias[b.id]).length;
+  document.getElementById('headerEyebrow').textContent = `🏅 ${totalGanadas}/${INSIGNIAS_DEF.length} logros`;
   document.getElementById('headerName').textContent = headerNombre;
-  document.getElementById('headerMeta').innerHTML = headerMeta;
+  // Meta: texto que el coach escribe/ajusta a mano (contacto.objetivoHeader),
+  // mostrado en segunda persona. Si está vacío, la línea entera se oculta -
+  // no queda un espacio vacío ni cae a ningún texto de respaldo.
+  const objetivo = (headerObjetivo || '').trim();
+  const elMeta = document.getElementById('headerMeta');
+  if(objetivo){ elMeta.style.display = ''; elMeta.innerHTML = `Tu meta: ${objetivo}`; }
+  else { elMeta.style.display = 'none'; elMeta.innerHTML = ''; }
   renderHeaderFeel();
   var _sc = document.getElementById('statStrip');
   if(_sc) _sc.style.display = 'none';
