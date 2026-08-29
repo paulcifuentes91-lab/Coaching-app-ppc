@@ -925,10 +925,51 @@ function renderCheckBanner(){
   el.textContent = msg;
 }
 
+// Indicador de estado emocional en el header: si todavia no registro como se
+// siente hoy, invita a hacerlo; si ya lo hizo, refleja la tendencia de animo
+// de los ultimos dias. Siempre clickeable -> lleva a la vista "Como te sientes".
+// Bancos de frases del indicador de animo del header - varias por grupo para
+// que no se sienta repetitivo, manteniendo el tono de cada estado (invitacion
+// a registrar / animo alto / estable / bajo). El caso "aun sin datos de animo"
+// (prom==null) reutiliza el mismo banco que "sin registrar hoy" porque en el
+// fondo pide lo mismo: invitar a registrar.
+const FRASES_HEADER_FEEL = {
+  sinRegistrar: ['¿Cómo te sientes hoy?', 'Cuéntanos cómo vas hoy', 'Un minuto para ti: ¿cómo estás?', 'Hoy también cuenta cómo te sientes'],
+  animoAlto: ['Buen ánimo estos días', 'Se te nota con energía', 'Vienes con todo esta semana', 'Racha de buena onda'],
+  animoEstable: ['Ánimo estable estos días', 'Vas sosteniendo el ritmo', 'Semana pareja, sigue así', 'Constancia ante todo'],
+  animoBajo: ['Ánimo bajo estos días', 'Los días difíciles también cuentan', 'Sigues aquí, eso ya es mucho', 'Registrar cómo te sientes también es avanzar']
+};
+
+function renderHeaderFeel(){
+  const el = document.getElementById('headerFeel');
+  if(!el) return;
+  const hoy = todayStr();
+  const yaHoy = !!(dailyFeel[hoy] && (dailyFeel[hoy].animo!=null || dailyFeel[hoy].energia!=null));
+  let emoji, texto;
+  if(!yaHoy){
+    emoji = '🙂'; texto = elegirFraseRotando(FRASES_HEADER_FEEL.sinRegistrar, 'sinRegistrar');
+  } else {
+    const fechas = Object.keys(dailyFeel).filter(f=> dailyFeel[f] && dailyFeel[f].animo!=null).sort().reverse().slice(0,3);
+    const valores = fechas.map(f=>dailyFeel[f].animo);
+    const prom = valores.length ? valores.reduce((a,b)=>a+b,0)/valores.length : null;
+    if(prom==null){ emoji='🙂'; texto=elegirFraseRotando(FRASES_HEADER_FEEL.sinRegistrar, 'sinRegistrar'); }
+    else if(prom>=4){ emoji='😊'; texto=elegirFraseRotando(FRASES_HEADER_FEEL.animoAlto, 'animoAlto'); }
+    else if(prom>=2.5){ emoji='😐'; texto=elegirFraseRotando(FRASES_HEADER_FEEL.animoEstable, 'animoEstable'); }
+    else { emoji='😔'; texto=elegirFraseRotando(FRASES_HEADER_FEEL.animoBajo, 'animoBajo'); }
+  }
+  el.innerHTML = `<button type="button" id="headerFeelBtn" style="margin-top:8px;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:12.5px;font-weight:600;cursor:pointer;">${emoji} ${texto}</button>`;
+  document.getElementById('headerFeelBtn').addEventListener('click', ()=>{
+    activeView = 'feel';
+    renderAll();
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+}
+
 function renderHeader(){
   document.getElementById('headerEyebrow').textContent = headerEyebrow;
   document.getElementById('headerName').textContent = headerNombre;
   document.getElementById('headerMeta').innerHTML = headerMeta;
+  renderHeaderFeel();
   var _sc = document.getElementById('statStrip');
   if(_sc) _sc.style.display = 'none';
 }
