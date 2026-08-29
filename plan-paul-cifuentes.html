@@ -884,6 +884,41 @@ function countProgress(day){
   return {done,total};
 }
 
+const FRASES_ENTRENO_COMPLETO = [
+  '¡Entrenamiento completo! Un paso más cerca de tu meta.',
+  'Hecho. Así se construyen los resultados — un día a la vez.',
+  'Terminaste. Esto es lo que hace la gente que cumple.',
+  '¡Completo! Tu esfuerzo de hoy ya cuenta.'
+];
+
+let _ultimoDiaCompletoAvisado = null; // evita repetir el aviso si countProgress se recalcula varias veces tras terminar
+
+// Si el atleta tiene un objetivo propio cargado (contacto.objetivoHeader,
+// ver headerObjetivo), lo prioriza sobre el banco generico - es mas
+// personalizado que rotar entre frases genericas. Sin objetivo, rota igual
+// que FRASES_HEADER_FEEL (elegirFraseRotando, sin repetir la ultima).
+function avisarEntrenoCompletado(){
+  const frase = headerObjetivo
+    ? `Entrenamiento completo. Sigues en camino a: ${headerObjetivo}`
+    : elegirFraseRotando(FRASES_ENTRENO_COMPLETO, 'entrenoCompleto');
+  showToastPush('🎉 ' + frase);
+}
+
+// Se llama despues de cualquier accion que pueda completar el ultimo
+// ejercicio pendiente del dia (marcar la ultima serie, o tildar a mano el
+// checkbox de un ejercicio sin series como cardio). Dispara el aviso una
+// sola vez por dia+dia-de-plan, aunque countProgress se vuelva a calcular
+// en renders posteriores dentro de la misma sesion.
+function revisarEntrenoCompleto(){
+  const day = currentDay();
+  const {done, total} = countProgress(day);
+  if(total === 0 || done < total) return;
+  const clave = todayStr() + '-' + activeDay;
+  if(_ultimoDiaCompletoAvisado === clave) return;
+  _ultimoDiaCompletoAvisado = clave;
+  avisarEntrenoCompletado();
+}
+
 function currentCalendarWeek(){ return computeCurrentWeek(); }
 function isWeekEditable(weekN){
   const cur = computeCurrentWeek();
@@ -1530,8 +1565,17 @@ function marcarSerie(sIdx, iIdx, totalSeries){
   if(actual >= totalSeries) return;
   setProgress[k] = actual + 1;
   saveField('setProgress', setProgress);
-  renderCard();
   const day = currentDay();
+  // Auto-completar: la ultima serie marca el ejercicio como hecho solo,
+  // sin que el atleta tenga que tocar el checkbox aparte.
+  if(setProgress[k] >= totalSeries && !checkedFor(day, sIdx, iIdx)){
+    checks[keyFor(sIdx, iIdx)] = true;
+    saveField('trainingChecks', checks);
+    updateMesocicloSummary();
+  }
+  renderCard();
+  renderTrainHistory();
+  revisarEntrenoCompleto();
   const item = day.sections[sIdx] && day.sections[sIdx].items[iIdx];
   const nombre = (item && item.name) || 'este ejercicio';
   const segundos = (item && item.tier === 'principal') ? DESCANSO_PRINCIPAL_SEG : DESCANSO_ACCESORIO_SEG;
@@ -1544,7 +1588,17 @@ function desmarcarUltimaSerie(sIdx, iIdx){
   if(actual <= 0) return;
   setProgress[k] = actual - 1;
   saveField('setProgress', setProgress);
+  // Simetrico al auto-completado: si se estaba marcando como hecho por
+  // haber llegado a la ultima serie, desmarcar series lo revierte tambien.
+  const day = currentDay();
+  const existente = entradaExistente(day, sIdx, iIdx);
+  if(existente){
+    checks[existente] = false;
+    saveField('trainingChecks', checks);
+    updateMesocicloSummary();
+  }
   renderCard();
+  renderTrainHistory();
 }
 
 /* Beep corto generado con AudioContext (sin archivo externo) - para cuando
@@ -1773,6 +1827,7 @@ function renderCard(){
       updateMesocicloSummary();
       renderCard();
       renderTrainHistory();
+      revisarEntrenoCompleto();
     });
   });
   card.querySelectorAll('.set-box').forEach(box=>{
