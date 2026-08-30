@@ -2381,7 +2381,11 @@ function renderSupplementContent(){
   let html = '';
   supplementation.forEach((block,bIdx)=>{
     html += `<div class="section-label" style="margin-top:${bIdx===0?'2px':'16px'}">${block.moment}</div>`;
-    block.items.forEach(([name,dose],iIdx)=>{
+    block.items.forEach((it,iIdx)=>{
+      // Acepta ambos formatos: [name,dose] (dato estatico de ejemplo, viejo)
+      // y {name,dose} (lo que ahora guarda el panel - Firestore no admite
+      // arrays anidados dentro de otro array, ver fbGuardarNutricion).
+      const [name,dose] = Array.isArray(it) ? it : [it.name, it.dose];
       const key = `${bIdx}-${iIdx}`;
       const checked = !!supplementChecks[key];
       html += `

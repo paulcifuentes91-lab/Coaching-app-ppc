@@ -2175,6 +2175,19 @@ document.addEventListener("input", e=>{
 document.addEventListener("click",e=>{
  const t=e.target;
  if(t.hasAttribute?.("data-save")){
+  // La pestaña de Suplementacion (#p4) es la unica de este grupo que ya
+  // tiene su propio guardado real a Firestore (fbGuardarNutricion, que
+  // ahora tambien escanea #sups) - las demas pestañas con este mismo
+  // atributo siguen con el flujo local + Exportar plan, sin tocar.
+  if(t.closest("#p4")){
+   if(!AUTH.user){ toast("Inicia sesión para guardar cambios"); document.getElementById("authModal").classList.add("on"); return; }
+   t.disabled = true; const txt=t.textContent; t.textContent="Guardando...";
+   fbGuardarNutricion(act).then(ok=>{
+    t.disabled = false; t.textContent = txt;
+    if(ok){ okAviso(t); toast("Suplementación guardada en la nube · "+act.n+" lo verá al abrir su app"); }
+   });
+   return;
+  }
   okAviso(t);
   toast("Cambios aplicados en pantalla · usa Exportar plan para llevarlos a la app");
   return;}
@@ -3200,6 +3213,22 @@ async function fbGuardarNutricion(a){
   bloques.push({ id: label.toLowerCase().replace(/[^a-z0-9]/g,"-").slice(0,20) || "b"+bloques.length,
    label, accent:"#E8C15C", macros:{kcal:p*4+cb*4+g*9, proteinG:p, carbG:cb, fatG:g}, meals });
  });
+ // Suplementacion: hasta ahora el boton "Guardar cambios" de esta pestaña
+ // (data-save) solo aplicaba el cambio en pantalla y nunca escribia a
+ // Firestore - la app del atleta se quedaba con el DEFAULT_PLAN.supplementation
+ // congelado desde el onboarding. Se escanea igual que #bloques (el DOM es la
+ // fuente real, no act.sup, que no se actualiza con los botones +/- de arriba).
+ const supplementation = [];
+ document.querySelectorAll("#sups .bloque").forEach(b=>{
+  const moment = b.querySelector("[data-smn]")?.value || "General";
+  // {name,dose} y no [name,dose]: Firestore no permite arrays anidados
+  // dentro de otro array (mismo problema ya resuelto antes para
+  // nutritionInfo, ver d239938) - un array de tuplas revienta el .set().
+  const items = [...b.querySelectorAll("[data-sitems] .ali")]
+   .map(row => { const [nameEl, doseEl] = row.querySelectorAll("input"); return { name: nameEl?.value||"", dose: doseEl?.value||"" }; })
+   .filter(it => it.name);
+  if(items.length) supplementation.push({ moment, items });
+ });
  try{
   const ref = FB.db.collection("athletes").doc(id);
   const snap = await ref.get();
@@ -3214,7 +3243,7 @@ async function fbGuardarNutricion(a){
    {l:"Comida libre", v:document.getElementById("nLibre")?.value || a.nut.libre || "Una a la semana"},
    {l:"Fechas", v:_fechasTxt || "Sin fechas definidas todavía"}
   ];
-  const planFinal = Object.assign({}, planActual, { mealWindows: bloques, nutritionInfo, actualizado: new Date().toISOString() });
+  const planFinal = Object.assign({}, planActual, { mealWindows: bloques, nutritionInfo, supplementation, actualizado: new Date().toISOString() });
   const hist = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
   // (fix: antes leia b.p/b.c/b.g, que no existen en el bloque - los macros
   // estan en b.macros.{proteinG,carbG,fatG} - siempre daba 0 kcal/0P/0C/0G
@@ -3230,6 +3259,8 @@ async function fbGuardarNutricion(a){
   const _cambios = [];
   if(_kcalAntes !== _totKcal) _cambios.push({campo:"dieta (kcal totales)", valorAnterior: _kcalAntes+" kcal", valorNuevo: _totKcal+" kcal"});
   if(_bloquesAntes.length !== bloques.length) _cambios.push({campo:"dieta (n° de bloques)", valorAnterior: _bloquesAntes.length, valorNuevo: bloques.length});
+  const _supAntes = planActual.supplementation || [];
+  if(JSON.stringify(_supAntes) !== JSON.stringify(supplementation)) _cambios.push({campo:"suplementacion", valorAnterior: _supAntes.reduce((s,b)=>s+b.items.length,0)+" item(s)", valorNuevo: supplementation.reduce((s,b)=>s+b.items.length,0)+" item(s)"});
   await ref.set({ plan: planFinal }, { merge:true });
   fbAuditoria(id, "fbGuardarNutricion", _cambios);
   return true;
