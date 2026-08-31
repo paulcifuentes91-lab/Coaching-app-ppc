@@ -113,6 +113,18 @@
   .vid-link:active{opacity:.65;}
 
   .reps-chip{flex:0 0 auto;font-family:var(--font-mono);font-size:12.5px;font-weight:600;background:var(--surface-2);border-left:2px solid var(--accent);padding:5px 9px;border-radius:6px;color:var(--text);white-space:nowrap;margin-top:1px;}
+  /* Fila de suplementos: la dosis puede ser mucho mas larga que un "3 X 12"
+     de ejercicio (ej. "20 mg pre entreno y post almuerzo dias de descanso"),
+     y con .ex-info{min-width:0} el nombre se encogia sin piso hasta quedar
+     tapado por el chip de dosis (que nunca se achica, flex:0 0 auto +
+     white-space:nowrap). Se resuelve con flex-wrap: el nombre reserva un
+     minimo real (no 0), asi que si la dosis no entra al lado, el chip baja
+     solo a su propia linea en vez de invadir el espacio del nombre. Ambito
+     .supp-row para no tocar las filas de ejercicios, que no tienen este
+     problema. */
+  .supp-row{flex-wrap:wrap;}
+  .supp-row .ex-info{min-width:55%;}
+  .supp-row .ex-name{overflow-wrap:anywhere;}
   .reps-col{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:0 0 auto;}
   .load-input{width:56px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font-mono);font-size:11px;text-align:center;padding:4px 2px;}
 
@@ -2566,7 +2578,7 @@ function renderSupplementContent(){
       const key = `${bIdx}-${iIdx}`;
       const checked = !!supplementChecks[key];
       html += `
-        <div class="row">
+        <div class="row supp-row">
           <div class="chk supp-chk ${checked?'checked':''}" data-k="${key}">${ICON_CHECK}</div>
           <div class="ex-info supp-info" data-k="${key}">
             <div class="ex-name ${checked?'done':''}">${name}</div>
