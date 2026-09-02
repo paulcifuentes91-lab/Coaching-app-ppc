@@ -269,7 +269,7 @@
     <main class="card" id="card"></main>
     <div id="printDays" style="display:none"></div>
 
-    <div class="card" id="trainHistoryCard" style="margin-top:12px;display:none"></div>
+    <details class="card" id="trainHistoryCard" style="margin-top:12px;display:none"></details>
   </div>
 
   <div id="nutritionView" style="display:none">
@@ -279,7 +279,7 @@
 
     <main class="card" id="mealCard"></main>
 
-    <div class="card" id="mealHistoryCard" style="margin-top:12px"></div>
+    <details class="card" id="mealHistoryCard" style="margin-top:12px"></details>
     <button class="add" id="btnDiaLibre" style="width:100%;margin-top:12px">✈️ Registrar día libre / viaje</button>
 
     <details class="accordion" style="margin-top:14px">
@@ -1341,18 +1341,23 @@ function renderFeelHistory(){
 }
 
 function renderTrainHistory(){
+  // #trainHistoryCard es un <details>: reemplazar su innerHTML (summary + cuerpo)
+  // no afecta el atributo "open" del propio <details>, así que re-renderizar no
+  // cierra el acordeón si el atleta lo tenía abierto.
   const el = document.getElementById('trainHistoryCard');
   if(!el) return;
   const hist = trainHistoryByDay();
   if(!hist.length){ el.innerHTML=''; el.style.display='none'; return; }
   el.style.display='';
   el.innerHTML = `
-    <div class="section-label" style="margin:0 0 4px">Historial de sesiones</div>
+    <summary class="section-label" style="margin:0 0 4px">Historial de entrenamiento</summary>
+    <div style="margin-top:12px">
     ${hist.slice(0,14).map(h=>{
       const icon = h.pct>=80 ? '✓' : (h.pct>=40 ? '~' : '✗');
       const color = h.pct>=80 ? '#4CAF7D' : (h.pct>=40 ? '#E0C23D' : '#E05B5B');
       return `<div class="param-row"><span class="param-label">${h.date}</span><span class="param-value">${h.names} · <b style="color:${color};font-family:var(--font-mono)">${icon} ${h.pct}%</b></span></div>`;
     }).join('')}
+    </div>
   `;
 }
 
@@ -2431,17 +2436,22 @@ function abrirInfoInsignia(b){
 }
 
 function renderMealHistory(){
+  // #mealHistoryCard es un <details>: reemplazar su innerHTML (summary + cuerpo)
+  // no afecta el atributo "open" del propio <details>, así que re-renderizar no
+  // cierra el acordeón si el atleta lo tenía abierto.
   const el = document.getElementById('mealHistoryCard');
   if(!el) return;
   const hist = mealHistoryByDay();
   if(!hist.length){ el.innerHTML=''; return; }
   el.innerHTML = `
-    <div class="section-label" style="margin-top:16px">Cumplimiento diario</div>
+    <summary class="section-label" style="margin:0 0 4px">Historial de comidas</summary>
+    <div style="margin-top:12px">
     ${hist.slice(0,14).map(h=>{
       const icon = h.pct>=80 ? '✓' : (h.pct>=40 ? '~' : '✗');
       const color = h.pct>=80 ? '#4CAF7D' : (h.pct>=40 ? '#E0C23D' : '#E05B5B');
       return `<div class="param-row"><span class="param-label">${h.date}</span><span class="param-value" style="color:${color};font-family:var(--font-mono);font-weight:700">${icon} ${h.pct}%</span></div>`;
     }).join('')}
+    </div>
   `;
 }
 
