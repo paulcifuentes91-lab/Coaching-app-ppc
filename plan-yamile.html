@@ -200,6 +200,17 @@
     .accordion .content{display:block !important;}
     .accordion summary::after{display:none;}
     .reps-chip, .macro-chip, .stat-chip, .adherence-chip{background:#f2f2f2 !important;color:#111 !important;}
+    #card{display:none !important;}
+    #printDays{display:block !important;}
+    .print-day{page-break-inside:avoid;break-inside:avoid;page-break-after:always;break-after:page;padding:14px 14px 6px;}
+    .print-day:last-child{page-break-after:auto;break-after:auto;}
+    .print-day .card-title{font-size:17px;margin-bottom:4px;}
+    .print-day .section-label{font-size:11px;margin:8px 0 3px;}
+    .print-day .row{padding:5px 2px;gap:8px;}
+    .print-day .ex-name{font-size:12.5px;}
+    .print-day .ex-tip{font-size:10px;}
+    .print-day .week-note{font-size:9.5px;padding:2px 7px;margin-top:3px;}
+    .print-day .reps-chip{font-size:10.5px;padding:3px 8px;}
   }
   .brand-logo{width:58px;height:58px;object-fit:contain;filter:drop-shadow(0 0 14px rgba(212,175,55,.55));margin-bottom:8px;display:block;}
 .day-locked-banner{background:linear-gradient(135deg,#1a3a24,#14171B);border:1px solid #4CAF7D;color:#7EE0A6;padding:12px 16px;border-radius:12px;margin:4px 0 14px;font-weight:600;font-size:14px;text-align:center;letter-spacing:.2px}
@@ -249,6 +260,8 @@
     <div class="week-banner" id="weekBanner"></div>
     <nav class="tabs" id="tabs"></nav>
     <main class="card" id="card"></main>
+    <div id="printDays" style="display:none"></div>
+
     <details class="card" id="trainHistoryCard" style="margin-top:12px;display:none"></details>
   </div>
 
@@ -1830,6 +1843,36 @@ function renderCard(){
   });
 }
 
+function dayPrintHtml(day){
+  let html = `<div class="card-title"><span class="day-tag">${day.dayTag}</span>${day.name}</div>`;
+  day.sections.forEach(sec=>{
+    html += `<div class="section-label">${sec.name}</div>`;
+    sec.items.forEach((it,iIdx)=>{
+      const isLast = iIdx===sec.items.length-1;
+      const computed = computeReps(it, sec.name, isLast, activeWeek);
+      html += `
+        <div class="row">
+          <div class="ex-info">
+            <div class="ex-name">${it.name}</div>
+            ${it.tip? `<div class="ex-tip">${it.tip}</div>` : ''}
+            ${computed.notes.map(n=>`<div class="week-note">${n}</div>`).join('')}
+          </div>
+          <div class="reps-col">
+            <div class="reps-chip">${computed.text}</div>
+          </div>
+        </div>
+      `;
+    });
+  });
+  return html;
+}
+
+function renderPrintDays(){
+  const el = document.getElementById('printDays');
+  if(!el) return;
+  el.innerHTML = days.map(day=> `<div class="card print-day">${dayPrintHtml(day)}</div>`).join('');
+}
+
 function currentMealWindow(){ return mealWindows.find(m=>m.id===activeMealWindow); }
 
 const ATHLETE_TZ = "Pacific/Auckland";
@@ -3100,6 +3143,7 @@ document.getElementById('importFile').addEventListener('change',(e)=>{
 
 document.getElementById('printBtn').addEventListener('click',()=>{
   document.querySelectorAll('details.accordion').forEach(d=> d.open = true);
+  renderPrintDays();
   setTimeout(()=> window.print(), 50);
 });
 
