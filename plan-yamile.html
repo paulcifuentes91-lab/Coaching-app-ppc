@@ -1888,36 +1888,20 @@ function localWeekday(){
 }
 function todayStr(){ return localDateStr(); }
 
-function totalMealItems(){
-  let total=0;
-  mealWindows.forEach(mw=> mw.meals.forEach(()=> total++));
-  return total + 1; // +1: check diario de agua
-}
-
-function countMealProgress(mw){
-  const today = todayStr();
-  let total=0, done=0;
-  mw.meals.forEach((meal,mIdx)=>{
-    total++;
-    if(mealChecks[`${today}-${mw.id}-${mIdx}`]) done++;
-  });
-  total++;
-  if(mealChecks[`${today}-agua`]) done++;
-  return {done,total};
-}
-
+// Check único diario (solo Yamile): a diferencia de los demás atletas, acá
+// no se marca comida por comida - una sola clave `${fecha}-cumplido` en
+// mealChecks representa "cumplí mi dieta hoy" completa. El historial viejo
+// por comida (formato `${fecha}-${ventana}-${idx}` / `${fecha}-agua`) queda
+// en Firestore sin borrar, pero esta función ya no lo lee - no se migra
+// (ver diagnóstico: bajo el cálculo viejo ningún día real llegó a 100%,
+// migrarlo habría inventado cumplimiento que no se marcó así).
 function mealHistoryByDay(){
-  const perDay = {};
-  Object.keys(mealChecks).forEach(k=>{
-    if(!mealChecks[k]) return;
-    const date = k.slice(0,10);
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) return; // ignora claves del formato antiguo sin fecha
-    perDay[date] = (perDay[date]||0) + 1;
-  });
-  const total = totalMealItems();
-  return Object.keys(perDay).sort().reverse().map(date=>({
-    date, pct: total? Math.round(perDay[date]/total*100) : 0
-  }));
+  return Object.keys(mealChecks)
+    .filter(k=> mealChecks[k] && k.endsWith('-cumplido'))
+    .map(k=> k.slice(0, -'-cumplido'.length))
+    .filter(date=> /^\d{4}-\d{2}-\d{2}$/.test(date))
+    .sort().reverse()
+    .map(date=> ({date, pct:100}));
 }
 
 let insignias = {};
@@ -2478,9 +2462,11 @@ function renderNutritionNotesBanner(){
 
 function renderMealWindowRow(){
   const el = document.getElementById('mealWindowRow');
-  el.innerHTML = mealWindows.map(mw=>
-    `<button class="week-btn ${mw.id===activeMealWindow?'active':''}" data-id="${mw.id}">${mw.label.toUpperCase()}</button>`
-  ).join('');
+  const hoyId = mealWindowDeHoyId();
+  el.innerHTML = mealWindows.map(mw=>{
+    const bloqueado = hoyId && mw.id!==hoyId;
+    return `<button class="week-btn ${mw.id===activeMealWindow?'active':''} ${bloqueado?'locked':''}" data-id="${mw.id}">${mw.label.toUpperCase()}${bloqueado?' 🔒':''}</button>`;
+  }).join('');
   el.querySelectorAll('.week-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{ activeMealWindow = btn.dataset.id; renderMacroCard(); renderMealCard(); });
   });
@@ -2489,11 +2475,14 @@ function renderMealWindowRow(){
 function renderMealCard(){
   const mw = currentMealWindow();
   const today = todayStr();
-  const {done,total} = countMealProgress(mw);
-  const pct = total? done/total : 0;
+  const hoyId = mealWindowDeHoyId();
+  // Bloque de solo lectura si no es el que corresponde a hoy - mismo
+  // concepto que isWeekEditable() para las semanas de entreno futuras.
+  const esBloqueDeHoy = !hoyId || mw.id===hoyId;
+  const cumplido = !!mealChecks[`${today}-cumplido`];
+  const done = cumplido?1:0, total = 1;
   const r = 24, circ = 2*Math.PI*r;
-  const offset = circ * (1-pct);
-
+  const offset = circ * (1-done/total);
 
   let html = `
     <div class="card-top">
@@ -2508,53 +2497,44 @@ function renderMealCard(){
     </div>
   `;
 
-  mw.meals.forEach((meal,mIdx)=>{
-    const checked = !!mealChecks[`${today}-${mw.id}-${mIdx}`];
+  if(!esBloqueDeHoy){
+    html += `<div class="week-locked-banner">🔒 Este no es tu bloque de hoy — bloqueado, cambia a la pestaña correcta</div>`;
+  }
+
+  mw.meals.forEach(meal=>{
     html += `
       <div class="row">
-        <div class="chk meal-chk ${checked?'checked':''}" data-m="${mIdx}">${ICON_CHECK}</div>
-        <div class="ex-info meal-info" data-m="${mIdx}">
-          <div class="ex-name ${checked?'done':''}">${meal.name}${meal.sub? ' · '+meal.sub : ''}</div>
+        <div class="ex-info">
+          <div class="ex-name">${meal.name}${meal.sub? ' · '+meal.sub : ''}</div>
           ${meal.items.map(food=>`<div class="ex-tip">· ${food}</div>`).join('')}
         </div>
       </div>
     `;
   });
 
-  const aguaChecked = !!mealChecks[`${today}-agua`];
   html += `
     <div class="section-label">Hidratación</div>
-    <div class="row">
-      <div class="chk agua-chk ${aguaChecked?'checked':''}">${ICON_CHECK}</div>
-      <div class="ex-info agua-info">
-        <div class="ex-name ${aguaChecked?'done':''}">💧 Agua del día completa</div>
-        <div class="ex-tip">Meta: 50 cc por kg de peso corporal al día</div>
+    <div class="ex-tip" style="margin:0 0 16px">💧 Meta: 50 cc por kg de peso corporal al día</div>
+    <div class="row" id="cumplioRow" style="${esBloqueDeHoy?'cursor:pointer':'opacity:.5'}">
+      <div class="chk cumplio-chk ${cumplido?'checked':''}">${ICON_CHECK}</div>
+      <div class="ex-info">
+        <div class="ex-name ${cumplido?'done':''}">Cumplí mi dieta hoy</div>
       </div>
     </div>
   `;
 
   const card = document.getElementById('mealCard');
   card.innerHTML = html;
-  card.querySelectorAll('.meal-chk, .meal-info').forEach(el=>{
-    el.addEventListener('click',()=>{
-      const k = `${todayStr()}-${mw.id}-${el.dataset.m}`;
+  if(esBloqueDeHoy){
+    document.getElementById('cumplioRow').addEventListener('click',()=>{
+      const k = `${todayStr()}-cumplido`;
       mealChecks[k] = !mealChecks[k];
       saveField('mealChecks', mealChecks);
       updateMesocicloSummary();
       renderMealCard();
       renderMealHistory();
     });
-  });
-  card.querySelectorAll('.agua-chk, .agua-info').forEach(el=>{
-    el.addEventListener('click',()=>{
-      const k = `${todayStr()}-agua`;
-      mealChecks[k] = !mealChecks[k];
-      saveField('mealChecks', mealChecks);
-      updateMesocicloSummary();
-      renderMealCard();
-      renderMealHistory();
-    });
-  });
+  }
 }
 
 function renderSupplementContent(){
@@ -3186,11 +3166,9 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
     renderCard();
     renderTrainHistory();
   } else if(activeView==='nutrition'){
-    const mw = currentMealWindow();
-    const today = todayStr();
-    Object.keys(mealChecks).forEach(k=>{
-      if(k.startsWith(`${today}-${mw.id}-`)) delete mealChecks[k];
-    });
+    // Check único diario: no depende de qué bloque esté activo, siempre es
+    // la misma clave "de hoy".
+    delete mealChecks[`${todayStr()}-cumplido`];
     saveField('mealChecks', mealChecks);
     updateMesocicloSummary();
     renderMealCard();
