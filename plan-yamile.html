@@ -1180,6 +1180,38 @@ function renderTrainHistory(){
   `;
 }
 
+let PERIODIZACION = {s2:1,s3principal:2,s3accesorio:1,deload:0.7};
+let MAX_SETS_SESSION = 34;
+
+function dayVolumeProfile(){
+  const day = (typeof currentDay==='function') ? currentDay() : null;
+  const prof = { base:0, nPrin:0, nAcc:0 };
+  if(!day) return prof;
+  day.sections.forEach(sec=>{
+    if(!/^Entrenamiento/.test(sec.name)) return;
+    sec.items.forEach(it=>{
+      const m = String(it.reps||'').match(/^(\d+)\s*[×xX]/);
+      if(!m) return;
+      prof.base += parseInt(m[1]);
+      const t = it.tier || 'accesorio';
+      if(/^\d+-\d+/.test(String(it.reps).replace(/^\d+\s*[×xX]\s*/,''))) return; // pirámide no acumula series
+      if(t === 'principal') prof.nPrin++;
+      else if(t === 'accesorio') prof.nAcc++;
+    });
+  });
+  return prof;
+}
+
+// Cap fisiológico de series por sesión en la semana de intensificación
+function peakBumps(){
+  const p = dayVolumeProfile();
+  const MAX = (typeof MAX_SETS_SESSION!=='undefined') ? MAX_SETS_SESSION : 30;
+  let bp = PERIODIZACION.s3principal, ba = PERIODIZACION.s3accesorio;   // incremento ideal en la intensificación
+  if(p.base + p.nPrin*bp + p.nAcc*ba > MAX){ bp = 1; ba = 0; }   // sesión cargada: solo principales
+  if(p.base + p.nPrin*bp > MAX){ bp = 0; ba = 0; }               // sesión al límite: progresa por CARGA
+  return { bp, ba, capped: (bp<2) };
+}
+
 /* Mismo grupo "cardio" que BD_EJ usa en el panel (panel-coach-ppc.html) para
    clasificar ejercicios. RIR y dropset son conceptos de series de fuerza -
    no aplican a este tipo de movimiento aunque un coach lo ponga dentro de
@@ -1198,50 +1230,80 @@ function esEjercicioCardio(nombre){
 }
 
 function computeReps(item, sectionName, isLast, week){
-  if(sectionName !== 'Entrenamiento') return { text:item.reps, notes:[] };
+  if(!/^Entrenamiento/.test(sectionName)) return { text:item.reps, notes:[] };
   if(esEjercicioCardio(item.name)) return { text:item.reps, notes:[] };
-  const m = item.reps.match(/^(\d+)(\s*×\s*)(.*)$/);
+  const m = item.reps.match(/^(\d+)(\s*[×xX]\s*)(.*)$/);
   if(!m) return { text:item.reps, notes:[] };
-  let sets = parseInt(m[1]);
+  let baseSets = parseInt(m[1]);
   let rest = m[3];
   let notes = [];
   const tier = item.tier || 'accesorio';
   const isPyramidScheme = /^\d+-\d+/.test(rest);
-  let delta = 0;
 
-  if(!isPyramidScheme && tier !== 'mantenimiento'){
-    if(tier === 'principal'){
-      if(week>=3) delta += 1;
-      if(week>=4) delta += 1;
-    } else if(week>=4){
-      delta += 1;
+  // ===== Periodización del VOLUMEN por semana =====
+  // Acumulación S1→S3 (intensificación en S3) + DESCARGA (deload) en S4.
+  // CAP DE VOLUMEN: si la sesión ya es de volumen alto (>=22 series base),
+  // se progresa por INTENSIDAD y no por más series (evita 30+ series/sesión).
+  const _b = peakBumps();
+  const bumpPrincipal = _b.bp;
+  const bumpAccesorio = _b.ba;
+  const altoVolumen = _b.capped;
+  // Descarga adaptativa: más profunda si el bloque progresó por intensidad (sesión capada)
+  const DELOAD = _b.capped ? Math.max(0.5, PERIODIZACION.deload-0.1) : PERIODIZACION.deload;
+
+  let sets = baseSets;
+  let phase = '';
+
+  if(isPyramidScheme){
+    if(week===4){
+      sets = Math.max(2, Math.round(baseSets*DELOAD));
+      phase = 'Descarga: reduce el volumen, técnica impecable y carga cómoda';
+    } else if(week===3){
+      phase = 'Intensificación: máxima carga manteniendo el esquema de repeticiones';
+    } else if(week===2){
+      phase = 'Progresión: sube carga respecto a la semana 1';
+    } else {
+      phase = 'Base: fija cargas de referencia con buena técnica';
     }
+  } else if(tier === 'mantenimiento'){
+    if(week===4 && baseSets>=3){ sets = baseSets-1; phase = 'Descarga: baja el volumen, mantén algo de carga'; }
+    else { phase = 'Mantén el volumen, progresa solo en carga (foco en otro tren)'; }
+  } else if(tier === 'principal'){
+    if(week===1){ phase = 'Base: técnica sólida y RIR 2-3, deja reps en reserva'; }
+    else if(week===2){ sets = baseSets+PERIODIZACION.s2; phase = 'Sobrecarga: sube carga (RIR 1-2)'; }
+    else if(week===3){
+      sets = baseSets+bumpPrincipal;
+      phase = altoVolumen
+        ? 'Intensificación: sesión de volumen alto — progresa en CARGA, +1 serie máximo (RIR 0-1)'
+        : 'Intensificación: +2 series, máxima intensidad (RIR 0-1)';
+    }
+    else if(week===4){ sets = Math.max(2, Math.round(baseSets*DELOAD)); phase = 'Descarga: ~50% menos volumen, recupera para el próximo bloque'; }
+  } else { // accesorio
+    if(week===1){ phase = 'Base: conexión mente-músculo, RIR 2-3'; }
+    else if(week===2){ phase = 'Mantén volumen, sube carga si la técnica fue sólida'; }
+    else if(week===3){
+      sets = baseSets+bumpAccesorio;
+      phase = altoVolumen
+        ? 'Intensificación: mantén las series, sube carga o baja el descanso (RIR 0-1)'
+        : 'Intensificación: +1 serie de volumen';
+    }
+    else if(week===4){ sets = Math.max(2, Math.round(baseSets*DELOAD)); phase = 'Descarga: reduce volumen, sin fallo'; }
   }
 
-  if(tier === 'principal' && week>=3){
-    notes.push(isPyramidScheme ? 'Principal: sube carga manteniendo el esquema de reps' : 'Principal: sube carga si la técnica fue sólida');
-  } else if(tier === 'accesorio' && week>=4){
-    notes.push(isPyramidScheme ? 'Sube carga levemente' : 'Volumen extra de cierre de bloque');
-  } else if(tier === 'mantenimiento' && week>=3){
-    notes.push('Tren superior: mantén el volumen, progresa solo en carga (el foco está en piernas)');
-  }
-
-  sets += delta;
+  if(phase) notes.push(phase);
   let text = `${sets}${m[2]}${rest}`;
 
   const rangeMatch = rest.match(/^(\d+)\s+a\s+(\d+)(.*)$/);
   if(rangeMatch){
     const low = rangeMatch[1], high = rangeMatch[2];
-    if(week<=2){
-      notes.push(`Meta esta semana: ${high} reps (técnica, carga moderada)`);
-    } else {
-      notes.push(`Meta esta semana: ${low} reps con más carga`);
-    }
+    if(week===4){ notes.push(`Descarga: apunta a ${high} reps con carga cómoda`); }
+    else if(week<=2){ notes.push(`Meta: ${high} reps (técnica, carga moderada)`); }
+    else { notes.push(`Meta: ${low} reps con más carga`); }
   }
 
-  if(week===4 && isLast && !isPyramidScheme && tier!=='mantenimiento'){
+  if(week===3 && isLast && !isPyramidScheme && tier!=='mantenimiento'){
     text += ' + DS';
-    notes.push('Dropset en la última serie');
+    notes.push('Dropset en la última serie (semana de intensificación)');
   }
   return { text, notes };
 }
