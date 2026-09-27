@@ -1076,12 +1076,29 @@ athleteRef.onSnapshot((doc)=>{
     // ahora siempre guarda anidado correctamente, ese formato viejo quedaba
     // congelado con datos antiguos y le ganaba al dato real y actualizado)
   } else {
-    // Primera vez: crear documento vacío — el plan queda en el código
-    athleteRef.set({
-      trainingChecks:{}, mealChecks:{}, supplementChecks:{},
-      exerciseLoads:{}, progressLog: HISTORICAL_ENTRIES,
-      mesocicloHistory:{}, dailyFeel:{}, exercisePRs:{}, loadHistory:{}, setProgress:{}
-    });
+    // Primera vez: crear documento vacío — el plan queda en el código.
+    // FIX (sep-2026, incidente Nicole/Diego): antes esto se ejecutaba con
+    // solo que el listener reportara doc.exists=false, lo que puede pasar
+    // por una lectura de CACHE vacia (celular sin datos locales, reconexion,
+    // etc.) sin que el documento realmente falte en el servidor - eso borraba
+    // fichas reales de atletas activos, reemplazandolas por una en blanco.
+    // Ahora: 1) si el snapshot viene de cache, no hacemos nada todavia y
+    // esperamos el snapshot confirmado del servidor; 2) si viene del
+    // servidor pero igual parece no existir, lo reconfirmamos con una
+    // lectura directa a servidor antes de crear nada. Solo si AMBAS
+    // confirman ausencia, se crea el documento nuevo.
+    if(doc.metadata.fromCache){
+      return; // no confirmado - esperar el proximo snapshot (servidor)
+    }
+    athleteRef.get({ source:'server' }).then(freshDoc=>{
+      if(freshDoc.exists) return; // falso positivo: SI existe, no tocar nada
+      athleteRef.set({
+        trainingChecks:{}, mealChecks:{}, supplementChecks:{},
+        exerciseLoads:{}, progressLog: HISTORICAL_ENTRIES,
+        mesocicloHistory:{}, dailyFeel:{}, exercisePRs:{}, loadHistory:{}, setProgress:{}
+      });
+    }).catch(()=>{ /* si no se pudo confirmar, no arriesgar sobrescribir nada */ });
+    return;
   }
   dataReady = true;
   document.getElementById('loadingOverlay').style.display = 'none';
