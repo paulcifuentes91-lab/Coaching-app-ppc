@@ -1,0 +1,40 @@
+name: Alta de atleta nuevo
+
+# Se dispara solo con subir un archivo .json a nuevos-atletas-pendientes/
+# (ver nuevos-atletas-pendientes/README.md para el paso a paso). También se
+# puede correr a mano desde la pestaña "Actions" de GitHub con "Run workflow"
+# por si hay que reintentar sin subir nada nuevo.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'nuevos-atletas-pendientes/*.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  alta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Dar de alta a los atletas pendientes
+        run: python3 scripts/crear_atleta_ci.py
+
+      - name: Confirmar y subir los cambios
+        run: |
+          git config user.name "PPC Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No hay cambios que subir (probablemente no había nada pendiente)."
+          else
+            git commit -m "Alta automática de atleta(s) nuevo(s)"
+            git push
+          fi
