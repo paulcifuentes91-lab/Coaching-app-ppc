@@ -1,0 +1,459 @@
+{
+ "athlete": "Álvaro Salcedo",
+ "athlete_id": "alvaro-julio-2026",
+ "tz": "America/Santiago",
+ "startDate": "2026-10-05",
+ "checkDate": "2026-10-11",
+ "accessExpiresAt": "2026-11-08",
+ "days": [
+  {
+   "dayTag": "Día 1",
+   "name": "Espalda",
+   "sections": [
+    {
+     "name": "Calentamiento",
+     "items": [
+      {
+       "name": "Movilidad articular general",
+       "reps": "5 a 10 min",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Activación de Espalda, Bíceps, Core",
+       "reps": "2 a 3 min",
+       "tier": "accesorio",
+       "tip": "Series livianas de aproximación"
+      }
+     ]
+    },
+    {
+     "name": "Entrenamiento",
+     "items": [
+      {
+       "name": "Remo con barra",
+       "reps": "6 X 8-10",
+       "tier": "principal",
+       "tip": "Alternativa: Remo T"
+      },
+      {
+       "name": "Remo T",
+       "reps": "5 X 8-10",
+       "tier": "principal",
+       "tip": "Alternativa: Remo con barra"
+      },
+      {
+       "name": "Curl martillo",
+       "reps": "6 X 12-15",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Curl en banco Scott",
+       "reps": "5 X 12-15",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Crunch en polea alta",
+       "reps": "6 X 12-15",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Elevación de piernas colgado",
+       "reps": "5 X 12-15",
+       "tier": "accesorio",
+       "tip": ""
+      }
+     ]
+    },
+    {
+     "name": "Estiramiento",
+     "items": [
+      {
+       "name": "Elongación de Espalda, Bíceps, Core",
+       "reps": "5 a 8 min",
+       "tier": "accesorio",
+       "tip": ""
+      }
+     ]
+    },
+    {
+     "name": "Cardio",
+     "items": [
+      {
+       "name": "Caminata en cinta LISS",
+       "reps": "30 min",
+       "tier": "accesorio",
+       "tip": "2 a 3 sesiones LISS de 20 a 30 min"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "dayTag": "Día 2",
+   "name": "Cadena posterior",
+   "sections": [
+    {
+     "name": "Calentamiento",
+     "items": [
+      {
+       "name": "Movilidad articular general",
+       "reps": "5 a 10 min",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Activación de Femoral, Glúteo, Lumbar",
+       "reps": "2 a 3 min",
+       "tier": "accesorio",
+       "tip": "Series livianas de aproximación"
+      }
+     ]
+    },
+    {
+     "name": "Entrenamiento",
+     "items": [
+      {
+       "name": "Peso muerto piernas rígidas",
+       "reps": "6 X 8-10",
+       "tier": "principal",
+       "tip": ""
+      },
+      {
+       "name": "Peso muerto sumo",
+       "reps": "5 X 8-10",
+       "tier": "principal",
+       "tip": "Alternativa: Peso muerto rumano"
+      },
+      {
+       "name": "Hip thrust con barra",
+       "reps": "6 X 8-10",
+       "tier": "principal",
+       "tip": "Alternativa: Hip thrust en máquina"
+      },
+      {
+       "name": "Patada de glúteo en polea",
+       "reps": "5 X 12-15",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Good morning",
+       "reps": "6 X 12-15",
+       "tier": "accesorio",
+       "tip": "Alternativa: Hiperextensiones"
+      },
+      {
+       "name": "Hiperextensiones",
+       "reps": "5 X 12-15",
+       "tier": "accesorio",
+       "tip": ""
+      }
+     ]
+    },
+    {
+     "name": "Estiramiento",
+     "items": [
+      {
+       "name": "Elongación de Femoral, Glúteo, Lumbar",
+       "reps": "5 a 8 min",
+       "tier": "accesorio",
+       "tip": ""
+      }
+     ]
+    },
+    {
+     "name": "Cardio",
+     "items": [
+      {
+       "name": "Caminata en cinta LISS",
+       "reps": "30 min",
+       "tier": "accesorio",
+       "tip": "2 a 3 sesiones LISS de 20 a 30 min"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "dayTag": "Día 3",
+   "name": "Pecho",
+   "sections": [
+    {
+     "name": "Calentamiento",
+     "items": [
+      {
+       "name": "Movilidad articular general",
+       "reps": "5 a 10 min",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Activación de Pecho, Hombro, Tríceps",
+       "reps": "2 a 3 min",
+       "tier": "accesorio",
+       "tip": "Series livianas de aproximación"
+      }
+     ]
+    },
+    {
+     "name": "Entrenamiento",
+     "items": [
+      {
+       "name": "Press inclinado con mancuernas",
+       "reps": "6 X 8-10",
+       "tier": "principal",
+       "tip": "Alternativa: Press inclinado con barra"
+      },
+      {
+       "name": "Press inclinado con barra",
+       "reps": "5 X 8-10",
+       "tier": "principal",
+       "tip": "Alternativa: Press inclinado con mancuernas"
+      },
+      {
+       "name": "Elevaciones laterales",
+       "reps": "6 X 12-15",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Elevaciones posteriores",
+       "reps": "5 X 12-15",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Press cerrado en banca",
+       "reps": "6 X 8-10",
+       "tier": "principal",
+       "tip": ""
+      },
+      {
+       "name": "Patada de tríceps",
+       "reps": "5 X 12-15",
+       "tier": "accesorio",
+       "tip": "Alternativa: Extensión en polea alta"
+      }
+     ]
+    },
+    {
+     "name": "Estiramiento",
+     "items": [
+      {
+       "name": "Elongación de Pecho, Hombro, Tríceps",
+       "reps": "5 a 8 min",
+       "tier": "accesorio",
+       "tip": ""
+      }
+     ]
+    },
+    {
+     "name": "Cardio",
+     "items": [
+      {
+       "name": "Caminata en cinta LISS",
+       "reps": "30 min",
+       "tier": "accesorio",
+       "tip": "2 a 3 sesiones LISS de 20 a 30 min"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "dayTag": "Día 4",
+   "name": "Cuádriceps",
+   "sections": [
+    {
+     "name": "Calentamiento",
+     "items": [
+      {
+       "name": "Movilidad articular general",
+       "reps": "5 a 10 min",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Activación de Cuádriceps, Pantorrilla",
+       "reps": "2 a 3 min",
+       "tier": "accesorio",
+       "tip": "Series livianas de aproximación"
+      }
+     ]
+    },
+    {
+     "name": "Entrenamiento",
+     "items": [
+      {
+       "name": "Hack squat",
+       "reps": "4 X 8-10",
+       "tier": "principal",
+       "tip": "Alternativa: Sentadilla libre con barra"
+      },
+      {
+       "name": "Sentadilla búlgara",
+       "reps": "4 X 12-15",
+       "tier": "accesorio",
+       "tip": "Alternativa: Zancada caminando"
+      },
+      {
+       "name": "Extensión de cuádriceps",
+       "reps": "4 X 12-15",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Zancada caminando",
+       "reps": "5 X 12-15",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Elevación de talones de pie",
+       "reps": "4 X 12-15",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Elevación de talones sentado",
+       "reps": "4 X 12-15",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Prensa de pantorrilla",
+       "reps": "4 X 12-15",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Elevación de talones a una pierna",
+       "reps": "5 X 12-15",
+       "tier": "accesorio",
+       "tip": ""
+      }
+     ]
+    },
+    {
+     "name": "Estiramiento",
+     "items": [
+      {
+       "name": "Elongación de Cuádriceps, Pantorrilla",
+       "reps": "5 a 8 min",
+       "tier": "accesorio",
+       "tip": ""
+      }
+     ]
+    },
+    {
+     "name": "Cardio",
+     "items": [
+      {
+       "name": "Caminata en cinta LISS",
+       "reps": "30 min",
+       "tier": "accesorio",
+       "tip": "2 a 3 sesiones LISS de 20 a 30 min"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "dayTag": "Día 5",
+   "name": "Hombro",
+   "sections": [
+    {
+     "name": "Calentamiento",
+     "items": [
+      {
+       "name": "Movilidad articular general",
+       "reps": "5 a 10 min",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Activación de Hombro, Bíceps, Tríceps",
+       "reps": "2 a 3 min",
+       "tier": "accesorio",
+       "tip": "Series livianas de aproximación"
+      }
+     ]
+    },
+    {
+     "name": "Entrenamiento",
+     "items": [
+      {
+       "name": "Elevaciones posteriores",
+       "reps": "6 X 12-15",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Elevación frontal",
+       "reps": "5 X 12-15",
+       "tier": "accesorio",
+       "tip": ""
+      },
+      {
+       "name": "Curl en polea baja",
+       "reps": "6 X 12-15",
+       "tier": "accesorio",
+       "tip": "Alternativa: Curl concentrado"
+      },
+      {
+       "name": "Curl con barra",
+       "reps": "5 X 8-10",
+       "tier": "principal",
+       "tip": "Alternativa: Curl martillo"
+      },
+      {
+       "name": "Press francés",
+       "reps": "6 X 8-10",
+       "tier": "principal",
+       "tip": "Alternativa: Press JM"
+      },
+      {
+       "name": "Press JM",
+       "reps": "5 X 8-10",
+       "tier": "principal",
+       "tip": "Alternativa: Extensión en polea alta"
+      }
+     ]
+    },
+    {
+     "name": "Estiramiento",
+     "items": [
+      {
+       "name": "Elongación de Hombro, Bíceps, Tríceps",
+       "reps": "5 a 8 min",
+       "tier": "accesorio",
+       "tip": ""
+      }
+     ]
+    },
+    {
+     "name": "Cardio",
+     "items": [
+      {
+       "name": "Caminata en cinta LISS",
+       "reps": "30 min",
+       "tier": "accesorio",
+       "tip": "2 a 3 sesiones LISS de 20 a 30 min"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "periodizacion": {
+  "maxSetsSession": 30,
+  "s2": 1,
+  "s3principal": 2,
+  "s3accesorio": 1,
+  "deload": 0.7
+ }
+}
