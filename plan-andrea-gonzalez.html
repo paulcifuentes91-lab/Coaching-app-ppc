@@ -961,6 +961,12 @@ function loadKeyFor(sIdx,iIdx){ return `${activeDay}-${sIdx}-${iIdx}`; } // la c
 // hecho (ultima serie o checkbox) sin cambiar el peso, para que un atleta que
 // repite el mismo peso sesion tras sesion igual quede con un punto por dia en
 // "Cargas" en vez de un historial casi vacio.
+/* Récord previo = el mayor entre el PR guardado y el historial de cargas de días anteriores */
+function prevRecord(k){
+  let m = exercisePRs[k] || 0;
+  try{ const hoy = todayStr(); (loadHistory[k]||[]).forEach(e=>{ if(e && e.date !== hoy && e.kg > m) m = e.kg; }); }catch(e){}
+  return m;
+}
 function registrarCargaHoy(k, num, sIdx, iIdx){
   if(isNaN(num) || num <= 0) return;
   const hoy = todayStr();
@@ -970,7 +976,7 @@ function registrarCargaHoy(k, num, sIdx, iIdx){
   arr.sort((a,b)=> a.date<b.date?-1:a.date>b.date?1:0);
   saveField('loadHistory', loadHistory);
 
-  const prev = exercisePRs[k] || 0;
+  const prev = prevRecord(k);
   if(num > prev){
     exercisePRs[k] = num;
     saveField('exercisePRs', exercisePRs);
@@ -3284,7 +3290,7 @@ function celebrar(nombre, prev, nuevo){
 (function(){
   var orig = window.registrarCargaHoy; if(typeof orig !== "function") return;
   window.registrarCargaHoy = function(k, n, sIdx, iIdx){
-    var prev = 0; try{ prev = exercisePRs[k] || 0; }catch(e){}
+    var prev = 0; try{ prev = prevRecord(k); }catch(e){}
     var r = orig.apply(this, arguments);
     try{
       if(!isNaN(n) && n > prev && prev > 0){
