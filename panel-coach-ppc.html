@@ -1928,7 +1928,7 @@ function msgWhatsApp(a, tipo){
   case "plan":
    txt = `Hola ${nom}, actualicé tu plan. Lo puedes ver aquí: ${url}`; break;
   case "seguimiento":
-   txt = `Hola ${nom}, ¿cómo vas con los entrenamientos de esta semana? Cuéntame cómo te has sentido.`; break;
+   txt = `Hola ${nom}, ¿cómo vas con los entrenamientos de esta semana? Cuéntame cómo te has sentido, qué tan comprometido/a estás (del 1 al 10) y si ves algo que pueda dificultarte los próximos días para ajustarlo juntos 💪`; break;
   case "vencimiento": {
    let diasVence = null;
    if(a.vence){ const dv=new Date(a.vence+"T12:00:00"); diasVence = Math.round((dv-hoy)/86400000); }
