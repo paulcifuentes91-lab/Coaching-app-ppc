@@ -1284,6 +1284,46 @@ window.ppcAlertasExtra = function(a){
         acc:"wa", tipo:"seguimiento"});
     }
   }
+  /* Alerta de variación de peso: último registro vs el anterior (≤ 21 días entre ambos, último ≤ 14 días) */
+  try{
+    const pl = ((d && d.progressLog)||[]).filter(e=>e && esFecha(e.date) && typeof e.weight==="number").sort((x,y)=>x.date<y.date?-1:1);
+    if(pl.length>=2 && iniOk){
+      const u = pl[pl.length-1], p = pl[pl.length-2];
+      const gap = diffDays(p.date, u.date), edad = diffDays(u.date, hoy);
+      const dif = Math.round((u.weight - p.weight)*10)/10;
+      if(gap>=1 && gap<=21 && edad<=14 && Math.abs(dif)>=1){
+        const sube = dif>0, masa = /hipertrofia|fuerza|volumen/i.test(a.cat||"");
+        const esperado = masa ? sube : !sube && /definici|p[ée]rdida|competici/i.test(a.cat||"");
+        const sg = (dif>0?"+":"−")+Math.abs(dif).toString().replace(".",",")+" kg";
+        out.push({p: esperado?2:1, ini:a.ini, id:a.id,
+          txt:`<b>${esc(nom1(a))}</b> ${sube?"subió":"bajó"} de peso (${sg})`,
+          sub:`${p.weight} → ${u.weight} kg en ${gap} día${gap===1?"":"s"}${esperado?" · va según su objetivo":" · revisar nutrición"}`,
+          acc:"ficha", tipo:"peso"});
+      }
+    }
+  }catch(e){}
+  /* Alerta de PR: ejercicios donde en los últimos 7 días subió la carga sobre su máximo anterior */
+  try{
+    const lh = (d && d.loadHistory) || {}, prs = [];
+    Object.keys(lh).forEach(k=>{
+      const arr = (lh[k]||[]).filter(e=>e && esFecha(e.date) && typeof e.kg==="number").sort((x,y)=>x.date<y.date?-1:1);
+      if(arr.length<2) return;
+      const recientes = arr.filter(e=>diffDays(e.date,hoy)>=0 && diffDays(e.date,hoy)<=7);
+      if(!recientes.length) return;
+      const corte = recientes[0].date;
+      const antes = arr.filter(e=>e.date<corte).map(e=>e.kg);
+      if(!antes.length) return;
+      const prev = Math.max(...antes), nuevo = Math.max(...recientes.map(e=>e.kg));
+      if(nuevo>prev){ const nm = (typeof nombreEjercicio==="function" && nombreEjercicio(a,k)) || k; prs.push({nm, prev, nuevo}); }
+    });
+    if(prs.length && iniOk){
+      prs.sort((x,y)=>(y.nuevo-y.prev)-(x.nuevo-x.prev));
+      out.push({p:2, ini:a.ini, id:a.id,
+        txt:`<b>${esc(nom1(a))}</b> subió la carga en ${prs.length} ejercicio${prs.length===1?"":"s"} 🏆`,
+        sub: prs.slice(0,3).map(x=>`${esc(x.nm)} ${x.prev}→${x.nuevo} kg`).join(" · ") + (prs.length>3?` · +${prs.length-3} más`:""),
+        acc:"ficha", tipo:"pr"});
+    }
+  }catch(e){}
   const c = d && d.alertaCuidado;
   if(c && esFecha(c.fecha) && diffDays(c.fecha, hoy) <= 4){
     out.push({p:0, ini:a.ini, id:a.id,
@@ -1644,6 +1684,7 @@ async function abrirPlantillas(a){
     }
   });
 }
+window.ppcModal = modal; window.ppcAbrirResumen = abrirResumen;
 })();
 </script>
 <script>
@@ -5549,4 +5590,439 @@ if('serviceWorker' in navigator){
   });
 }
 </script>
+<style id="ppcMej2Css">
+.ppcsn{margin-left:5px;padding:5px 8px}
+.ppcgrp{font-family:var(--mono);font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--fa);margin:12px 0 4px}
+.ppcgrp b{color:var(--gold);font-weight:600}
+.ppcetapa{background:var(--card2);color:var(--tx);border:1px solid var(--line);border-radius:7px;padding:5px 6px;font-size:11px;margin-left:5px;max-width:118px}
+.ppcembudo{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 10px}
+.ppcembudo span{font-family:var(--mono);font-size:10px;border:1px solid var(--line);border-radius:20px;padding:3px 9px;color:var(--mu);background:var(--card2)}
+.ppcembudo span b{color:var(--gold);margin-left:4px}
+#ppcSbToggle{position:fixed;left:12px;bottom:14px;z-index:60;background:var(--card);color:var(--gold);border:1px solid var(--line);border-radius:22px;padding:9px 14px;font-family:var(--mono);font-size:11px;letter-spacing:.8px;cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.45)}
+body.sb-off .app{grid-template-columns:1fr}
+body.sb-off aside{display:none}
+.ppcleyenda{font-size:10px;color:var(--fa);line-height:1.5;padding:0 14px 8px}
+.ppcleyenda i{display:inline-block;width:6px;height:6px;border-radius:50%;margin:0 3px 0 6px;vertical-align:middle}
+.ppcrenbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.ppcrenbtns button{padding:11px 8px}
+.ppcrenbtns button.on{border-color:var(--gold);color:var(--gold)}
+.ppcfx{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:0 0 12px}
+.ppcfx .lb{display:block;margin-bottom:6px}
+.ppcbit{display:flex;gap:6px;margin-top:6px}
+.ppcbit input{flex:1;min-width:0}
+.ppcbitl{font-size:12px;color:var(--mu);margin-top:6px;line-height:1.5}
+.ppcbitl b{color:var(--tx);font-family:var(--mono);font-size:10.5px;margin-right:6px}
+.ppcspark{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ppcspark .v{font-family:var(--mono);font-size:20px;color:var(--tx)}
+.ppcspark .d{font-family:var(--mono);font-size:11px}
+@media(max-width:700px){
+ .hnums{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ .ppcrow2{flex-wrap:wrap}
+}
+</style>
+<script id="ppcMej2">
+/* ═══ MEJORAS PANEL 2: limpieza, Hoy, renovar, snooze, bitácora, calendario, embudo, respaldo ═══ */
+(function(){
+"use strict";
+const $id = id => document.getElementById(id);
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const nom1 = a => (a.n||"").split(" ")[0];
+const esFecha = s => /^\d{4}-\d{2}-\d{2}$/.test(s||"");
+const ptsF = s => s.split("-").map(Number);
+const diffDays = (a,b)=>{ const pa=ptsF(a), pb=ptsF(b); return Math.round((Date.UTC(pb[0],pb[1]-1,pb[2])-Date.UTC(pa[0],pa[1]-1,pa[2]))/86400000); };
+const fmtF = s => esFecha(s) ? s.slice(8,10)+"-"+s.slice(5,7)+"-"+s.slice(2,4) : "—";
+const hoyStr = ()=>{ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+const CLP = n => "$" + Math.round(+n||0).toLocaleString("es-CL");
+const addMonth = s => { const p=ptsF(s); const d=new Date(Date.UTC(p[0],p[1],p[2])); return d.toISOString().slice(0,10); };
+const modal = (t,h)=>window.ppcModal(t,h);
+const abrirResumen = a=>window.ppcAbrirResumen(a);
+const PANEL = {d:{dismissAn:{}, snooze:{}, bitacora:{}, prosOcultos:{}, embudo:{}, ingHist:{}}, cargado:false, cargando:false};
+try{ const r = JSON.parse(localStorage.getItem("ppc_panel")||"{}"); Object.keys(PANEL.d).forEach(k=>{ if(r[k]) PANEL.d[k]=r[k]; }); }catch(e){}
+window.PPC_PANEL = PANEL;
+let _tm = null;
+function guardar(){
+  try{ localStorage.setItem("ppc_panel", JSON.stringify(PANEL.d)); }catch(e){}
+  clearTimeout(_tm);
+  _tm = setTimeout(async ()=>{
+    try{ if(FB.on && AUTH && AUTH.user) await FB.db.collection("athletes").doc("_ppc_panel").set({datos:PANEL.d, actualizado:new Date().toISOString()}); }catch(e){}
+  }, 700);
+}
+async function cargarNube(){
+  if(PANEL.cargado || PANEL.cargando) return;
+  if(!(FB.on && AUTH && AUTH.user)) return;
+  PANEL.cargando = true;
+  try{
+    const s = await FB.db.collection("athletes").doc("_ppc_panel").get();
+    if(s.exists){
+      const r = (s.data()||{}).datos || {};
+      Object.keys(PANEL.d).forEach(k=>{
+        const rem = r[k]; if(!rem) return;
+        if(k==="bitacora"){
+          Object.keys(rem).forEach(id=>{
+            const loc = PANEL.d.bitacora[id]||[], seen = new Set(loc.map(x=>x.f+"|"+x.t));
+            PANEL.d.bitacora[id] = loc.concat(rem[id].filter(x=>!seen.has(x.f+"|"+x.t))).sort((x,y)=>x.f<y.f?1:-1);
+          });
+        } else PANEL.d[k] = Object.assign({}, rem, PANEL.d[k]);
+      });
+    }
+    PANEL.cargado = true; guardar();
+    if(typeof pintarHome==="function") pintarHome();
+  }catch(e){}
+  PANEL.cargando = false;
+}
+const addDias = (s,n)=>{ const p=ptsF(s); return new Date(Date.UTC(p[0],p[1]-1,p[2]+n)).toISOString().slice(0,10); };
+const addMeses = (s,n)=>{ const p=ptsF(s); const d=new Date(Date.UTC(p[0],p[1]-1+n,p[2])); if(d.getUTCDate()!==p[2]) d.setUTCDate(0); return d.toISOString().slice(0,10); };
+const fLocal = iso => { const d=new Date(iso); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+const norm = s => (s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^a-z ]/g," ").split(/\s+/).filter(Boolean);
+const q = (sel,root)=>Array.from((root||document).querySelectorAll(sel));
+const DIAS = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+function etiqueta(a){
+  const t = (a.n||"").split(" "), dup = ATLETAS.filter(x=>nom1(x)===nom1(a)).length>1;
+  return dup && t[1] ? t[0]+" "+t[1][0]+"." : t[0];
+}
+function nomPublico(a){ return a.n; }
+
+/* ── Posponer (snooze) de alertas de Atención ── */
+function aplicarSnooze(){
+  const hoy = hoyStr();
+  q("#homeAtencion .hrowa").forEach(r=>{
+    const key = r.dataset.ir+":"+(r.dataset.tipo||"");
+    const hasta = PANEL.d.snooze[key];
+    if(hasta && hoy < hasta){ r.remove(); return; }
+    const b = document.createElement("button");
+    b.className = "hbtn ppcsn"; b.title = "Recordarme en 3 días"; b.textContent = "⏰";
+    b.dataset.ppcSnooze = key; r.appendChild(b);
+  });
+  const c = $id("homeAtencion");
+  if(c && HOME.cargado && !c.querySelector(".hrowa")) c.innerHTML = '<div class="hvacio">Nada urgente por ahora.</div>';
+}
+
+/* ── Anamnesis pendientes: "No aplica" ── */
+function mejorarAnamnesis(){
+  const c = $id("homeAnamnesis"); if(!c) return;
+  let ocultas = 0;
+  q(".hrowa[data-ir]", c).forEach(r=>{
+    const id = r.dataset.ir;
+    if(PANEL.d.dismissAn[id]){ r.remove(); ocultas++; return; }
+    const b = document.createElement("button");
+    b.className = "hbtn"; b.style.marginLeft = "5px"; b.textContent = "No aplica";
+    b.title = "Ya la tengo o no la necesito: sacar de la lista"; b.dataset.ppcAnok = id; r.appendChild(b);
+  });
+  if(HOME.cargado && !c.querySelector(".hrowa")) c.innerHTML = '<div class="hvacio">Nada pendiente.</div>';
+  if(ocultas) c.insertAdjacentHTML("beforeend", `<div class="hvacio" style="margin-top:6px">${ocultas} oculta${ocultas===1?"":"s"} · <span data-ppc-anreset="1" style="text-decoration:underline;cursor:pointer;color:var(--gold)">restaurar</span></div>`);
+}
+
+/* ── Interesados: ocultar convertidos y descartados, embudo ── */
+const ETAPAS = ["Ficha recibida","Contactado","Propuesta enviada","Pagó"];
+function mejorarProspectos(){
+  const sec = $id("secProspectos"), c = $id("homeProspectos"); if(!c || !sec) return;
+  const pros = HOME.prospectos || [];
+  const hoy = hoyStr(), conteo = {}; ETAPAS.forEach(e=>conteo[e]=0);
+  let visibles = 0;
+  q(".hrowa[data-pros]", c).forEach(r=>{
+    const id = r.dataset.pros, p = pros.find(x=>String(x.id)===String(id)) || {};
+    const an = p.anamnesis || {};
+    const nom = an.nombre || (p.contacto && p.contacto.nombre) || "";
+    const tk = norm(nom);
+    let esAtleta = false;
+    if(tk.length>=2) esAtleta = ATLETAS.some(a=>{ const at = norm(a.n); return tk.every(w=>at.includes(w)); });
+    if(esAtleta || PANEL.d.prosOcultos[id]){ r.remove(); return; }
+    visibles++;
+    const et = PANEL.d.embudo[id] || ETAPAS[0]; conteo[et] = (conteo[et]||0)+1;
+    const sel = document.createElement("select"); sel.className = "ppcetapa"; sel.dataset.ppcEtapa = id;
+    sel.innerHTML = ETAPAS.map(e=>`<option ${e===et?"selected":""}>${e}</option>`).join("");
+    const b = document.createElement("button"); b.className = "hbtn"; b.style.marginLeft = "5px"; b.textContent = "Descartar";
+    b.dataset.ppcProsok = id;
+    r.appendChild(sel); r.appendChild(b);
+    if(!nom && p.creado && diffDays((p.creado||"").slice(0,10), hoy) > 7){
+      const hs = r.querySelector(".hs"); if(hs) hs.innerHTML += " · <b style='color:var(--wa)'>antigua sin nombre</b>";
+    }
+  });
+  if(!visibles){ sec.style.display = "none"; return; }
+  sec.style.display = "block";
+  const n = $id("cntProspectos"); if(n) n.textContent = String(visibles);
+  const act_ = ATLETAS.filter(a=>a.estado!=="pausa").length;
+  c.insertAdjacentHTML("afterbegin", `<div class="ppcembudo">${ETAPAS.map(e=>`<span>${e}<b>${conteo[e]||0}</b></span>`).join("")}<span>Atletas activos<b>${act_}</b></span></div>`);
+}
+
+/* ── Adherencia agrupada ── */
+function mejorarAdherencia(){
+  const c = $id("homeAdherencia"); if(!c || !HOME.cargado) return;
+  const hoy = hoyStr();
+  const act_ = ATLETAS.filter(a=>a.estado!=="pausa");
+  const G = {entrenando:[], sinActividad:[], sinEmpezar:[], vencido:[]};
+  act_.forEach(a=>{
+    const ad = adherenciaSemana(a.id), dv = diasHasta(a.vence);
+    const reciente = !a.ini_f || diffDays(a.ini_f, hoy) <= 14;
+    if(dv!==null && dv<0) G.vencido.push({a,dv});
+    else if(!ad) (reciente ? G.sinEmpezar : G.sinActividad).push({a,ad:null});
+    else if(ad.entrenados===0) G.sinActividad.push({a,ad});
+    else G.entrenando.push({a,ad});
+  });
+  const fila = (a, pct, cls, txt)=>`<div class="hadh" data-ir="${a.id}"><span class="hadn">${esc(etiqueta(a))}</span><div class="hadb"><i class="${cls}" style="width:${pct}%"></i></div><span class="hadv ${cls}">${txt}</span></div>`;
+  const cl = p => p>=80?"ok":p>=50?"medio":"bajo";
+  let h = "";
+  const ent = G.entrenando.sort((x,y)=>x.ad.pct-y.ad.pct);
+  const bien = ent.filter(x=>x.ad.pct>=80), resto = ent.filter(x=>x.ad.pct<80);
+  if(resto.length) h += `<div class="ppcgrp"><b>Entrenando</b> · por debajo del 80%</div>` + resto.map(x=>fila(x.a, Math.min(100,x.ad.pct), cl(x.ad.pct), `${x.ad.entrenados} de ${x.ad.objetivo}`)).join("");
+  if(bien.length) h += `<div class="hvacio" style="margin-top:6px">✓ ${bien.length} con buena adherencia (80%+) <span id="ppcVerBien" style="text-decoration:underline;cursor:pointer;color:var(--gold)">mostrar</span></div><div id="ppcListaBien" style="display:none">${bien.map(x=>fila(x.a, Math.min(100,x.ad.pct), "ok", `${x.ad.entrenados} de ${x.ad.objetivo}`)).join("")}</div>`;
+  if(G.sinActividad.length) h += `<div class="ppcgrp"><b>Sin actividad</b> esta semana (${G.sinActividad.length})</div>` + G.sinActividad.map(x=>fila(x.a, 0, "nada", x.ad ? `0 de ${x.ad.objetivo}` : "sin datos")).join("");
+  if(G.sinEmpezar.length) h += `<div class="ppcgrp"><b>Recién empiezan</b> (${G.sinEmpezar.length})</div>` + G.sinEmpezar.map(x=>fila(x.a, 0, "nada", x.a.ini_f && x.a.ini_f>hoy ? "parte "+fmtF(x.a.ini_f) : "sin datos")).join("");
+  if(G.vencido.length) h += `<div class="ppcgrp"><b>Plan vencido</b> · no pueden usar su app (${G.vencido.length})</div>` + G.vencido.sort((x,y)=>x.dv-y.dv).map(x=>fila(x.a, 0, "nada", `hace ${-x.dv} d`)).join("");
+  c.innerHTML = h || '<div class="hvacio">Sin datos todavía.</div>';
+  const vb = $id("ppcVerBien");
+  if(vb) vb.onclick = ()=>{ const l=$id("ppcListaBien"), on=l.style.display==="none"; l.style.display=on?"block":"none"; vb.textContent=on?"ocultar":"mostrar"; };
+  const con = G.entrenando.concat(G.sinActividad.filter(x=>x.ad));
+  const m = $id("adMedia"); if(m) m.textContent = con.length ? Math.round(con.reduce((s,x)=>s+Math.min(100,x.ad.pct),0)/con.length)+"%" : "—";
+}
+
+/* ── Vista "Hoy": las 5 acciones más urgentes ── */
+function asegurarSeccion(id, html, despuesDe){
+  let d = $id(id); if(d) return d;
+  d = document.createElement("details"); d.className = "sec"; d.id = id; d.innerHTML = html;
+  const ref = despuesDe==="inicio" ? $id("vistaInicio").querySelector(".racc") : $id(despuesDe);
+  if(ref) ref.insertAdjacentElement("afterend", d);
+  return d;
+}
+function construirHoy(){
+  const d = asegurarSeccion("acHoy", `<summary class="st">Hoy · lo más urgente <span class="acnt" id="cntHoy"></span><span class="aux">las 5 acciones que más importan</span></summary><div id="homeHoy"></div>`, "inicio");
+  if(d && !d.dataset.init){ d.dataset.init="1"; d.open = true; }
+  const c = $id("homeHoy"); if(!c) return;
+  if(!HOME.cargado){ c.innerHTML = '<div class="hvacio">Consultando la nube...</div>'; return; }
+  const hoy = hoyStr(), items = [];
+  ATLETAS.filter(a=>a.estado!=="pausa").forEach(a=>{
+    const dv = diasHasta(a.vence); if(dv===null || dv>10) return;
+    const key = a.id+":renovar", hasta = PANEL.d.snooze[key];
+    if(hasta && hoy < hasta) return;
+    items.push({p: dv<=3?0:1, o:dv, id:a.id, ini:a.ini, key,
+      txt:`Plan de <b>${esc(etiqueta(a))}</b> ${dv<0?"vencido":"por vencer"}`,
+      sub: dv>0 ? `en ${dv} día${dv===1?"":"s"}` : dv===0 ? "vence hoy" : `vencido hace ${-dv} día${-dv===1?"":"s"}`,
+      btn:`<button class="hbtn" data-ppc-renovar="${a.id}">Renovar</button>`});
+  });
+  const venc = new Set(ATLETAS.filter(a=>{ const v=diasHasta(a.vence); return v!==null && v<0; }).map(a=>a.id));
+  q("#homeAtencion .hrowa").forEach((r,i)=>{
+    if(r.dataset.tipo==="vencimiento" || venc.has(r.dataset.ir)) return;
+    const p = /\bp(\d)\b/.exec(r.className); const b = r.querySelector("button.hbtn:not(.ppcsn)");
+    items.push({p: p?+p[1]:2, o:100+i, id:r.dataset.ir, ini:(r.querySelector(".hav")||{}).textContent||"", key:r.dataset.ir+":"+(r.dataset.tipo||""),
+      txt:(r.querySelector(".ht")||{}).innerHTML||"", sub:(r.querySelector(".hs")||{}).innerHTML||"", btn:b?b.outerHTML:""});
+  });
+  items.sort((x,y)=>x.p-y.p || x.o-y.o);
+  const top = items.slice(0,5);
+  const cnt = $id("cntHoy"); if(cnt) cnt.textContent = items.length ? `${top.length} de ${items.length}` : "";
+  c.innerHTML = top.length ? top.map(it=>`<div class="hrowa p${it.p}" data-ir="${it.id}" data-tipo="${(it.key.split(":")[1]||"")}">
+      <div class="hav">${esc(it.ini)}</div><div class="hinfo"><div class="ht">${it.txt}</div><div class="hs">${it.sub}</div></div>
+      ${it.btn}<button class="hbtn ppcsn" data-ppc-snooze="${it.key}" title="Recordarme en 3 días">⏰</button></div>`).join("")
+      + (items.length>top.length ? `<div class="hvacio" style="margin-top:6px"><span data-ppc-hoyver="1" style="text-decoration:underline;cursor:pointer;color:var(--gold)">Ver las ${items.length} alertas</span></div>` : "")
+    : '<div class="hvacio">Todo al día. Nada urgente hoy ✓</div>';
+}
+
+/* ── Calendario de chequeos ── */
+function construirCalendario(){
+  const d = asegurarSeccion("acCalendario", `<summary class="st">Calendario de chequeos <span class="acnt" id="cntCal"></span><span class="aux">próximos 30 días, por fecha</span></summary><div id="homeCalendario"></div>`, "acVencimientos");
+  const c = $id("homeCalendario"); if(!c) return;
+  const hoy = hoyStr();
+  const lst = ATLETAS.filter(a=>a.estado!=="pausa" && a.chk).map(a=>({a, dd:diasHasta(a.chk)}))
+    .filter(x=>x.dd!==null && x.dd>=-3 && x.dd<=30).sort((x,y)=>x.dd-y.dd);
+  const cnt = $id("cntCal"); if(cnt) cnt.textContent = lst.length ? String(lst.length) : "";
+  if(!lst.length){ c.innerHTML = '<div class="hvacio">Sin chequeos en los próximos 30 días.</div>'; return; }
+  let ultimo = "", h = "";
+  lst.forEach(({a,dd})=>{
+    if(a.chk !== ultimo){
+      ultimo = a.chk; const p = ptsF(a.chk), dow = DIAS[new Date(Date.UTC(p[0],p[1]-1,p[2])).getUTCDay()];
+      h += `<div class="ppcgrp"><b>${dow} ${fmtF(a.chk)}</b> · ${dd<0?`hace ${-dd} d`:dd===0?"hoy":dd===1?"mañana":`en ${dd} días`}</div>`;
+    }
+    h += `<div class="hrowa ${dd<=1?"p1":"p2"}" data-ir="${a.id}"><div class="hav">${esc(a.ini)}</div>
+      <div class="hinfo"><div class="ht">${esc(a.n)}</div><div class="hs">${esc(a.cat||"")}</div></div>
+      <button class="hbtn" data-accion="wa" data-tipo="chequeo" data-id="${a.id}">Escribir</button></div>`;
+  });
+  c.innerHTML = h;
+}
+
+/* ── Ingresos: renovaciones y comparación con el mes anterior ── */
+function mejorarIngresos(){
+  const c = $id("homeIngresos"); if(!c) return;
+  const act_ = ATLETAS.filter(a=>a.estado!=="pausa"), conMonto = act_.filter(a=>+a.pagoMonto>0);
+  if(!conMonto.length) return;
+  const hoy = hoyStr(), mes = hoy.slice(0,7);
+  const esperado = conMonto.reduce((s,a)=>s+(+a.pagoMonto||0),0);
+  const cobrado = conMonto.filter(a=>a.pagoEstado==="pagado").reduce((s,a)=>s+(+a.pagoMonto||0),0);
+  const prevH = PANEL.d.ingHist[mes];
+  if(!prevH || prevH.esperado!==esperado || prevH.cobrado!==cobrado){ PANEL.d.ingHist[mes] = {esperado, cobrado}; if(PANEL.cargado) guardar(); else try{ localStorage.setItem("ppc_panel", JSON.stringify(PANEL.d)); }catch(e){} }
+  const pm = addMeses(mes+"-01", -1).slice(0,7), ant = PANEL.d.ingHist[pm];
+  const venc30 = conMonto.filter(a=>{ const d=diasHasta(a.vence); return d!==null && d>=0 && d<=30; });
+  const vencidos = conMonto.filter(a=>{ const d=diasHasta(a.vence); return d!==null && d<0; });
+  const suma = arr => arr.reduce((s,a)=>s+(+a.pagoMonto||0),0);
+  const cmp = ant ? (()=>{ const dif = esperado-ant.esperado, pc = ant.esperado ? Math.round(dif/ant.esperado*100) : 0;
+    return `${dif>=0?"+":"−"}${CLP(Math.abs(dif))} (${dif>=0?"+":""}${pc}%) vs ${pm}`; })() : "la comparación aparece el próximo mes";
+  c.insertAdjacentHTML("beforeend", `<div class="lb" style="margin-top:12px">Renovaciones y comparación</div>
+   <div class="segkpis">
+    <div class="segkpi rev"><b>${CLP(suma(venc30))}</b><span>Vence en 30 días (${venc30.length})</span></div>
+    <div class="segkpi pend"><b>${CLP(suma(vencidos))}</b><span>Vencido sin renovar (${vencidos.length})</span></div>
+    <div class="segkpi tot"><b style="font-size:13px">${cmp}</b><span>Esperado vs mes anterior</span></div>
+   </div>`);
+}
+
+/* ── Renovar en un toque ── */
+function abrirRenovar(a){
+  const hoy = hoyStr(), dv = a.vence && esFecha(a.vence) ? a.vence : null;
+  const base = dv && dv>hoy ? dv : hoy;
+  const opc = [["+30 días", addDias(base,30)],["+3 meses", addMeses(base,3)],["+6 meses", addMeses(base,6)],["+12 meses", addMeses(base,12)]];
+  const m = modal(`Renovar a ${esc(a.n)}`, `
+   <div class="hvacio">Acceso actual: <b>${dv?fmtF(dv):"sin fecha"}</b>${dv&&dv<hoy?` (vencido hace ${diffDays(dv,hoy)} días)`:""} · se cuenta desde ${fmtF(base)}</div>
+   <div class="ppcrenbtns">${opc.map((o,i)=>`<button class="b2 ${i===0?"on":""}" data-ppcrn="${o[1]}">${o[0]}<br><span style="font-size:10px;color:var(--fa)">hasta ${fmtF(o[1])}</span></button>`).join("")}</div>
+   <label class="lb">Otra fecha</label><input class="in" type="date" id="ppcRnFecha" value="${opc[0][1]}">
+   <label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px"><input type="checkbox" id="ppcRnPago" checked> Marcar pago como pagado</label>
+   <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:13px"><input type="checkbox" id="ppcRnWa" ${a.wa?"checked":""}> Abrir WhatsApp con el aviso</label>
+   <div style="margin-top:14px"><button class="b2 fbsave" id="ppcRnOk">Renovar</button></div>`);
+  m.addEventListener("click", ev=>{
+    const b = ev.target.closest && ev.target.closest("[data-ppcrn]");
+    if(b){ q("[data-ppcrn]", m).forEach(x=>x.classList.remove("on")); b.classList.add("on"); $id("ppcRnFecha").value = b.dataset.ppcrn; }
+    if(ev.target.id==="ppcRnOk") confirmarRenovar(a, m);
+  });
+}
+async function confirmarRenovar(a, m){
+  const nueva = $id("ppcRnFecha").value, pago = $id("ppcRnPago").checked, wa = $id("ppcRnWa").checked;
+  if(!esFecha(nueva)){ toast("Elige una fecha válida"); return; }
+  const id = FB_ID[a.id];
+  if(!AUTH || !AUTH.user){ toast("Inicia sesión para guardar cambios"); const am=$id("authModal"); if(am) am.classList.add("on"); return; }
+  if(!id || !FB.on){ toast("Este atleta aún no está en la nube"); return; }
+  const hoy = hoyStr(), contacto = {};
+  if(pago){ const b2 = esFecha(a.pagoProximo) && a.pagoProximo>hoy ? a.pagoProximo : hoy; contacto.pagoEstado = "pagado"; contacto.pagoProximo = addMonth(b2); }
+  try{
+    const data = {plan:{accessExpiresAt:nueva}};
+    if(pago) data.contacto = contacto;
+    await FB.db.collection("athletes").doc(id).set(data, {merge:true});
+  }catch(e){ toast("No se pudo guardar: "+e.message); return; }
+  a.vence = nueva; if(pago) Object.assign(a, contacto);
+  const lb = PANEL.d.bitacora[a.id] = PANEL.d.bitacora[a.id] || [];
+  lb.unshift({f:new Date().toISOString(), t:"Renovado hasta "+fmtF(nueva)}); guardar();
+  m.remove(); toast(`${nom1(a)} renovada hasta ${fmtF(nueva)}`);
+  if(wa && a.wa){
+    const tel = a.wa.replace(/[^0-9]/g,"");
+    const txt = `Hola ${nom1(a)}, ya renové tu acceso hasta el ${fmtF(nueva)}. ¡Seguimos con todo! 💪`;
+    window.open("https://wa.me/"+tel+"?text="+encodeURIComponent(txt),"_blank","noopener");
+  }
+  if(typeof pintarHome==="function") pintarHome();
+  if(act && act.id===a.id){ try{ $id("fVence").value = nueva; }catch(e){} }
+}
+
+/* ── Ficha: tendencia de peso + bitácora de contacto ── */
+function pesosDe(a){
+  const out = [], vistos = new Set();
+  const d = HOME.datos && HOME.datos[a.id];
+  ((d && d.progressLog)||[]).forEach(e=>{ if(e && esFecha(e.date) && typeof e.weight==="number"){ out.push([e.date, e.weight]); vistos.add(e.date); } });
+  (a.hist||[]).forEach(h=>{ if(h && esFecha(h[0]) && !vistos.has(h[0])){ const w = parseFloat(String(h[1]).replace(",",".")); if(w>0) out.push([h[0], w]); } });
+  return out.sort((x,y)=>x[0]<y[0]?-1:1);
+}
+function sparkSvg(pts){
+  if(pts.length<2) return "";
+  const W=170,H=44,P=4, ys=pts.map(p=>p[1]), mn=Math.min(...ys), mx=Math.max(...ys), rg=(mx-mn)||1;
+  const xy = pts.map((p,i)=>[P+i*(W-2*P)/(pts.length-1), H-P-(p[1]-mn)/rg*(H-2*P)]);
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><polyline fill="none" stroke="var(--gold)" stroke-width="2" points="${xy.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ")}"/><circle cx="${xy[xy.length-1][0].toFixed(1)}" cy="${xy[xy.length-1][1].toFixed(1)}" r="3" fill="var(--gold)"/></svg>`;
+}
+function pintarFichaExtra(a){
+  const tools = $id("ppcTools"); if(!tools || !a) return;
+  let box = $id("ppcFichaExtra");
+  if(!box){ box = document.createElement("div"); box.id = "ppcFichaExtra"; tools.insertAdjacentElement("afterend", box); }
+  const pts = pesosDe(a), ult = pts[pts.length-1], pre = pts[pts.length-2];
+  let pesoH = '<span class="hvacio" style="padding:0">Aún sin pesos registrados.</span>';
+  if(ult){
+    const dif = pre ? Math.round((ult[1]-pre[1])*10)/10 : null;
+    const col = dif===null||dif===0 ? "var(--mu)" : dif>0 ? "var(--wa)" : "var(--ok)";
+    pesoH = `<div class="ppcspark"><span class="v">${String(ult[1]).replace(".",",")} kg</span>
+      ${dif!==null?`<span class="d" style="color:${col}">${dif>0?"↑ +":dif<0?"↓ −":"→ "}${Math.abs(dif).toString().replace(".",",")} kg vs ${fmtF(pre[0])}</span>`:""}
+      ${sparkSvg(pts.slice(-10))}<span class="hvacio" style="padding:0">${pts.length} registro${pts.length===1?"":"s"} · último ${fmtF(ult[0])}</span></div>`;
+  }
+  const bit = PANEL.d.bitacora[a.id] || [];
+  const ultC = bit[0] ? Math.max(0, Math.floor((Date.now()-new Date(bit[0].f))/86400000)) : null;
+  box.innerHTML = `<div class="ppcfx"><span class="lb">Tendencia de peso</span>${pesoH}</div>
+   <div class="ppcfx"><span class="lb">Bitácora de contacto${ultC!==null?` · último hace ${ultC===0?"hoy":ultC+" día"+(ultC===1?"":"s")}`:""}</span>
+    <div class="ppcbit"><input class="in" id="ppcBitTxt" placeholder="Ej: le escribí por WhatsApp, respondió"><button class="b2" data-ppc-bit="add">Anotar</button></div>
+    <div class="ppcbit" style="flex-wrap:wrap">${["WhatsApp enviado","Respondió","Sin respuesta","Llamada"].map(t=>`<button class="b2" data-ppc-bit="${t}" style="font-size:11px;padding:4px 9px">${t}</button>`).join("")}</div>
+    ${bit.slice(0,5).map(x=>`<div class="ppcbitl"><b>${fmtF(fLocal(x.f))}</b>${esc(x.t)}</div>`).join("")}
+    ${bit.length>5?`<div class="ppcbitl" style="color:var(--fa)">+ ${bit.length-5} anotaciones anteriores</div>`:""}</div>`;
+}
+function anotar(txt){
+  if(!act || !txt) return;
+  const l = PANEL.d.bitacora[act.id] = PANEL.d.bitacora[act.id] || [];
+  l.unshift({f:new Date().toISOString(), t:txt.slice(0,200)}); guardar(); pintarFichaExtra(act);
+}
+
+/* ── Resúmenes de todos + respaldo ── */
+function abrirResumenes(){
+  const lista = ATLETAS.filter(a=>a.estado!=="pausa" && FB_ID[a.id]);
+  const m = modal("Resúmenes semanales", `<div class="hvacio">Toca un atleta para abrir su resumen con el texto listo para WhatsApp.</div>` +
+    lista.map(a=>`<div class="hrowa" style="cursor:default"><div class="hav">${esc(a.ini)}</div><div class="hinfo"><div class="ht">${esc(a.n)}</div></div><button class="hbtn" data-ppc-resum="${a.id}">Resumen</button></div>`).join(""));
+  m.addEventListener("click", ev=>{ const b = ev.target.closest && ev.target.closest("[data-ppc-resum]"); if(b){ const a = ATLETAS.find(x=>x.id===b.dataset.ppcResum); if(a) abrirResumen(a); } });
+}
+function respaldo(){
+  const out = {generado:new Date().toISOString(), atletas:ATLETAS, datosNube:HOME.datos||{}, prospectos:HOME.prospectos||[], panel:PANEL.d};
+  const blob = new Blob([JSON.stringify(out,null,1)], {type:"application/json"});
+  const u = URL.createObjectURL(blob), l = document.createElement("a");
+  l.href = u; l.download = "respaldo-panel-ppc-"+hoyStr()+".json"; document.body.appendChild(l); l.click();
+  setTimeout(()=>{ URL.revokeObjectURL(u); l.remove(); }, 800);
+  toast("Respaldo descargado");
+}
+
+/* ── Barra lateral plegable + leyenda ── */
+function iniciarSidebar(){
+  if(!$id("ppcSbToggle")){
+    const b = document.createElement("button"); b.id = "ppcSbToggle"; document.body.appendChild(b);
+    let off = null; try{ off = localStorage.getItem("ppc_sb_off"); }catch(e){}
+    if(off===null) off = window.innerWidth<=700 ? "1" : "0";
+    const aplicar = ()=>{ document.body.classList.toggle("sb-off", off==="1"); b.textContent = off==="1" ? "☰ Atletas" : "‹ Ocultar lista"; };
+    aplicar();
+    b.onclick = ()=>{ off = off==="1" ? "0" : "1"; try{ localStorage.setItem("ppc_sb_off", off); }catch(e){} aplicar(); };
+  }
+  const chips = $id("ppcChips");
+  if(chips && !$id("ppcLeyenda")) chips.insertAdjacentHTML("afterend", '<div class="ppcleyenda" id="ppcLeyenda">n/16 = insignias ganadas<i style="background:var(--ok)"></i>al día<i style="background:var(--wa)"></i>revisar<i style="background:var(--al)"></i>urgente</div>');
+}
+function iniciarBotones(){
+  const r = document.querySelector("#vistaInicio .racc"); if(!r || $id("raResumenes")) return;
+  r.insertAdjacentHTML("beforeend", '<button class="ra" id="raResumenes">Resúmenes</button><button class="ra" id="raRespaldo">Respaldo</button>');
+}
+
+window.ppcMejorasHome = function(){
+  cargarNube();
+  iniciarBotones(); iniciarSidebar();
+  aplicarSnooze(); mejorarAnamnesis(); mejorarProspectos(); mejorarAdherencia();
+  construirHoy(); construirCalendario(); mejorarIngresos();
+  try{ contarAcordeones(); }catch(e){}
+  const n = $id("cntProspectos"); if(n && $id("secProspectos").style.display!=="none"){ const k=q("#homeProspectos .hrowa").length; n.textContent = k?String(k):""; }
+};
+window.ppcMejorasFicha = function(a){ pintarFichaExtra(a); };
+
+/* Eventos */
+document.addEventListener("click", ev=>{
+  const t = ev.target; if(!t || !t.closest) return;
+  const g = s => t.closest(s);
+  let b;
+  if((b = g("[data-ppc-snooze]"))){ ev.stopPropagation(); PANEL.d.snooze[b.dataset.ppcSnooze] = addDias(hoyStr(),3); guardar(); toast("Te lo recuerdo en 3 días"); pintarHome(); return; }
+  if((b = g("[data-ppc-anok]"))){ ev.stopPropagation(); PANEL.d.dismissAn[b.dataset.ppcAnok] = true; guardar(); pintarHome(); return; }
+  if((b = g("[data-ppc-anreset]"))){ PANEL.d.dismissAn = {}; guardar(); pintarHome(); return; }
+  if((b = g("[data-ppc-prosok]"))){ ev.stopPropagation(); PANEL.d.prosOcultos[b.dataset.ppcProsok] = true; guardar(); pintarHome(); return; }
+  if((b = g("[data-ppc-renovar]"))){ ev.stopPropagation(); const a = ATLETAS.find(x=>x.id===b.dataset.ppcRenovar); if(a) abrirRenovar(a); return; }
+  if(g("[data-ppc-hoyver]")){ const d = $id("acAtencion"); if(d){ d.open = true; d.scrollIntoView({behavior:"smooth", block:"start"}); } return; }
+  if((b = g("[data-ppc-bit]"))){ const v = b.dataset.ppcBit; if(v==="add"){ const i = $id("ppcBitTxt"); if(i && i.value.trim()){ anotar(i.value.trim()); } } else anotar(v); return; }
+  if(g("#raResumenes")){ abrirResumenes(); return; }
+  if(g("#raRespaldo")){ respaldo(); return; }
+}, true);
+document.addEventListener("change", ev=>{
+  const s = ev.target; if(s && s.dataset && s.dataset.ppcEtapa){ PANEL.d.embudo[s.dataset.ppcEtapa] = s.value; guardar(); pintarHome(); }
+});
+
+/* Enganches: home, ficha, y vencimiento real desde la nube */
+const homeOrig = window.ppcExtrasHome;
+window.ppcExtrasHome = function(){ try{ if(homeOrig) homeOrig(); }catch(e){} try{ ppcMejorasHome(); }catch(e){ console.error(e); } };
+const fichaOrig = window.ppcExtrasFicha;
+window.ppcExtrasFicha = function(a){ try{ if(fichaOrig) fichaOrig(a); }catch(e){} try{ pintarFichaExtra(a); }catch(e){} };
+const mergeOrig = window.ppcMergeContacto;
+window.ppcMergeContacto = function(a, datos){
+  try{ if(mergeOrig) mergeOrig(a, datos); }catch(e){}
+  try{ const p = datos && datos.plan; if(p && p.accessExpiresAt!==undefined){ a.vence = esFecha(p.accessExpiresAt) ? p.accessExpiresAt : ""; } }catch(e){}
+};
+try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
+})();
+</script>
+
 </body></html>
