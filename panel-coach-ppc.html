@@ -2040,9 +2040,19 @@ function cargar(a){
    if(!snap.exists || !act || act.id!==a.id) return;
    const p = snap.data().plan || {};
    let cambio = false;
+   /* Mesociclo nuevo horneado en ATLETAS (inicio posterior al guardado en la
+      nube): el archivo trae un bloque mas reciente que Firestore, asi que NO
+      se pisan fechas ni dias con la copia vieja de la nube - si no, el
+      mesociclo nuevo desaparecia al abrir la ficha y "Guardar en la nube"
+      volvia a guardar el antiguo (caso real: Elizabeth, oct-2026). Al guardar,
+      la nube queda con el mismo inicio y la sincronizacion vuelve a lo normal. */
+   const _esFecha = f => /^\d{4}-\d{2}-\d{2}$/.test(f||"");
+   const _localMasNuevo = _esFecha(a.ini_f) && _esFecha(p.startDate) && a.ini_f > p.startDate;
+   if(!_localMasNuevo){
    if(p.startDate && p.startDate!==a.ini_f){ a.ini_f=p.startDate; cambio=true; }
    if(p.checkDate && p.checkDate!==a.chk){ a.chk=p.checkDate; cambio=true; }
    if(p.accessExpiresAt && p.accessExpiresAt!==a.vence){ a.vence=p.accessExpiresAt; cambio=true; }
+   }
    const c = snap.data().contacto || {};
    if(c.estado && c.estado!==a.estado){ a.estado=c.estado; cambio=true; }
    if(c.estatura && c.estatura!==a.est){ a.est=c.estatura; cambio=true; }
@@ -2072,7 +2082,7 @@ function cargar(a){
       paso repetidamente con Andrea, Diego, Elizabeth, Francisca y
       Magdalena (ver commits 5cfe903, de15388, 30389fa). */
    const days = p.days;
-   if(Array.isArray(days) && days.length){
+   if(!_localMasNuevo && Array.isArray(days) && days.length){
     const diasReales = days.map(function(d){
      return {
       n: (d.dayTag ? d.dayTag+" · " : "") + (d.name||""),
@@ -2133,6 +2143,7 @@ function cargar(a){
     pintarLista($("#buscar").value);
     toast("Datos actualizados desde la nube");
    }
+   if(_localMasNuevo) toast("Mesociclo nuevo de "+a.n+" (inicio "+a.ini_f+") aún no está en la nube · pulsa Guardar en la nube");
    _btnsGuardar.forEach(b=>{ b.disabled = false; b.textContent = b.dataset.txtOriginal || "Guardar cambios"; });
   }).catch(()=>{ _btnsGuardar.forEach(b=>{ b.disabled = false; b.textContent = b.dataset.txtOriginal || "Guardar cambios"; }); });
  }
