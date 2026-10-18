@@ -2649,15 +2649,6 @@ function renderPrintMeals(){
   const el = document.getElementById('printMeals');
   if(!el) return;
   let html = mealWindows.map(mw=> `<div class="print-meal-block">${mealWindowPrintHtml(mw)}</div>`).join('');
-  html += `
-    <div class="section-label">Hidratación</div>
-    <div class="row">
-      <div class="ex-info">
-        <div class="ex-name">💧 Agua del día completa</div>
-        <div class="ex-tip">Meta: 50 cc por kg de peso corporal al día</div>
-      </div>
-    </div>
-  `;
   el.innerHTML = html;
 }
 
