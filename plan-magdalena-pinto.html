@@ -960,6 +960,34 @@ athleteRef.onSnapshot((doc)=>{
 
 function keyFor(sIdx,iIdx){ return `${todayStr()}-w${activeWeek}-${activeDay}-${sIdx}-${iIdx}`; }
 function loadKeyFor(sIdx,iIdx){ return `${activeDay}-${sIdx}-${iIdx}`; } // la carga (kg) persiste por ejercicio, no se reinicia por fecha
+/* Registra la carga del día y detecta récord personal (misma lógica en todas las apps) */
+/* Récord previo = el mayor entre el PR guardado y el historial de cargas de días anteriores */
+function prevRecord(k){
+  let m = exercisePRs[k] || 0;
+  try{ const hoy = todayStr(); (loadHistory[k]||[]).forEach(e=>{ if(e && e.date !== hoy && e.kg > m) m = e.kg; }); }catch(e){}
+  return m;
+}
+function registrarCargaHoy(k, num, sIdx, iIdx){
+  if(isNaN(num) || num <= 0) return;
+  const hoy = todayStr();
+  const arr = loadHistory[k] = loadHistory[k] || [];
+  const idxHoy = arr.findIndex(e=> e.date === hoy);
+  if(idxHoy >= 0) arr[idxHoy].kg = num; else arr.push({date:hoy, kg:num});
+  arr.sort((a,b)=> a.date<b.date?-1:a.date>b.date?1:0);
+  saveField('loadHistory', loadHistory);
+
+  const prev = prevRecord(k);
+  if(num > prev){
+    exercisePRs[k] = num;
+    saveField('exercisePRs', exercisePRs);
+    if(prev > 0){
+      const d = currentDay();
+      const it = d.sections[sIdx] && d.sections[sIdx].items[iIdx];
+      const nombre = it ? it.name : 'este ejercicio';
+      showToast(`🏆 ¡Nuevo récord en ${nombre}! ${prev} kg → ${num} kg`, false);
+    }
+  }
+}
 function currentDay(){ return days.find(d=>d.id===activeDay); }
 
 /* Rango real de fechas (calendario) de la semana activa, segun planStartDate
@@ -1700,6 +1728,8 @@ function marcarSerie(sIdx, iIdx, totalSeries){
     checks[keyFor(sIdx, iIdx)] = true;
     saveField('trainingChecks', checks);
     updateMesocicloSummary();
+    const kCarga = loadKeyFor(sIdx, iIdx);
+    registrarCargaHoy(kCarga, parseFloat(String(loads[kCarga]).replace(',','.')), sIdx, iIdx);
   }
   renderCard();
   renderTrainHistory();
@@ -1932,7 +1962,11 @@ function renderCard(){
       const day = currentDay();
       const existente = entradaExistente(day, el.dataset.s, el.dataset.i);
       if(existente) checks[existente] = false;
-      else checks[keyFor(el.dataset.s, el.dataset.i)] = true;
+      else {
+        checks[keyFor(el.dataset.s, el.dataset.i)] = true;
+        const kCarga = loadKeyFor(el.dataset.s, el.dataset.i);
+        registrarCargaHoy(kCarga, parseFloat(String(loads[kCarga]).replace(',','.')), el.dataset.s, el.dataset.i);
+      }
       saveField('trainingChecks', checks);
       updateMesocicloSummary();
       renderCard();
@@ -1960,28 +1994,7 @@ function renderCard(){
       saveField('exerciseLoads', loads);
 
       const num = parseFloat(String(inp.value).replace(',','.'));
-      if(!isNaN(num) && num > 0){
-        // Serie temporal real: un registro por dia (si ya se edito hoy este
-        // ejercicio, se actualiza ese mismo registro en vez de duplicar).
-        const hoy = todayStr();
-        const arr = loadHistory[k] = loadHistory[k] || [];
-        const idxHoy = arr.findIndex(e=> e.date === hoy);
-        if(idxHoy >= 0) arr[idxHoy].kg = num; else arr.push({date:hoy, kg:num});
-        arr.sort((a,b)=> a.date<b.date?-1:a.date>b.date?1:0);
-        saveField('loadHistory', loadHistory);
-
-        const prev = exercisePRs[k] || 0;
-        if(num > prev){
-          exercisePRs[k] = num;
-          saveField('exercisePRs', exercisePRs);
-          if(prev > 0){
-            const d = currentDay();
-            const it = d.sections[inp.dataset.s] && d.sections[inp.dataset.s].items[inp.dataset.i];
-            const nombre = it ? it.name : 'este ejercicio';
-            showToast(`🏆 ¡Nuevo récord en ${nombre}! ${prev} kg → ${num} kg`, false);
-          }
-        }
-      }
+      registrarCargaHoy(k, num, inp.dataset.s, inp.dataset.i);
     });
   });
 }
@@ -3244,7 +3257,7 @@ function celebrar(nombre, prev, nuevo){
 (function(){
   var orig = window.registrarCargaHoy; if(typeof orig !== "function") return;
   window.registrarCargaHoy = function(k, n, sIdx, iIdx){
-    var prev = 0; try{ prev = exercisePRs[k] || 0; }catch(e){}
+    var prev = 0; try{ prev = prevRecord(k); }catch(e){}
     var r = orig.apply(this, arguments);
     try{
       if(!isNaN(n) && n > prev && prev > 0){
