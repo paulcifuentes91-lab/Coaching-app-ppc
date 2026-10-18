@@ -222,6 +222,14 @@
     #printMeals .row{padding:3px 2px;gap:8px;}
     #printMeals .ex-name{font-size:11.5px;}
     #printMeals .ex-tip{font-size:9.5px;}
+    /* Impresión / PDF: solo Entrenamiento, Nutrición y Suplementos */
+    body #feelView, body #progressView, body #headerFeel, body #expiryBanner, body #checkBanner,
+    body #viewSwitch, body #weekRow, body #weekBanner, body #tabs, body #statStrip,
+    body #trainHistoryCard, body #mealHistoryCard, body #btnDiaLibre, body footer,
+    body #toast, body .toast, body #ppcAyuda, body #ppcOffline, body #ppcTut, body #ppcCuidado,
+    body .chat-fab, body #loadingOverlay, body #expiredOverlay, body #debugToast, body #headerEyebrow{display:none !important;}
+    .param-value, .section-label, .macro-note, .p-subhead{color:#222 !important;}
+    #nutritionView{page-break-after:auto !important;}
   }
 .day-locked-banner{background:linear-gradient(135deg,#1a3a24,#14171B);border:1px solid #4CAF7D;color:#7EE0A6;padding:12px 16px;border-radius:12px;margin:4px 0 14px;font-weight:600;font-size:14px;text-align:center;letter-spacing:.2px}
 .week-locked-banner{background:linear-gradient(135deg,#3a2a14,#14171B);border:1px solid #E0A93D;color:#F0C674;padding:12px 16px;border-radius:12px;margin:4px 0 14px;font-weight:600;font-size:14px;text-align:center;letter-spacing:.2px}
