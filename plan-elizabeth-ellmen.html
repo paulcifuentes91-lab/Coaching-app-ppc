@@ -1516,7 +1516,10 @@ function esEjercicioCardio(nombre){
   return EJERCICIOS_CARDIO.some(c => n.includes(c));
 }
 
+/* Elizabeth: sin periodización automática (RIR, dropset, base, descarga). Se muestran las series y repeticiones tal como las programó el coach. */
+const SIN_PERIODIZACION = true;
 function computeReps(item, sectionName, isLast, week){
+  if(SIN_PERIODIZACION) return { text:item.reps, notes:[] };
   if(!/^Entrenamiento/.test(sectionName)) return { text:item.reps, notes:[] };
   if(esEjercicioCardio(item.name)) return { text:item.reps, notes:[] };
   const m = item.reps.match(/^(\d+)(\s*[×xX]\s*)(.*)$/);
@@ -1774,7 +1777,10 @@ function renderHeaderFeel(){
 }
 
 function renderStaticPanels(){
-  document.getElementById('paramsContent').innerHTML = params.map(function(x){
+  document.getElementById('paramsContent').innerHTML = params.filter(function(x){
+    var t = Array.isArray(x) ? x.join(' ') : (x.l+' '+x.v);
+    return !/\bRIR\b|drop\s?set|\bbase\b/i.test(t);
+  }).map(function(x){
     var l = Array.isArray(x) ? x[0] : x.l, v = Array.isArray(x) ? x[1] : x.v;
     return '<div class="param-row"><span class="param-label">'+l+'</span><span class="param-value">'+v+'</span></div>';
   }).join('');
@@ -1827,7 +1833,7 @@ function renderWeekBanner(){
   const rangeTxt = range ? ` · ${range}` : '';
   const nowTag = (activeWeek===currentW) ? ' · SEMANA ACTUAL' : '';
   document.getElementById('weekBanner').innerHTML =
-    `<div class="wb-title">Semana ${wm.n} · ${wm.label}${nowTag}</div><div class="wb-desc">${rangeTxt ? 'Fechas: '+range+'. ' : ''}${wm.desc}</div>`;
+    `<div class="wb-title">Semana ${wm.n}${SIN_PERIODIZACION ? '' : ' · '+wm.label}${nowTag}</div><div class="wb-desc">${rangeTxt ? 'Fechas: '+range+'. ' : ''}${SIN_PERIODIZACION ? '' : wm.desc}</div>`;
 }
 
 function renderTabs(){
