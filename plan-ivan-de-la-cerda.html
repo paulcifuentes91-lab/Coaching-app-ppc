@@ -3538,24 +3538,57 @@ function equivalencias(it){
   }).filter(function(e){ return e.g>=10 && e.g<=500 && Math.abs(e.kcal-kcalBase) <= Math.max(60, kcalBase*0.35); })
     .sort(function(a,b){ return Math.abs(a.kcal-kcalBase)-Math.abs(b.kcal-kcalBase); }).slice(0,8);
 }
-function abrirSwap(mwId, mIdx, iIdx, it){
-  var base = FOODS[it.clave], idx = BASE[base[4]] || 2;
-  var eq = equivalencias(it);
-  var kcalBase = Math.round(base[0]*it.g/100);
-  var filas = eq.length ? eq.map(function(e,i){
+/* Una sola opción por línea: "170 g carne o pechuga de pollo", "200 g papa, camote o 120 g arroz"
+   o "… (o 100 g quinoa / pan)" se muestran solo con la primera; el resto queda como
+   alternativas del coach en el botón ↔. "+" y combinaciones con cantidades ("150 g pollo,
+   200 g arroz o …") no se separan. */
+function separarOpciones(txt){
+  var orig = String(txt||"").replace(/^\s*·\s*/,"").trim(), t = orig, alts = [], suf = "";
+  var mp = /\s*\(\s*(?:o|u)\s+([^)]*)\)\s*$/i.exec(t);
+  if(mp){ t = t.slice(0, mp.index).trim(); alts = mp[1].split(/\s*\/\s*|\s*,\s*|\s+o\s+|\s+u\s+/i); }
+  var ms = /\s+·\s+[^·]+$/.exec(t); if(ms){ suf = ms[0]; t = t.slice(0, ms.index); }
+  if(/\s+o\s+/i.test(t)){
+    var partes = t.split(/\s+o\s+/i), ultima = partes.pop();
+    var primeras = partes.join(" o ").split(/\s*,\s*/);
+    if(primeras.filter(function(p){ return /^\d/.test(p); }).length > 1) return {main: orig, alts: []};
+    partes = primeras.concat([ultima]);
+    t = partes[0]; alts = partes.slice(1).concat(alts);
+  }
+  var cant = /^(\d+(?:[.,]\d+)?\s*(?:g|gr|grs|ml|cc)\.?\s+(?:de\s+)?)/i.exec(t);
+  alts = alts.map(function(a){ return a.trim(); }).filter(Boolean)
+    .map(function(a){ return (/^\d/.test(a) || !cant) ? a : cant[1]+a; })
+    .map(function(a){ return a+suf; });
+  return {main: t+suf, alts: alts};
+}
+function abrirSwap(mwId, mIdx, iIdx, it, alts, mainTxt){
+  alts = alts || [];
+  var eq = it ? equivalencias(it) : [];
+  var opciones = alts.map(function(a){ return a; }).concat(eq.map(function(e){ return e.g+" g "+e.nombre; }));
+  var filasCoach = alts.map(function(a,i){
+    return '<div class="ppcswrow"><div><b>'+esc(a)+'</b></div><button class="ppcbtn" data-i="'+i+'">Usar hoy</button></div>';
+  }).join("");
+  var filasEq = eq.map(function(e,i){
     return '<div class="ppcswrow"><div><b>'+e.g+' g '+esc(e.nombre)+'</b><div class="ppcsub">'+e.kcal+' kcal · P '+e.p+' · C '+e.c+' · G '+e.gr+'</div></div>'+
-      '<button class="ppcbtn" data-i="'+i+'">Usar hoy</button></div>';
-  }).join("") : '<div class="ppcsub">No encontré equivalencias razonables para este alimento.</div>';
+      '<button class="ppcbtn" data-i="'+(alts.length+i)+'">Usar hoy</button></div>';
+  }).join("");
+  var cabecera;
+  if(it){
+    var base = FOODS[it.clave], idx = BASE[base[4]] || 2, kcalBase = Math.round(base[0]*it.g/100);
+    cabecera = '<b>'+it.g+' g '+esc(it.nombre)+'</b> <span class="ppcsub">· '+kcalBase+' kcal · iguala '+BASE_TXT[idx]+' ('+num(base[idx]*it.g/100,0)+' g)</span>';
+  } else cabecera = '<b>'+esc(String(mainTxt||"").replace(/^\s*·\s*/,""))+'</b>';
+  var filas = (filasCoach ? '<div class="ppcsub" style="margin:6px 0 4px">Alternativas de tu coach</div>'+filasCoach : '')+
+    (filasEq ? '<div class="ppcsub" style="margin:10px 0 4px">Equivalentes calculados</div>'+filasEq : '')+
+    (!filasCoach && !filasEq ? '<div class="ppcsub">No encontré equivalencias razonables para este alimento.</div>' : '');
   var o = overlay('<div class="ppctit">Intercambiar alimento</div>'+
-    '<div style="margin-bottom:8px"><b>'+it.g+' g '+esc(it.nombre)+'</b> <span class="ppcsub">· '+kcalBase+' kcal · iguala '+BASE_TXT[idx]+' ('+num(base[idx]*it.g/100,0)+' g)</span></div>'+
+    '<div style="margin-bottom:8px">'+cabecera+'</div>'+
     filas+
     '<div class="ppcsub" style="margin-top:10px">Aplica solo hoy. Son equivalencias aproximadas; ante dudas o alergias consulta con tu coach.</div>'+
     '<button class="ppcbtn sec" id="ppcOvCerrar" style="margin-top:12px;width:100%">Cerrar</button>', "ppcSwap");
   o.addEventListener("click", function(ev){
     if(ev.target.id==="ppcOvCerrar"){ o.remove(); return; }
     var b = ev.target.closest && ev.target.closest("button[data-i]"); if(!b) return;
-    var e = eq[+b.dataset.i], s = swapsHoy();
-    s.o.s[mwId+"-"+mIdx+"-"+iIdx] = e.g+" g "+e.nombre;
+    var elegido = opciones[+b.dataset.i], s = swapsHoy(); if(!elegido) return;
+    s.o.s[mwId+"-"+mIdx+"-"+iIdx] = elegido;
     try{ localStorage.setItem(s.key, JSON.stringify(s.o)); }catch(x){}
     try{ var upd={}; upd[s.o.fecha]=s.o.s; saveField("mealSwaps", upd); }catch(x){}
     o.remove(); renderMealCard();
@@ -3571,17 +3604,18 @@ wrap("renderMealCard", function(){
     tips.forEach(function(tip, iIdx){
       var skey = mw.id+"-"+mIdx+"-"+iIdx;
       var original = tip.textContent;
-      var limpio = original.replace(/\s*\((?:o|u) [^)]*\)\s*$/,""); if(limpio!==original && !sw[skey]){ original = limpio; tip.textContent = limpio; }
+      var op = separarOpciones(original);
+      if(op.alts.length){ original = "· "+op.main; if(!sw[skey]) tip.textContent = original; }
       var it = parseItem(original);
       if(sw[skey]){
         tip.innerHTML = '· <b>'+esc(sw[skey])+'</b> <span class="ppcsub">(cambio de hoy · antes '+esc(original.replace(/^·\s*/,""))+')</span>';
-        if(it){ tip.dataset.ppcSwap = "1"; var b0=document.createElement("button"); b0.className="ppcswbtn"; b0.textContent="↺"; b0.title="Volver al original";
+        if(it || op.alts.length){ tip.dataset.ppcSwap = "1"; var b0=document.createElement("button"); b0.className="ppcswbtn"; b0.textContent="↺"; b0.title="Volver al original";
           b0.addEventListener("click", function(ev){ ev.stopPropagation(); var s=swapsHoy(); delete s.o.s[skey]; try{ localStorage.setItem(s.key, JSON.stringify(s.o)); }catch(x){} renderMealCard(); }); tip.appendChild(b0); }
         return;
       }
-      if(!it) return;
+      if(!it && !op.alts.length) return;
       var b = document.createElement("button"); b.className="ppcswbtn"; b.textContent="↔"; b.title="Cambiar por un alimento equivalente";
-      b.addEventListener("click", function(ev){ ev.stopPropagation(); abrirSwap(mw.id, mIdx, iIdx, it); });
+      b.addEventListener("click", function(ev){ ev.stopPropagation(); abrirSwap(mw.id, mIdx, iIdx, it, op.alts, original); });
       tip.appendChild(b);
     });
   });
