@@ -100,9 +100,9 @@
   .row{display:flex;align-items:flex-start;gap:12px;padding:10px 2px;border-bottom:1px solid var(--border);}
   .row:last-child{border-bottom:none;}
 
-  .chk{flex:0 0 auto;width:22px;height:22px;margin-top:1px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease;}
-  .chk.checked{background:var(--accent);border-color:var(--accent);}
-  .chk svg{width:12px;height:12px;opacity:0;transition:opacity .1s ease;}
+  .chk{flex:0 0 auto;width:28px;height:28px;margin-top:0;border-radius:50%;border:2.5px solid var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s ease;}
+  .chk.checked{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 40%,transparent);}
+  .chk svg{width:16px;height:16px;opacity:0;transition:opacity .1s ease;}
   .chk.checked svg{opacity:1;}
 
   .ex-info{flex:1;min-width:0;cursor:pointer;}
@@ -3548,6 +3548,7 @@ wrap("renderMealCard", function(){
     tips.forEach(function(tip, iIdx){
       var skey = mw.id+"-"+mIdx+"-"+iIdx;
       var original = tip.textContent;
+      var limpio = original.replace(/\s*\((?:o|u) [^)]*\)\s*$/,""); if(limpio!==original && !sw[skey]){ original = limpio; tip.textContent = limpio; }
       var it = parseItem(original);
       if(sw[skey]){
         tip.innerHTML = '· <b>'+esc(sw[skey])+'</b> <span class="ppcsub">(cambio de hoy · antes '+esc(original.replace(/^·\s*/,""))+')</span>';

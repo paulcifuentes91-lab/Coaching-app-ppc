@@ -3571,6 +3571,7 @@ wrap("renderMealCard", function(){
     tips.forEach(function(tip, iIdx){
       var skey = mw.id+"-"+mIdx+"-"+iIdx;
       var original = tip.textContent;
+      var limpio = original.replace(/\s*\((?:o|u) [^)]*\)\s*$/,""); if(limpio!==original && !sw[skey]){ original = limpio; tip.textContent = limpio; }
       var it = parseItem(original);
       if(sw[skey]){
         tip.innerHTML = '· <b>'+esc(sw[skey])+'</b> <span class="ppcsub">(cambio de hoy · antes '+esc(original.replace(/^·\s*/,""))+')</span>';
