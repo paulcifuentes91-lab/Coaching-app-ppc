@@ -1920,20 +1920,29 @@ function desmarcarUltimaSerie(sIdx, iIdx){
    el atleta tiene la app abierta en pantalla. No usar en segundo plano: el
    audio se corta apenas el navegador suspende la pestaña. */
 function beepDescanso(freq, dur){
+  const final = !freq;
   freq = freq || 1175; dur = dur || 0.7; // sin argumentos = tono final (más largo y agudo)
   try{
     if(!_audioCtxDescanso) _audioCtxDescanso = new (window.AudioContext || window.webkitAudioContext)();
     const ctx = _audioCtxDescanso;
     if(ctx.state === 'suspended') ctx.resume();
-    const osc = ctx.createOscillator(), gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.5, ctx.currentTime + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + dur + 0.05);
+    // Onda cuadrada a volumen casi máximo y sostenida (no decae de inmediato):
+    // en parlantes de celular suena bastante más fuerte que la sinusoidal.
+    // El tono final son 3 pitidos seguidos para que no pase desapercibido.
+    const veces = final ? 3 : 1, largo = final ? 0.22 : dur, paso = final ? 0.3 : 0;
+    for(let i=0; i<veces; i++){
+      const t0 = ctx.currentTime + i*paso;
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.9, t0 + 0.01);
+      gain.gain.setValueAtTime(0.9, t0 + largo*0.7);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + largo);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + largo + 0.05);
+    }
   }catch(e){ /* AudioContext bloqueado por politica de autoplay - no interrumpe el resto */ }
 }
 
