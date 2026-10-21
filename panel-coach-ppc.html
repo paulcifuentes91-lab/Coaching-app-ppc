@@ -6166,4 +6166,136 @@ try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
   function init(){ try{ montarHome(); }catch(e){ console.error(e); } try{ montarFicha(); }catch(e){ console.error(e); } }
   if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", init); else init();
 })();
-</script></body></html>
+</script><style id="ppcDisenoBCss">
+/* ═══ Diseño B: atletas primero + pestañas ═══ */
+#ppcTabs{display:flex;gap:6px;margin:0 0 14px}
+#ppcTabs button{flex:1;min-height:44px;background:var(--card);border:1px solid var(--line);color:var(--mu);border-radius:12px;font-family:var(--mono);font-size:11px;letter-spacing:.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+#ppcTabs button svg{width:18px;height:18px;flex-shrink:0}
+#ppcTabs button.on{border-color:var(--gold);color:var(--gold);background:var(--goldsoft)}
+#ppcTabs .n{background:var(--gold);color:#09090A;border-radius:20px;padding:0 6px;font-size:9px;font-weight:700}
+#ppcTabs .n:empty{display:none}
+/* grupos de la pantalla de inicio: solo se ve el de la pestaña activa */
+body:not([data-tab="hoy"]) #vistaInicio .ppc-g-hoy{display:none!important}
+body:not([data-tab="negocio"]) #vistaInicio .ppc-g-negocio{display:none!important}
+body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
+/* menos ruido en el inicio */
+#vistaInicio details.sec{border-color:var(--line);background:var(--card)}
+#vistaInicio .st .aux{display:none}
+/* línea de alerta y días restantes en la lista de atletas */
+#ppcAlertaB{display:flex;align-items:center;gap:9px;width:100%;margin:8px 0 0;min-height:42px;padding:0 12px;background:rgba(242,163,58,.10);border:1px solid rgba(242,163,58,.35);color:#F2C46B;border-radius:11px;font-family:inherit;font-size:12.5px;cursor:pointer;text-align:left}
+#ppcAlertaB b{margin-left:auto;font-weight:600}
+.item > div:nth-child(2){flex:1;min-width:0}
+.item .ppcdias{font-family:var(--mono);font-size:10px;color:var(--mu);white-space:nowrap;margin-left:auto;padding-left:6px}
+.item .ppcdias.am{color:#F2C46B;font-weight:600}
+.item .ppcdias.ro{color:#FF8F8F;font-weight:600}
+@media(max-width:900px){
+  #ppcTabs{position:fixed;left:0;right:0;bottom:0;z-index:70;margin:0;padding:6px 8px calc(10px + env(safe-area-inset-bottom));background:#0F1013;border-top:1px solid var(--line);gap:4px}
+  #ppcTabs button{flex-direction:column;gap:2px;min-height:52px;border:0;background:none;font-size:10.5px}
+  #ppcTabs button.on{background:none}
+  main{padding-bottom:100px!important}
+  #ppcSbToggle{display:none!important}
+  body:not([data-tab="atletas"]) aside, body.ficha aside{display:none!important}
+  body[data-tab="atletas"]:not(.ficha) aside{display:flex!important;height:auto;min-height:calc(100vh - 90px)}
+  body[data-tab="atletas"]:not(.ficha) .lista{max-height:none}
+  body[data-tab="atletas"]:not(.ficha) main > :not(#ppcTabs){display:none!important}
+  .item{min-height:56px}
+}
+@media(min-width:901px){ #ppcTabs button[data-tab="atletas"]{display:none} }
+</style>
+<script id="ppcDisenoB">
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var G = {
+    hoy:["acHoy","acAtencion","acAnamnesis","acVencimientos","acAdherencia","acCalendario"],
+    negocio:["acPagos","acIngresos","acPrecios","secProspectos"],
+    mas:["acSeguimiento"]
+  };
+  var ICON = {
+    atletas:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></svg>',
+    hoy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg>',
+    negocio:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h3"/></svg>',
+    mas:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>'
+  };
+  var NOM = {atletas:"Atletas", hoy:"Hoy", negocio:"Negocio", mas:"Más"};
+  var movil = function(){ return window.innerWidth <= 900; };
+
+  function agrupar(){
+    var v = $("vistaInicio"); if(!v) return;
+    var mapa = {};
+    Object.keys(G).forEach(function(g){ G[g].forEach(function(id){ mapa[id] = g; }); });
+    v.querySelectorAll(":scope > details.sec[id]").forEach(function(d){
+      var g = mapa[d.id] || "mas";
+      ["hoy","negocio","mas"].forEach(function(x){ d.classList.toggle("ppc-g-"+x, x===g); });
+    });
+    var h = v.querySelector(":scope > .hhead"); if(h) h.classList.add("ppc-g-hoy");
+    var r = v.querySelector(":scope > .racc"); if(r) r.classList.add("ppc-g-mas");
+  }
+
+  function setTab(t){
+    if(t === "atletas" && !movil()) t = "hoy";
+    document.body.setAttribute("data-tab", t);
+    document.querySelectorAll("#ppcTabs button").forEach(function(b){ b.classList.toggle("on", b.dataset.tab === t); b.setAttribute("aria-current", b.dataset.tab === t ? "page" : "false"); });
+    try{ sessionStorage.setItem("ppc_tab", t); }catch(e){}
+    if(document.body.classList.contains("ficha") && typeof irInicio === "function") irInicio();
+    window.scrollTo(0, 0);
+  }
+
+  function montarTabs(){
+    if($("ppcTabs")) return;
+    var main = document.querySelector("main"); if(!main) return;
+    var n = document.createElement("nav"); n.id = "ppcTabs"; n.setAttribute("aria-label", "Secciones del panel");
+    n.innerHTML = ["atletas","hoy","negocio","mas"].map(function(t){
+      return '<button type="button" data-tab="'+t+'">'+ICON[t]+'<span>'+NOM[t]+'</span>'+(t==="hoy"?'<span class="n" id="ppcTabN"></span>':'')+'</button>';
+    }).join("");
+    main.insertBefore(n, main.firstChild);
+    n.addEventListener("click", function(ev){ var b = ev.target.closest("button[data-tab]"); if(b) setTab(b.dataset.tab); });
+  }
+
+  /* línea de alerta + días restantes en la lista de atletas */
+  function decorar(){
+    var lista = $("lista"); if(!lista || typeof ATLETAS === "undefined") return;
+    lista.querySelectorAll(".item[data-id]").forEach(function(it){
+      if(it.querySelector(".ppcdias")) return;
+      var a = ATLETAS.filter(function(x){ return String(x.id) === it.dataset.id; })[0]; if(!a) return;
+      var dv = null; try{ dv = diasHasta(a.vence); }catch(e){}
+      if(dv === null || dv === undefined || isNaN(dv) || a.estado === "pausa") return;
+      var s = document.createElement("span");
+      s.className = "ppcdias " + (dv < 0 ? "ro" : dv <= 10 ? "am" : "");
+      s.textContent = dv < 0 ? "Vencido" : dv + (dv === 1 ? " día" : " días");
+      var pt = it.querySelector(".pt"); if(pt) it.insertBefore(s, pt); else it.appendChild(s);
+    });
+    var cnt = ATLETAS.filter(function(a){ return a.estado !== "pausa" && a.e && a.e !== "ok"; }).length;
+    var b = $("ppcAlertaB");
+    if(!b){
+      var ref = $("ppcChips"); if(!ref) return;
+      b = document.createElement("button"); b.id = "ppcAlertaB"; b.type = "button";
+      ref.insertAdjacentElement("beforebegin", b);
+      b.addEventListener("click", function(){ var c = document.querySelector('[data-ppcf="atencion"]'); if(c) c.click(); });
+    }
+    b.style.display = cnt ? "flex" : "none";
+    b.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg><span>'+cnt+(cnt===1?" requiere atención":" requieren atención")+'</span><b>Ver</b>';
+    var tn = $("ppcTabN");
+    if(tn){ var v = $("cntAtencion"); tn.textContent = v && v.textContent.trim() ? v.textContent.trim() : ""; }
+  }
+
+  /* la ficha abierta oculta la lista en móvil; volver al inicio la devuelve */
+  if(typeof window.irAtleta === "function"){ var oA = window.irAtleta; window.irAtleta = function(){ document.body.classList.add("ficha"); return oA.apply(this, arguments); }; }
+  if(typeof window.irInicio === "function"){ var oI = window.irInicio; window.irInicio = function(){ document.body.classList.remove("ficha"); var r = oI.apply(this, arguments); try{ agrupar(); decorar(); }catch(e){} return r; }; }
+  if(typeof window.pintarLista === "function"){ var oL = window.pintarLista; window.pintarLista = function(){ var r = oL.apply(this, arguments); try{ decorar(); }catch(e){} return r; }; }
+
+  function init(){
+    montarTabs(); agrupar();
+    var t = null; try{ t = sessionStorage.getItem("ppc_tab"); }catch(e){}
+    if(!t || (t === "atletas" && !movil())) t = movil() ? "atletas" : "hoy";
+    setTab(t);
+    decorar();
+    var v = $("vistaInicio");
+    if(v && window.MutationObserver){ new MutationObserver(function(){ agrupar(); decorar(); }).observe(v, {childList:true}); }
+    window.addEventListener("resize", function(){ if(!movil() && document.body.getAttribute("data-tab") === "atletas") setTab("hoy"); });
+    setTimeout(function(){ agrupar(); decorar(); }, 1500);
+  }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
+})();
+</script>
+</body></html>
