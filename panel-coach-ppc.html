@@ -5950,14 +5950,7 @@ function pintarFichaExtra(a){
       ${dif!==null?`<span class="d" style="color:${col}">${dif>0?"↑ +":dif<0?"↓ −":"→ "}${Math.abs(dif).toString().replace(".",",")} kg vs ${fmtF(pre[0])}</span>`:""}
       ${sparkSvg(pts.slice(-10))}<span class="hvacio" style="padding:0">${pts.length} registro${pts.length===1?"":"s"} · último ${fmtF(ult[0])}</span></div>`;
   }
-  const bit = PANEL.d.bitacora[a.id] || [];
-  const ultC = bit[0] ? Math.max(0, Math.floor((Date.now()-new Date(bit[0].f))/86400000)) : null;
-  box.innerHTML = `<div class="ppcfx"><span class="lb">Tendencia de peso</span>${pesoH}</div>
-   <div class="ppcfx"><span class="lb">Bitácora de contacto${ultC!==null?` · último hace ${ultC===0?"hoy":ultC+" día"+(ultC===1?"":"s")}`:""}</span>
-    <div class="ppcbit"><input class="in" id="ppcBitTxt" placeholder="Ej: le escribí por WhatsApp, respondió"><button class="b2" data-ppc-bit="add">Anotar</button></div>
-    <div class="ppcbit" style="flex-wrap:wrap">${["WhatsApp enviado","Respondió","Sin respuesta","Llamada"].map(t=>`<button class="b2" data-ppc-bit="${t}" style="font-size:11px;padding:4px 9px">${t}</button>`).join("")}</div>
-    ${bit.slice(0,5).map(x=>`<div class="ppcbitl"><b>${fmtF(fLocal(x.f))}</b>${esc(x.t)}</div>`).join("")}
-    ${bit.length>5?`<div class="ppcbitl" style="color:var(--fa)">+ ${bit.length-5} anotaciones anteriores</div>`:""}</div>`;
+  box.innerHTML = `<div class="ppcfx"><span class="lb">Tendencia de peso</span>${pesoH}</div>`;
 }
 function anotar(txt){
   if(!act || !txt) return;
@@ -6199,6 +6192,7 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
   body[data-tab="atletas"]:not(.ficha) .lista{max-height:none}
   body[data-tab="atletas"]:not(.ficha) main > :not(#ppcTabs){display:none!important}
   .item{min-height:56px}
+  .toast{bottom:92px!important}
 }
 @media(min-width:901px){ #ppcTabs button[data-tab="atletas"]{display:none} }
 </style>
@@ -6296,6 +6290,30 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
     setTimeout(function(){ agrupar(); decorar(); }, 1500);
   }
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
+})();
+</script>
+<script id="ppcDatosAcordeones">
+/* Pestaña Datos de la ficha: cada bloque de datos personales pasa a acordeón (Identidad abierto, el resto cerrado) */
+(function(){
+  "use strict";
+  function convertir(){
+    var pane = document.getElementById("p1"); if(!pane) return;
+    Array.prototype.slice.call(pane.children).forEach(function(sec, i){
+      if(sec.tagName !== "DIV" || !sec.classList.contains("sec")) return;
+      var st = sec.firstElementChild; if(!st || !st.classList.contains("st")) return;
+      var d = document.createElement("details");
+      d.className = sec.className;
+      if(sec.id) d.id = sec.id;
+      var sm = document.createElement("summary"); sm.className = "st";
+      while(st.firstChild) sm.appendChild(st.firstChild);
+      d.appendChild(sm);
+      st.remove();
+      while(sec.firstChild) d.appendChild(sec.firstChild);
+      if(/^\s*Identidad/.test(sm.textContent)) d.open = true;
+      sec.parentNode.replaceChild(d, sec);
+    });
+  }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", convertir); else convertir();
 })();
 </script>
 </body></html>
