@@ -1807,8 +1807,9 @@ async function avisarDescansoTerminado(nombreEjercicio){
   if(restTimerAvisado) return;
   restTimerAvisado = true;
   if(document.visibilityState === 'visible'){
-    // Sin alarma al llegar a 0: el aviso sonoro son los 5 pitidos de la cuenta
-    // regresiva (5,4,3,2,1). Solo una vibración corta para marcar el fin.
+    // Estilo temporizador de intervalos: 3 pitidos cortos en la cuenta (3,2,1)
+    // y un pitido largo al llegar a 0.
+    beepDescanso(1320, 1.0);
     if(navigator.vibrate) navigator.vibrate([200,100,300]);
     return;
   }
@@ -1882,8 +1883,8 @@ function abrirTemporizadorDescanso(segundos, nombreEjercicio){
       if(btn) btn.textContent = 'Cerrar';
     } else {
       numEl.textContent = fmt(restante);
-      // Últimos 5 segundos: un pitido por segundo (5,4,3,2,1) y el número cambia de color
-      if(restante <= 5){
+      // Últimos 3 segundos: un pitido corto por segundo (3,2,1) y el número cambia de color
+      if(restante <= 3){
         numEl.classList.add('warn');
         if(ultimoTick !== restante && document.visibilityState === 'visible'){ ultimoTick = restante; beepDescanso(880, 0.18); if(navigator.vibrate) navigator.vibrate(60); }
       }
