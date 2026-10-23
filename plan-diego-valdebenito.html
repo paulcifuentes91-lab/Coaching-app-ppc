@@ -1083,6 +1083,7 @@ athleteRef.onSnapshot((doc)=>{
       days = asegurarColores(p.days || DEFAULT_PLAN.days);
       nutritionInfo = p.nutritionInfo || DEFAULT_PLAN.nutritionInfo;
       mealWindows = p.mealWindows && p.mealWindows.length ? p.mealWindows : DEFAULT_PLAN.mealWindows;
+      window.__foodsCustom = p.foodsCustom || {};
       MEAL_PLAN_MACROS = p.macros || DEFAULT_PLAN.macros;
       supplementation = p.supplementation || DEFAULT_PLAN.supplementation;
       if(!days.find(d=>d.id===activeDay)) activeDay = days[0].id;
@@ -1943,7 +1944,7 @@ function desmarcarUltimaSerie(sIdx, iIdx){
 /* Beep corto generado con AudioContext (sin archivo externo) - para cuando
    el atleta tiene la app abierta en pantalla. No usar en segundo plano: el
    audio se corta apenas el navegador suspende la pestaña. */
-function beepDescanso(freq, dur){
+function _beepWA(freq, dur){
   const final = !freq;
   freq = freq || 1175; dur = dur || 0.7; // sin argumentos = tono final (más largo y agudo)
   try{
@@ -1977,6 +1978,58 @@ function beepDescanso(freq, dur){
     });
   }catch(e){ /* AudioContext bloqueado por politica de autoplay - no interrumpe el resto */ }
 }
+
+/* Sonido del descanso con respaldo: si el audio del navegador está suspendido
+   (pasa en algunos celulares tras un rato sin sonar), se espera a que reanude y,
+   si no lo logra, se usa un <audio> con el mismo tono generado en el momento. */
+const _tonosAudioTag = {};
+function _urlTono(freq, dur){
+  const k = freq+'|'+dur;
+  if(_tonosAudioTag[k]) return _tonosAudioTag[k];
+  const sr = 22050, n = Math.floor(sr*dur), buf = new ArrayBuffer(44 + n*2), v = new DataView(buf);
+  const w = (o, s) => { for(let i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); };
+  w(0,'RIFF'); v.setUint32(4, 36+n*2, true); w(8,'WAVE'); w(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true);
+  v.setUint16(22,1,true); v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
+  w(36,'data'); v.setUint32(40, n*2, true);
+  for(let i=0;i<n;i++){
+    const t = i/sr, env = Math.min(1, t/0.01, (dur-t)/0.03);
+    v.setInt16(44+i*2, (Math.sin(2*Math.PI*freq*t) >= 0 ? 1 : -1) * 0.8 * Math.max(0, env) * 32767, true);
+  }
+  return (_tonosAudioTag[k] = URL.createObjectURL(new Blob([buf], {type:'audio/wav'})));
+}
+function _beepAudioTag(freq, dur){
+  try{
+    const a = new Audio(_urlTono(freq || 1760, dur || 0.5));
+    a.volume = 1;
+    const p = a.play(); if(p && p.catch) p.catch(function(){});
+  }catch(e){}
+}
+function beepDescanso(freq, dur){
+  try{
+    if(!_audioCtxDescanso) _audioCtxDescanso = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = _audioCtxDescanso;
+    if(ctx.state === 'running'){ _beepWA(freq, dur); return; }
+    let hecho = false;
+    const respaldo = () => { if(!hecho){ hecho = true; _beepAudioTag(freq, dur); } };
+    const t = setTimeout(respaldo, 300);
+    const p = ctx.resume && ctx.resume();
+    if(p && p.then) p.then(() => { clearTimeout(t); if(!hecho){ hecho = true; if(ctx.state === 'running') _beepWA(freq, dur); else _beepAudioTag(freq, dur); } }).catch(() => { clearTimeout(t); respaldo(); });
+    else { clearTimeout(t); respaldo(); }
+  }catch(e){ _beepAudioTag(freq, dur); }
+}
+/* Desbloqueo del audio con cualquier toque en la app (los celulares lo exigen) */
+(function(){
+  const desbloquear = () => {
+    try{
+      if(!_audioCtxDescanso) _audioCtxDescanso = new (window.AudioContext || window.webkitAudioContext)();
+      const ctx = _audioCtxDescanso;
+      if(ctx.state !== 'running') ctx.resume();
+      const b = ctx.createBuffer(1, 1, 22050), s = ctx.createBufferSource();
+      s.buffer = b; s.connect(ctx.destination); s.start(0);
+    }catch(e){}
+  };
+  ['pointerdown','touchend','click'].forEach(ev => document.addEventListener(ev, desbloquear, {passive:true}));
+})();
 
 /* Aviso de que el descanso terminó - en pantalla usa beep+vibración, en
    segundo plano usa una notificación local del Service Worker (con
@@ -3478,23 +3531,60 @@ function celebrar(nombre, prev, nuevo){
 })();
 
 /* ───── 18 · Intercambio de alimentos (mismos macros clave) ───── */
-var FOODS = {"pechuga de pollo":[165,31,0,3.6,"prot"],"carne roja magra":[250,26,0,15,"prot"],"pescado blanco":[105,23,0,1.5,"prot"],"salmón":[208,20,0,13,"prot"],"atún en agua":[116,26,0,1,"prot"],"pavo":[135,29,0,1.7,"prot"],"lomo de cerdo":[143,26,0,4,"prot"],"camarones":[99,24,0.2,0.3,"prot"],"huevo entero":[143,12.6,0.7,9.5,"prot"],"claras de huevo":[52,11,0.7,0.2,"prot"],"tofu":[144,15,3,9,"prot"],"tempeh":[192,20,7.6,11,"prot"],"seitán":[370,75,14,1.9,"prot"],"lentejas cocidas":[116,9,20,0.4,"prot"],"garbanzos cocidos":[164,9,27,2.6,"prot"],"porotos negros cocidos":[132,8.9,24,0.5,"prot"],"edamame":[122,11,10,5,"prot"],"arroz blanco cocido":[130,2.7,28,0.3,"carbo"],"papa cocida":[87,2,20,0.1,"carbo"],"camote cocido":[86,1.6,20,0.1,"carbo"],"avena":[389,17,66,7,"carbo"],"pasta cocida":[158,6,31,0.9,"carbo"],"pasta integral cocida":[124,5,25,1.1,"carbo"],"pan":[265,9,49,3.2,"carbo"],"pan integral":[247,13,41,4.2,"carbo"],"quinoa cocida":[120,4.4,21,1.9,"carbo"],"legumbres cocidas":[116,8,20,0.5,"carbo"],"zapallo":[34,1,8,0.1,"carbo"],"choclo":[96,3.4,21,1.5,"carbo"],"arroz integral cocido":[112,2.3,24,0.9,"carbo"],"galletas de arroz":[387,8,81,3,"carbo"],"cuscús cocido":[112,3.8,23,0.2,"carbo"],"polenta cocida":[70,1.6,15,0.3,"carbo"],"aceite de oliva":[884,0,0,100,"grasa"],"palta":[160,2,9,15,"grasa"],"frutos secos":[607,20,21,54,"grasa"],"mantequilla de maní":[588,25,20,50,"grasa"],"almendras":[579,21,22,50,"grasa"],"nueces":[654,15,14,65,"grasa"],"chía":[486,17,42,31,"grasa"],"linaza":[534,18,29,42,"grasa"],"maní":[567,26,16,49,"grasa"],"aceite de coco":[862,0,0,99,"grasa"],"aceitunas":[115,0.8,6,11,"grasa"],"yogurt griego":[59,10,3.6,0.4,"lacteos"],"queso":[320,25,2,24,"lacteos"],"kefir":[41,3.3,4.5,1,"lacteos"],"leche descremada":[35,3.4,5,0.2,"lacteos"],"yogurt natural":[61,3.5,4.7,3.3,"lacteos"],"queso cottage":[98,11,3.4,4.3,"lacteos"],"leche de almendras":[17,0.6,0.6,1.5,"lacteos"],"leche de soya":[33,3.3,1.8,1.8,"lacteos"],"plátano":[89,1.1,23,0.3,"frutas"],"frutos rojos":[52,0.7,12,0.3,"frutas"],"manzana":[52,0.3,14,0.2,"frutas"],"naranja":[47,0.9,12,0.1,"frutas"],"kiwi":[61,1.1,15,0.5,"frutas"],"piña":[50,0.5,13,0.1,"frutas"],"pera":[57,0.4,15,0.1,"frutas"],"sandía":[30,0.6,8,0.2,"frutas"],"uvas":[69,0.7,18,0.2,"frutas"],"mango":[60,0.8,15,0.4,"frutas"]};
-var BASE = {prot:1, lacteos:1, carbo:2, frutas:2, grasa:3}; // índice del macro que se iguala: 1=P 2=C 3=G
+var FOODS = {"pechuga de pollo":[165,31,0,3.6,"prot"],"carne roja magra":[250,26,0,15,"prot"],"pescado blanco":[105,23,0,1.5,"prot"],"salmón":[208,20,0,13,"prot"],"atún en agua":[116,26,0,1,"prot"],"pavo":[135,29,0,1.7,"prot"],"lomo de cerdo":[143,26,0,4,"prot"],"camarones":[99,24,0.2,0.3,"prot"],"huevo entero":[143,12.6,0.7,9.5,"prot"],"claras de huevo":[52,11,0.7,0.2,"prot"],"tofu":[144,15,3,9,"prot"],"tempeh":[192,20,7.6,11,"prot"],"seitán":[370,75,14,1.9,"prot"],"lentejas cocidas":[116,9,20,0.4,"prot"],"garbanzos cocidos":[164,9,27,2.6,"prot"],"porotos negros cocidos":[132,8.9,24,0.5,"prot"],"edamame":[122,11,10,5,"prot"],"arroz blanco cocido":[130,2.7,28,0.3,"carbo"],"papa cocida":[87,2,20,0.1,"carbo"],"camote cocido":[86,1.6,20,0.1,"carbo"],"avena":[389,17,66,7,"carbo"],"pasta cocida":[158,6,31,0.9,"carbo"],"pasta integral cocida":[124,5,25,1.1,"carbo"],"pan":[265,9,49,3.2,"carbo"],"pan integral":[247,13,41,4.2,"carbo"],"quinoa cocida":[120,4.4,21,1.9,"carbo"],"legumbres cocidas":[116,8,20,0.5,"carbo"],"zapallo":[34,1,8,0.1,"carbo"],"choclo":[96,3.4,21,1.5,"carbo"],"arroz integral cocido":[112,2.3,24,0.9,"carbo"],"galletas de arroz":[387,8,81,3,"carbo"],"cuscús cocido":[112,3.8,23,0.2,"carbo"],"polenta cocida":[70,1.6,15,0.3,"carbo"],"aceite de oliva":[884,0,0,100,"grasa"],"palta":[160,2,9,15,"grasa"],"frutos secos":[607,20,21,54,"grasa"],"mantequilla de maní":[588,25,20,50,"grasa"],"almendras":[579,21,22,50,"grasa"],"nueces":[654,15,14,65,"grasa"],"chía":[486,17,42,31,"grasa"],"linaza":[534,18,29,42,"grasa"],"maní":[567,26,16,49,"grasa"],"aceite de coco":[862,0,0,99,"grasa"],"aceitunas":[115,0.8,6,11,"grasa"],"yogurt griego":[59,10,3.6,0.4,"lacteos"],"queso":[320,25,2,24,"lacteos"],"kefir":[41,3.3,4.5,1,"lacteos"],"leche descremada":[35,3.4,5,0.2,"lacteos"],"yogurt natural":[61,3.5,4.7,3.3,"lacteos"],"queso cottage":[98,11,3.4,4.3,"lacteos"],"leche de almendras":[17,0.6,0.6,1.5,"lacteos"],"leche de soya":[33,3.3,1.8,1.8,"lacteos"],"plátano":[89,1.1,23,0.3,"frutas"],"frutos rojos":[52,0.7,12,0.3,"frutas"],"manzana":[52,0.3,14,0.2,"frutas"],"naranja":[47,0.9,12,0.1,"frutas"],"kiwi":[61,1.1,15,0.5,"frutas"],"piña":[50,0.5,13,0.1,"frutas"],"pera":[57,0.4,15,0.1,"frutas"],"sandía":[30,0.6,8,0.2,"frutas"],"uvas":[69,0.7,18,0.2,"frutas"],"mango":[60,0.8,15,0.4,"frutas"],"whey":[400,80,8,6,"polvo"],"proteína aislada":[370,90,1,1,"polvo"],"caseína":[360,80,6,2,"polvo"],"proteína vegetal":[380,75,8,6,"polvo"],"proteína":[395,78,8,6,"polvo"],"brócoli":[34,2.8,7,0.4,"verd"],"espinaca":[23,2.9,3.6,0.4,"verd"],"tomate":[18,0.9,3.9,0.2,"verd"],"pepino":[15,0.7,3.6,0.1,"verd"],"zanahoria":[41,0.9,10,0.2,"verd"],"champiñón":[22,3.1,3.3,0.3,"verd"],"pimiento":[31,1,6,0.3,"verd"],"coliflor":[25,1.9,5,0.3,"verd"],"lechuga":[15,1.4,2.9,0.2,"verd"],"acelga":[19,1.8,3.7,0.2,"verd"],"ensalada verde":[22,1.1,3.5,0.25,"verd"],"verduras":[35,2,6,0.4,"verd"],"arroz basmati cocido":[121,3.5,25,0.4,"carbo"],"arroz cocido":[130,2.7,28,0.3,"carbo"],"corn flakes":[357,7,84,0.4,"carbo"],"harina de arroz":[366,6,80,1.4,"carbo"],"arándanos":[57,0.7,14,0.3,"frutas"],"frutillas":[32,0.7,7.7,0.3,"frutas"]};
+var BASE = {prot:1, lacteos:1, carbo:2, frutas:2, grasa:3, verd:2, polvo:1}; // índice del macro que se iguala: 1=P 2=C 3=G
 var BASE_TXT = {1:"proteína",2:"carbohidratos",3:"grasas"};
+// Categorías que también se ofrecen como alternativa (además de la propia)
+var GENERICOS = ["proteína","verduras"]; // se reconocen, pero no se ofrecen como alternativa
+var EQ_EXTRA = {polvo:{cats:["lacteos"], nombres:["claras de huevo"]}, lacteos:{cats:["polvo"], nombres:[]}};
+// Alimentos que se cargan por unidad ("4 huevos", "2 tostadas"): gramos aproximados por unidad
+var UNIDADES = [
+  [/^huevos?( enteros?)?$/, 55, "huevo entero"], [/^claras?( de huevo)?$/, 33, "claras de huevo"],
+  [/^(tostadas?( de pan)?|rebanadas? de pan)( integral(es)?)?$/, 28, "pan"], [/^pl[aá]tanos?$/, 120, "plátano"],
+  [/^manzanas?$/, 180, "manzana"], [/^naranjas?$/, 150, "naranja"], [/^kiwis?$/, 75, "kiwi"],
+  [/^yogu?rt( natural)?$/, 125, "yogurt natural"], [/^yogu?rt griego$/, 125, "yogurt griego"],
+  [/^scoops?( de (whey|prote[ií]na))?$/, 30, "whey"]
+];
+function sinAcentos(t){ return String(t).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim(); }
+// Alimentos cargados a mano desde el panel (plan.foodsCustom): se suman a la lista
+function ppcAplicarFoods(){
+  var c = window.__foodsCustom; if(!c) return;
+  Object.keys(c).forEach(function(n){
+    var f = c[n]; if(!f) return;
+    var cat = BASE[f.cat] ? f.cat : "prot";
+    FOODS[String(n).toLowerCase()] = [+f.k||0, +f.p||0, +f.c||0, +f.g||0, cat];
+  });
+}
 function buscarAlimento(nombre){
-  var n = nombre.toLowerCase().trim(), k;
-  if(FOODS[n]) return n;
-  var claves = Object.keys(FOODS);
-  for(var i=0;i<claves.length;i++){ k=claves[i]; if(n===k || n.indexOf(k)===0 || k.indexOf(n)===0) return k; }
-  for(var j=0;j<claves.length;j++){ k=claves[j]; if(n.indexOf(k)>=0) return k; }
+  ppcAplicarFoods();
+  var n = sinAcentos(nombre), k;
+  var claves = Object.keys(FOODS).sort(function(a,b){ return b.length - a.length; }); // primero los nombres más específicos
+  for(var e=0;e<claves.length;e++){ if(sinAcentos(claves[e])===n) return claves[e]; }
+  for(var i=0;i<claves.length;i++){ k = sinAcentos(claves[i]); if(n.indexOf(k)===0 || (n.length>=4 && k.indexOf(n)===0)) return claves[i]; }
+  for(var j=0;j<claves.length;j++){ k = sinAcentos(claves[j]); if(k.length>=4 && n.indexOf(k)>=0) return claves[j]; }
+  for(var h=0;h<claves.length;h++){ k = sinAcentos(claves[h]); if(n.length>=4 && k.indexOf(n)>=0) return claves[h]; } // "pollo" -> "pechuga de pollo"
   return null;
 }
+// Una parte de la línea: "150 g pollo" o "4 huevos". null si no se puede interpretar.
 function parseItem(txt){
-  var m = /^\s*·?\s*(\d+(?:[.,]\d+)?)\s*g\s+(.+?)\s*$/.exec(txt); if(!m) return null;
-  var g = parseFloat(m[1].replace(",",".")), nombre = m[2];
-  if(/\s+o\s+|\+|\//.test(nombre)) return null; // textos libres con alternativas: no se tocan
-  var clave = buscarAlimento(nombre); if(!clave) return null;
-  return {g:g, nombre:nombre, clave:clave};
+  var t = String(txt).replace(/^\s*·?\s*/,"").replace(/\s*\([^)]*\)\s*/g," ").trim();
+  var m = /^(\d+(?:[.,]\d+)?)\s*g(?:r|rs)?\s+(?:de\s+)?(.+?)\s*$/i.exec(t), g, nombre, clave;
+  if(m){
+    g = parseFloat(m[1].replace(",",".")); nombre = m[2];
+    if(/\s+o\s+|\//.test(nombre)) return null; // alternativas escritas: no se tocan
+    clave = buscarAlimento(nombre); if(!clave) return null;
+    return {g:g, nombre:nombre, clave:clave};
+  }
+  m = /^(\d+(?:[.,]\d+)?)\s+(?:de\s+)?(.+?)\s*$/i.exec(t);
+  if(m){
+    var cant = parseFloat(m[1].replace(",",".")); nombre = m[2];
+    if(/\s+o\s+|\//.test(nombre)) return null;
+    var nn = sinAcentos(nombre);
+    for(var u=0;u<UNIDADES.length;u++){
+      if(UNIDADES[u][0].test(nn)){ clave = UNIDADES[u][2]; if(!FOODS[clave]) return null; return {g:Math.round(cant*UNIDADES[u][1]), nombre:nombre, clave:clave, texto:t}; }
+    }
+  }
+  return null;
 }
 function swapsHoy(){
   var hoy = todayStr(), key = "ppc_swaps_"+ATHLETE_ID, o = {};
@@ -3506,7 +3596,12 @@ function equivalencias(it){
   var base = FOODS[it.clave], idx = BASE[base[4]] || 2;
   var objetivo = base[idx]*it.g/100; if(objetivo <= 0.5) return [];
   var kcalBase = base[0]*it.g/100;
-  return Object.keys(FOODS).filter(function(k){ return k!==it.clave && FOODS[k][4]===base[4] && FOODS[k][idx] >= 2; }).map(function(k){
+  var ex = EQ_EXTRA[base[4]] || {cats:[], nombres:[]};
+  return Object.keys(FOODS).filter(function(k){
+    if(k===it.clave || GENERICOS.indexOf(k)>=0) return false;
+    var c = FOODS[k][4];
+    return (c===base[4] || ex.cats.indexOf(c)>=0 || ex.nombres.indexOf(k)>=0) && FOODS[k][idx] >= 2;
+  }).map(function(k){
     var f = FOODS[k], g = Math.round(objetivo/f[idx]*100/5)*5; // redondeo a 5 g
     return {nombre:k, g:g, kcal:Math.round(f[0]*g/100), p:Math.round(f[1]*g/100), c:Math.round(f[2]*g/100), gr:Math.round(f[3]*g/100)};
   }).filter(function(e){ return e.g>=10 && e.g<=500 && Math.abs(e.kcal-kcalBase) <= Math.max(60, kcalBase*0.35); })
@@ -3534,10 +3629,10 @@ function separarOpciones(txt){
     .map(function(a){ return a+suf; });
   return {main: t+suf, alts: alts};
 }
-function abrirSwap(mwId, mIdx, iIdx, it, alts, mainTxt){
+function abrirSwap(mwId, mIdx, iIdx, it, suf, alts, mainTxt){
   alts = alts || [];
   var eq = it ? equivalencias(it) : [];
-  var opciones = alts.map(function(a){ return a; }).concat(eq.map(function(e){ return e.g+" g "+e.nombre; }));
+  var opciones = alts.slice().concat(eq.map(function(e){ return e.g+" g "+e.nombre; }));
   var filasCoach = alts.map(function(a,i){
     return '<div class="ppcswrow"><div><b>'+esc(a)+'</b></div><button class="ppcbtn" data-i="'+i+'">Usar hoy</button></div>';
   }).join("");
@@ -3549,7 +3644,7 @@ function abrirSwap(mwId, mIdx, iIdx, it, alts, mainTxt){
   if(it){
     var base = FOODS[it.clave], idx = BASE[base[4]] || 2, kcalBase = Math.round(base[0]*it.g/100);
     cabecera = '<b>'+it.g+' g '+esc(it.nombre)+'</b> <span class="ppcsub">· '+kcalBase+' kcal · iguala '+BASE_TXT[idx]+' ('+num(base[idx]*it.g/100,0)+' g)</span>';
-  } else cabecera = '<b>'+esc(String(mainTxt||"").replace(/^\s*·\s*/,""))+'</b>';
+  } else cabecera = '<b>'+esc(String(mainTxt||""))+'</b>';
   var filas = (filasCoach ? '<div class="ppcsub" style="margin:6px 0 4px">Alternativas de tu coach</div>'+filasCoach : '')+
     (filasEq ? '<div class="ppcsub" style="margin:10px 0 4px">Equivalentes calculados</div>'+filasEq : '')+
     (!filasCoach && !filasEq ? '<div class="ppcsub">No encontré equivalencias razonables para este alimento.</div>' : '');
@@ -3562,7 +3657,7 @@ function abrirSwap(mwId, mIdx, iIdx, it, alts, mainTxt){
     if(ev.target.id==="ppcOvCerrar"){ o.remove(); return; }
     var b = ev.target.closest && ev.target.closest("button[data-i]"); if(!b) return;
     var elegido = opciones[+b.dataset.i], s = swapsHoy(); if(!elegido) return;
-    s.o.s[mwId+"-"+mIdx+"-"+iIdx] = elegido;
+    s.o.s[mwId+"-"+mIdx+"-"+iIdx+(suf||"")] = elegido;
     try{ localStorage.setItem(s.key, JSON.stringify(s.o)); }catch(x){}
     try{ var upd={}; upd[s.o.fecha]=s.o.s; saveField("mealSwaps", upd); }catch(x){}
     o.remove(); renderMealCard();
@@ -3571,26 +3666,46 @@ function abrirSwap(mwId, mIdx, iIdx, it, alts, mainTxt){
 wrap("renderMealCard", function(){
   var card = $("mealCard"); if(!card) return;
   var mw = currentMealWindow(); if(!mw) return;
+  ppcAplicarFoods();
   var sw = swapsHoy().o.s;
   var infos = card.querySelectorAll(".meal-info");
   infos.forEach(function(info){
     var mIdx = +info.dataset.m, tips = info.querySelectorAll(".ex-tip");
     tips.forEach(function(tip, iIdx){
       var skey = mw.id+"-"+mIdx+"-"+iIdx;
-      var original = tip.textContent;
-      var op = separarOpciones(original);
-      if(op.alts.length){ original = "· "+op.main; if(!sw[skey]) tip.textContent = original; }
-      var it = parseItem(original);
-      if(sw[skey]){
-        tip.innerHTML = '· <b>'+esc(sw[skey])+'</b> <span class="ppcsub">(cambio de hoy · antes '+esc(original.replace(/^·\s*/,""))+')</span>';
-        if(it || op.alts.length){ tip.dataset.ppcSwap = "1"; var b0=document.createElement("button"); b0.className="ppcswbtn"; b0.textContent="↺"; b0.title="Volver al original";
-          b0.addEventListener("click", function(ev){ ev.stopPropagation(); var s=swapsHoy(); delete s.o.s[skey]; try{ localStorage.setItem(s.key, JSON.stringify(s.o)); }catch(x){} renderMealCard(); }); tip.appendChild(b0); }
+      var original = tip.textContent.replace(/^\s*·\s*/,"");
+      // Una sola opción por parte: "A o B", "A, B o C" y "(o X / Y)" muestran
+      // solo la primera; el resto va como "Alternativas de tu coach" en ↔
+      var ops = original.split(/\s+\+\s+/).map(function(p){ return separarOpciones(p); });
+      var partes = ops.map(function(op){ return op.main; });
+      var limpio = partes.join(" + ");
+      var items = partes.map(function(p){ return parseItem(p); });
+      var hayCambio = false;
+      for(var q=0;q<partes.length;q++){ if(sw[skey + (partes.length>1?"-p"+q:"")]) hayCambio = true; }
+      if(!hayCambio && !items.some(function(x){ return x; }) && !ops.some(function(op){ return op.alts.length; })){
+        if(limpio!==original) tip.textContent = "· "+limpio;
         return;
       }
-      if(!it && !op.alts.length) return;
-      var b = document.createElement("button"); b.className="ppcswbtn"; b.textContent="↔"; b.title="Cambiar por un alimento equivalente";
-      b.addEventListener("click", function(ev){ ev.stopPropagation(); abrirSwap(mw.id, mIdx, iIdx, it, op.alts, original); });
-      tip.appendChild(b);
+      tip.textContent = "· ";
+      partes.forEach(function(ptxt, q){
+        var sk = skey + (partes.length>1 ? "-p"+q : "");
+        if(q>0) tip.appendChild(document.createTextNode(" + "));
+        var span = document.createElement("span");
+        var it = items[q];
+        if(sw[sk]){
+          span.innerHTML = '<b>'+esc(sw[sk])+'</b> <span class="ppcsub">(cambio de hoy · antes '+esc(ptxt)+')</span>';
+          tip.appendChild(span);
+          var b0 = document.createElement("button"); b0.className="ppcswbtn"; b0.textContent="↺"; b0.title="Volver al original";
+          b0.addEventListener("click", function(ev){ ev.stopPropagation(); var s=swapsHoy(); delete s.o.s[sk]; try{ localStorage.setItem(s.key, JSON.stringify(s.o)); }catch(x){} renderMealCard(); });
+          tip.appendChild(b0);
+          return;
+        }
+        span.textContent = ptxt; tip.appendChild(span);
+        if(!it && !ops[q].alts.length) return;
+        var b = document.createElement("button"); b.className="ppcswbtn"; b.textContent="↔"; b.title="Cambiar por un alimento equivalente";
+        b.addEventListener("click", function(ev){ ev.stopPropagation(); abrirSwap(mw.id, mIdx, iIdx, it, partes.length>1 ? "-p"+q : "", ops[q].alts, ptxt); });
+        tip.appendChild(b);
+      });
     });
   });
 });
