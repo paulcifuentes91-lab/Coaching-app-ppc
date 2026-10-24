@@ -4080,6 +4080,8 @@ function macrosDeAlimento(txt){
  }
  const n = n0;
  /* "sin aporte" solo si NO hay ningún alimento identificable en la línea */
+ if(/\b(libre|al gusto)\b/.test(n) && !/\d/.test(n)) return {ok:false, motivo:"sin aporte"};
+ if(/^objetivo\b|por confirmar|se cargara|proximamente|detalle de comidas/.test(n)) return {ok:false, motivo:"sin aporte"};
  const hayAlimento = buscarEnTabla(n, TABLA100) || buscarEnTabla(n, TABLAUD);
  if(!hayAlimento && IGNORAR.some(x=>n.includes(x)))
    return {ok:false, motivo:"sin aporte"};
@@ -6340,6 +6342,11 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
 .vvlist{margin-top:12px;border-top:1px solid var(--line);padding-top:8px;font-size:12px;color:var(--mu)}
 .vvlist div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0}
 .vvlist button{background:none;border:0;color:var(--al);cursor:pointer;font-size:15px;min-width:32px;min-height:32px}
+.vvsug{position:fixed;z-index:310;background:var(--card2);border:1px solid var(--gold2);border-radius:11px;box-shadow:0 8px 26px rgba(0,0,0,.55);overflow:hidden;display:none}
+.vvsug div{padding:10px 12px;font-size:13.5px;color:var(--tx);display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--line);cursor:pointer;min-height:40px;align-items:center}
+.vvsug div:first-child{border-top:0}
+.vvsug div:active,.vvsug div.on{background:rgba(232,193,92,.14)}
+.vvsug small{font-family:var(--mono);font-size:10.5px;color:var(--mu);white-space:nowrap}
 </style>
 <script id="ppcDietaViva">
 /* ═══ Dieta a mano: totales en vivo, diferencia contra el objetivo y alimentos propios ═══ */
@@ -6355,6 +6362,8 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
 
   function limpiarNombre(n){ return String(n).replace(/[.\/~*\[\]]/g," ").replace(/\s+/g," ").trim().toLowerCase().slice(0,60); }
   function registrar(){
+    try{ for(var cat in GEN_ALIM){ var o = GEN_ALIM[cat]; if(!o || typeof o !== "object") continue;
+      for(var nm in o){ var k = _n(nm); if(!(k in TABLA100) && o[nm] && o[nm].length >= 4) TABLA100[k] = [o[nm][0],o[nm][1],o[nm][2],o[nm][3]]; } } }catch(e){}
     Object.keys(CUS).forEach(function(n){ var f = CUS[n]; TABLA100[_n(n)] = [+f.k||0, +f.p||0, +f.c||0, +f.g||0]; });
   }
   var _tp = null;
@@ -6382,7 +6391,7 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
       if(r.ok){ ok++; for(var i=0;i<4;i++) tot[i] += r.macros[i]; }
       else if(r.motivo !== "sin aporte" && r.motivo !== "vacío") noRec.push(p);
     });
-    return {tot:tot, noRec:noRec, ok:ok, partes:partes.length};
+    return {tot:tot, noRec:noRec, ok:ok, partes:partes};
   }
   function fmt(t){ return Math.round(t[0])+" kcal · P "+Math.round(t[1])+" · C "+Math.round(t[2])+" · G "+Math.round(t[3]); }
 
@@ -6402,6 +6411,7 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
   function pintar(){
     var cont = $q("#bloques"); if(!cont) return;
     if(_obs) _obs.disconnect();
+    var sy = window.pageYOffset, alto0 = cont.offsetHeight; cont.style.minHeight = alto0 + "px";
     try{
       $$q(".vvchip,.vvsub,.vviva", cont).forEach(function(e){ e.remove(); });
       $$q(".bloque", cont).forEach(function(b){
@@ -6418,11 +6428,14 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
             if(a.ok) n++;
             a.noRec.forEach(function(x){ noRec.push(x); });
             var chip = document.createElement("div");
+            var btnE = function(t, txt){ return " <button type=\"button\" data-vvadd=\""+esc2(t)+"\">"+txt+"</button>"; };
             if(a.noRec.length){
               chip.className = "vvchip no";
-              chip.innerHTML = (a.ok ? esc2(fmt(a.tot))+" · " : "") + "sin calcular: «"+esc2(a.noRec[0])+"» <button type=\"button\" data-vvadd=\""+esc2(a.noRec[0])+"\">Agregar macros</button>";
+              chip.innerHTML = (a.ok ? esc2(fmt(a.tot))+" · " : "") + "sin calcular: «"+esc2(a.noRec[0])+"»" + btnE(a.noRec[0], "Agregar macros");
             } else if(a.ok){
-              chip.className = "vvchip"; chip.textContent = fmt(a.tot);
+              chip.className = "vvchip";
+              var bs = a.partes.length === 1 ? btnE(a.partes[0], "Editar macros") : a.partes.map(function(x){ return btnE(x, "✎ "+esc2(nombreDe(x).slice(0,16))); }).join("");
+              chip.innerHTML = esc2(fmt(a.tot)) + bs;
             } else { return; }
             row.appendChild(chip);
           });
@@ -6453,6 +6466,8 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
         var ref = $q("[data-verif]", b); if(ref) ref.insertAdjacentElement("afterend", d); else b.insertBefore(d, b.children[2]||null);
       });
     }catch(e){ console.error(e); }
+    cont.style.minHeight = "";
+    if(Math.abs(window.pageYOffset - sy) > 2) window.scrollTo(0, sy);
     if(_obs) _obs.observe(cont, {childList:true, subtree:true});
   }
 
@@ -6460,17 +6475,30 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
   function nombreDe(txt){
     return String(txt).replace(/\([^)]*\)/g," ").replace(/^\s*[\d.,\/]+\s*(?:g|gr|grs|kg|ml|cc|unidades?|u)?\b\s*(?:de\s+)?/i,"").replace(/\s+/g," ").trim();
   }
+  function buscarClave(txt){
+    var n = _n(txt), mejor = null;
+    for(var k in TABLA100){ if(n.indexOf(k) >= 0 && (!mejor || k.length > mejor.length)) mejor = k; }
+    return mejor;
+  }
   function abrirAgregar(txt){
-    var m = window.ppcModal("Agregar alimento", "<div class=\"v7vacio\" style=\"margin-bottom:6px\">Escribe los valores por <b>100 g</b> (como dice la etiqueta). Quedan guardados para todos tus atletas y la app los usa para calcular alternativas.</div>"+
+    var clave = buscarClave(txt), pre = clave ? TABLA100[clave] : null;
+    var nomIni = nombreDe(txt);
+    if(pre && _n(nomIni).indexOf(clave) < 0) nomIni = clave;
+    var m = window.ppcModal((pre ? "Editar" : "Agregar")+" alimento", "<div class=\"v7vacio\" style=\"margin-bottom:6px\">"+(pre ? "Corrige los valores por <b>100 g</b> de este alimento. " : "Escribe los valores por <b>100 g</b> (como dice la etiqueta). ")+"Quedan guardados para todos tus atletas y la app los usa para calcular alternativas.</div>"+
       "<div class=\"vvform\">"+
-      "<label class=\"full\"><span class=\"lb\">Nombre</span><input class=\"in\" id=\"vvN\" value=\""+esc2(nombreDe(txt))+"\"></label>"+
-      "<label><span class=\"lb\">Proteína g</span><input class=\"in mono\" id=\"vvP\" type=\"number\" step=\"0.1\" inputmode=\"decimal\"></label>"+
-      "<label><span class=\"lb\">Carbos g</span><input class=\"in mono\" id=\"vvC\" type=\"number\" step=\"0.1\" inputmode=\"decimal\"></label>"+
-      "<label><span class=\"lb\">Grasas g</span><input class=\"in mono\" id=\"vvG\" type=\"number\" step=\"0.1\" inputmode=\"decimal\"></label>"+
-      "<label><span class=\"lb\">Kcal (si lo dejas vacío se calcula)</span><input class=\"in mono\" id=\"vvK\" type=\"number\" step=\"1\" inputmode=\"decimal\"></label>"+
-      "<label class=\"full\"><span class=\"lb\">Tipo (para ofrecer alternativas)</span><select class=\"in\" id=\"vvCat\">"+Object.keys(CATS).map(function(k){ return "<option value=\""+k+"\">"+CATS[k]+"</option>"; }).join("")+"</select></label>"+
+      "<label class=\"full\"><span class=\"lb\">Nombre</span><input class=\"in\" id=\"vvN\" value=\""+esc2(nomIni)+"\"></label>"+
+      "<label><span class=\"lb\">Proteína g</span><input class=\"in mono\" id=\"vvP\" type=\"number\" step=\"0.1\" inputmode=\"decimal\" value=\""+(pre ? r1(pre[1]) : "")+"\"></label>"+
+      "<label><span class=\"lb\">Carbos g</span><input class=\"in mono\" id=\"vvC\" type=\"number\" step=\"0.1\" inputmode=\"decimal\" value=\""+(pre ? r1(pre[2]) : "")+"\"></label>"+
+      "<label><span class=\"lb\">Grasas g</span><input class=\"in mono\" id=\"vvG\" type=\"number\" step=\"0.1\" inputmode=\"decimal\" value=\""+(pre ? r1(pre[3]) : "")+"\"></label>"+
+      "<label><span class=\"lb\">Kcal (si lo dejas vacío se calcula)</span><input class=\"in mono\" id=\"vvK\" type=\"number\" step=\"1\" inputmode=\"decimal\" value=\""+(pre ? Math.round(pre[0]) : "")+"\"></label>"+
+      "<label class=\"full\"><span class=\"lb\">Tipo (para las alternativas de la app)</span><select class=\"in\" id=\"vvCat\">"+Object.keys(CATS).map(function(k){ return "<option value=\""+k+"\">"+CATS[k]+"</option>"; }).join("").replace("<option", "<option value=\"\">Automático (según macros)</option><option")+"</select></label>"+
       "</div><button class=\"add g\" id=\"vvGuardar\">Guardar alimento</button><div id=\"vvLista\"></div>");
     if(!m) return;
+    try{
+      var ct0 = CUS[limpiarNombre(nomIni)] ? CUS[limpiarNombre(nomIni)].cat : "";
+      if(!ct0){ var nn = _n(clave || nomIni); for(var cat in GEN_ALIM){ var o = GEN_ALIM[cat]; if(!o || typeof o !== "object") continue; for(var nm in o){ if(_n(nm) === nn && CATS[cat]) ct0 = cat; } } }
+      if(ct0) m.querySelector("#vvCat").value = ct0;
+    }catch(e){}
     function lista(){
       var ks = Object.keys(CUS);
       m.querySelector("#vvLista").innerHTML = ks.length ? "<div class=\"vvlist\"><b>Tus alimentos ("+ks.length+")</b>"+ks.map(function(k){
@@ -6486,7 +6514,9 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
       var Kv = m.querySelector("#vvK").value, K = Kv === "" ? P*4+C*4+G*9 : parseFloat(Kv)||0;
       if(!nom){ toast("Escribe el nombre del alimento"); return; }
       if(!(K>0 || P>0 || C>0 || G>0)){ toast("Ingresa al menos un valor"); return; }
-      CUS[nom] = {k:r1(K), p:r1(P), c:r1(C), g:r1(G), cat:m.querySelector("#vvCat").value};
+      var ct = m.querySelector("#vvCat").value;
+      if(!ct){ var kp = P*4, kc = C*4, kg = G*9; ct = kg > kp && kg > kc ? "grasa" : kp >= kc ? "prot" : "carbo"; }
+      CUS[nom] = {k:r1(K), p:r1(P), c:r1(C), g:r1(G), cat:ct};
       registrar(); persistir(); toast("«"+nom+"» guardado · se usará en todas las dietas"); lista(); refrescar();
     });
   }
@@ -6498,6 +6528,58 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
   });
   document.addEventListener("input", function(ev){ if(ev.target.closest && ev.target.closest("#bloques")) refrescar(); });
 
+
+  /* ── Sugerencias por nombre al escribir un alimento ── */
+  var SUG = null, sugInp = null;
+  function catalogo(){
+    var vistos = {}, lista = [];
+    function add(nom, v){ var k = _n(nom); if(!k || vistos[k]) return; vistos[k] = 1; lista.push({n:nom, k:k, v:v}); }
+    Object.keys(CUS).forEach(function(n){ var f = CUS[n]; add(n, [f.k,f.p,f.c,f.g]); });
+    try{ for(var cat in GEN_ALIM){ var o = GEN_ALIM[cat]; if(!o || typeof o !== "object") continue; for(var nm in o) add(nm, o[nm]); } }catch(e){}
+    Object.keys(TABLA100).forEach(function(k){ add(k, TABLA100[k]); });
+    return lista;
+  }
+  function partirLinea(v){
+    var i = v.lastIndexOf("+"), ini = i >= 0 ? v.slice(0, i+1) + " " : "", resto = i >= 0 ? v.slice(i+1).replace(/^\s+/, "") : v;
+    var m = /^([\d.,\/]+\s*(?:g|gr|grs|kg|ml|cc|u|unidades?)?\s*(?:de\s+)?)?(.*)$/i.exec(resto);
+    return {ini: ini, cant: (m[1]||""), q: (m[2]||"").trim()};
+  }
+  function ocultarSug(){ if(SUG) SUG.style.display = "none"; sugInp = null; }
+  function mostrarSug(inp){
+    var pt = partirLinea(inp.value), q = _n(pt.q);
+    if(q.length < 2){ ocultarSug(); return; }
+    var c = catalogo().filter(function(x){ return x.k.indexOf(q) >= 0 && x.k !== q; });
+    c.sort(function(a,b){ var pa = a.k.indexOf(q) === 0 ? 0 : 1, pb = b.k.indexOf(q) === 0 ? 0 : 1; return pa - pb || a.k.length - b.k.length; });
+    c = c.filter(function(x){ return !c.some(function(y){ return y.k !== x.k && y.k.indexOf(x.k) === 0; }); }).slice(0, 6);
+    if(!c.length){ ocultarSug(); return; }
+    if(!SUG){ SUG = document.createElement("div"); SUG.className = "vvsug"; document.body.appendChild(SUG);
+      SUG.addEventListener("pointerdown", function(ev){ ev.preventDefault(); });
+      SUG.addEventListener("click", function(ev){
+        var d = ev.target.closest("[data-vvs]"); if(!d || !sugInp) return;
+        var inp2 = sugInp, pt2 = partirLinea(inp2.value);
+        inp2.value = pt2.ini + (pt2.cant || "100 g ") + d.getAttribute("data-vvs");
+        ocultarSug(); inp2.dispatchEvent(new Event("input", {bubbles:true})); inp2.focus();
+      }); }
+    sugInp = inp;
+    SUG.innerHTML = c.map(function(x){ return "<div data-vvs=\""+esc2(x.n)+"\"><span>"+esc2(x.n)+"</span><small>"+Math.round(x.v[0])+" kcal/100 g</small></div>"; }).join("");
+    SUG.style.display = "block"; ubicarSug();
+  }
+  function ubicarSug(){
+    if(!SUG || !sugInp) return;
+    var inp = sugInp, r = inp.getBoundingClientRect();
+    if(r.bottom < 0 || r.top > window.innerHeight){ SUG.style.display = "none"; return; }
+    SUG.style.display = "block";
+    var nItems = SUG.children.length;
+    SUG.style.left = r.left + "px"; SUG.style.width = r.width + "px";
+    var alto = nItems * 41, abajo = window.innerHeight - 76 - r.bottom;
+    SUG.style.top = (abajo > alto + 6 ? r.bottom + 3 : Math.max(8, r.top - alto - 3)) + "px";
+  }
+  document.addEventListener("input", function(ev){
+    var t = ev.target;
+    if(t && t.tagName === "INPUT" && t.closest && t.closest("#bloques [data-alis] .ali")) mostrarSug(t);
+  });
+  document.addEventListener("focusout", function(ev){ if(ev.target === sugInp) setTimeout(ocultarSug, 120); });
+  window.addEventListener("scroll", ubicarSug, true); window.addEventListener("resize", ubicarSug);
   function init(){
     registrar(); cargarNube(0);
     var cont = $q("#bloques");
