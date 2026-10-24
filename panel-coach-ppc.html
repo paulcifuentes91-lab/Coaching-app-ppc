@@ -2810,7 +2810,7 @@ document.addEventListener("click",e=>{
  /* nutrición */
  if(t.hasAttribute?.("data-delali")){t.closest(".ali").remove();return;}
  if(t.hasAttribute?.("data-addali")){
-  const c=t.previousElementSibling;
+  const c=(t.closest(".comida") && t.closest(".comida").querySelector("[data-alis]")) || t.previousElementSibling;
   c.insertAdjacentHTML("beforeend",`<div class="ali"><input placeholder="Ej. 120 g pollo">
    <button class="x" data-delali title="Quitar">×</button></div>`);
   c.lastElementChild.querySelector("input").focus();return;}
@@ -6572,7 +6572,10 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
     c = c.filter(function(x){ return !c.some(function(y){ return y.k !== x.k && y.k.indexOf(x.k) === 0; }); }).slice(0, 6);
     if(!c.length){ ocultarSug(); return; }
     if(!SUG){ SUG = document.createElement("div"); SUG.className = "vvsug"; document.body.appendChild(SUG);
+      SUG.style.setProperty("background-color", "#1B1C21", "important");
+      SUG.style.setProperty("opacity", "1", "important");
       SUG.addEventListener("pointerdown", function(ev){ ev.preventDefault(); });
+      SUG.addEventListener("mousedown", function(ev){ ev.preventDefault(); });
       SUG.addEventListener("click", function(ev){
         var d = ev.target.closest("[data-vvs]"); if(!d || !sugInp) return;
         var inp2 = sugInp, pt2 = partirLinea(inp2.value);
@@ -6580,7 +6583,7 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
         ocultarSug(); inp2.dispatchEvent(new Event("input", {bubbles:true})); inp2.focus();
       }); }
     sugInp = inp;
-    SUG.innerHTML = c.map(function(x){ return "<div data-vvs=\""+esc2(x.n)+"\"><span>"+esc2(x.n)+"</span><small>"+Math.round(x.v[0])+" kcal/100 g</small></div>"; }).join("");
+    SUG.innerHTML = c.map(function(x){ return "<div style=\"background-color:#1B1C21\" data-vvs=\""+esc2(x.n)+"\"><span>"+esc2(x.n)+"</span><small>"+Math.round(x.v[0])+" kcal/100 g</small></div>"; }).join("");
     SUG.style.display = "block"; ubicarSug();
   }
   function ubicarSug(){
@@ -6599,6 +6602,12 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
   });
   document.addEventListener("focusout", function(ev){ if(ev.target === sugInp) setTimeout(ocultarSug, 120); });
   window.addEventListener("scroll", ubicarSug, true); window.addEventListener("resize", ubicarSug);
+  /* Un toque fuera del menú lo cierra antes de que llegue el click: así no tapa "+ Añadir alimento" ni otros botones */
+  document.addEventListener("pointerdown", function(ev){
+    if(!SUG || SUG.style.display === "none") return;
+    if(SUG.contains(ev.target) || ev.target === sugInp) return;
+    ocultarSug();
+  }, true);
   function init(){
     registrar(); cargarNube(0);
     var cont = $q("#bloques");
