@@ -957,7 +957,7 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
         <label><span class="lb">Semana 2 · principales</span><select class="in" id="kS2"><option value="0">igual</option><option value="1" selected>+1 serie</option><option value="2">+2 series</option></select></label>
         <label><span class="lb">Semana 3 · principales</span><select class="in" id="kS3p"><option value="1">+1 serie</option><option value="2" selected>+2 series</option><option value="3">+3 series</option></select></label>
         <label><span class="lb">Semana 3 · accesorios</span><select class="in" id="kS3a"><option value="0">igual</option><option value="1" selected>+1 serie</option></select></label>
-        <label><span class="lb">Descarga semana 4</span><select class="in" id="kDl"><option value="0.5">50% del volumen base</option><option value="0.6">60% del volumen base</option><option value="0.7" selected>70% del volumen base</option></select></label>
+        <label><span class="lb">Descarga semana 4</span><select class="in" id="kDl"><option value="0.5">50% del volumen base</option><option value="0.6">60% del volumen base</option><option value="0.7" selected>70% del volumen base</option><option value="1">Sin descarga fija (reactiva)</option></select></label>
         <label><span class="lb">Dropset de cierre</span><select class="in" id="kDs"><option value="3" selected>Solo en la semana pico</option><option value="0">No usar</option></select></label>
       </div>
       <div class="avisos" style="margin-top:13px">Estos ajustes cambian cómo sube y baja el volumen semana a semana. La vista previa de la pestaña <b>Entrenamiento</b> se actualiza con lo que elijas aquí.</div>
@@ -1614,6 +1614,7 @@ async function abrirComparar(a){
 
 /* ───── 10 · Planificación anual ───── */
 function abrirAnual(a){
+  if(window.ppcMacroAnual && window.ppcMacroAnual(a)) return;
   const meta = ($id("fMacroMeta")||{}).value || (a.macro && a.macro.meta) || "";
   const tipo = ($id("fMacroTipo")||{}).value || (a.macro && a.macro.tipo) || "mantencion";
   const nombre = ($id("fMacroNombre")||{}).value || (a.macro && a.macro.nombre) || "";
@@ -2028,6 +2029,7 @@ function cargar(a){
  $("#fMacroTipo").value = _macro.tipo || "mantencion";
  $("#fMacroNombre").value = _macro.nombre || "";
  $("#fMacroMeta").value = _macro.meta || "";
+ try{ if(window.ppcMacroPintar) window.ppcMacroPintar(a); }catch(e){}
  $("#fObjetivoHeader").value = a.objetivoHeader || "";
  $("#semAviso").textContent = a.ini_f ? "Hoy: "+semanaHoy(a.ini_f) : "";
  pintarDias(); pintarBloques(); _postBloques(); pintarSups(); pintarHist(); recalcular(); v7cargar(); pintarMesocicloCalendario(); pintarPerfil();
@@ -2132,6 +2134,12 @@ function cargar(a){
     const nuevoJSONs = JSON.stringify(supReal);
     if(actualJSONs !== nuevoJSONs){ a.sup = supReal; cambio = true; }
    }
+   if(p.macrociclo && typeof p.macrociclo === "object" && JSON.stringify(p.macrociclo) !== JSON.stringify(a.macro||null)){
+    a.macro = p.macrociclo;
+    $("#fMacroTipo").value = a.macro.tipo || "mantencion"; $("#fMacroNombre").value = a.macro.nombre || ""; $("#fMacroMeta").value = a.macro.meta || "";
+   }
+   if(!_localMasNuevo && Array.isArray(p.weekMeta) && p.weekMeta.length && p.weekMeta.length !== +a.sem){ a.sem = p.weekMeta.length; cambio = true; }
+   try{ if(window.ppcMacroPintar) window.ppcMacroPintar(a); }catch(e){}
    if(cambio){
     $("#fIni").value=a.ini_f; $("#fChk").value=a.chk; $("#fVence").value=a.vence;
     $("#fEstado").value=a.estado; $("#fEst").value=a.est; $("#fWa").value=a.wa||""; $("#fNota").value=a.nota; $("#fTipoPlan").value=a.tipoPlan||"basico"; $("#fEdad").value=a.edad||""; $("#fSexo").value=a.sexo||"m"; $("#fNivel").value=a.nivel||"intermedio"; $("#fObjetivo").value=a.objetivoManual||""; $("#fSupRevision").value=a.supRevision||""; $("#fObjetivoHeader").value=a.objetivoHeader||"";
@@ -2361,6 +2369,9 @@ async function renovarMesociclo(){
   if(semanasRestantes <= 1) faseSugerida = "Peak week";
   else if(semanasRestantes <= 8) faseSugerida = "Definición";
  }
+ const _mz = window.ppcMacroSugerencia ? window.ppcMacroSugerencia(act) : null;
+ if(_mz && _mz.opcion) faseSugerida = _mz.opcion;
+ const _semSug = _mz ? _mz.sem : (+act.sem || 4);
  const diasActuales = (act.dias||[]).length || 4;
  const edadAct = document.getElementById("asEdad")?.value || act.edad || "";
  const sexoAct = act.sexo || document.getElementById("asSexo")?.value || "m";
@@ -2374,17 +2385,20 @@ async function renovarMesociclo(){
      <button class="cerrar" id="renovarCerrar">Cancelar</button></div>
    <div class="mbody">
     ${semanasRestantes!==null ? `<div class="anfila"><span class="anl">Semanas hasta la meta</span><span class="anv">${semanasRestantes}</span></div>` : `<div class="v7vacio" style="margin-bottom:12px">Sin fecha meta definida - sugerencia por defecto: Volumen</div>`}
+    ${_mz ? `<div class="mzsug"><b>Según el calendario:</b> ${_mz.texto} · fase sugerida <b>${_mz.opcion}</b>, ${_mz.sem} semana(s).</div>` : `<div class="mzsug">Sin calendario de macrociclo: créalo en Datos → Objetivo del macrociclo para que la fase y la duración se sugieran solas.</div>`}
+    <label style="display:block;margin:12px 0"><span class="lb">Semanas del bloque</span><input class="in mono" id="renovarSem" type="number" min="1" max="8" value="${_semSug}" style="width:100%"></label>
     <label style="display:block;margin:12px 0"><span class="lb">Fase del próximo bloque</span>
      <select class="in" id="renovarFase" style="width:100%">
       <option value="Volumen" ${faseSugerida==="Volumen"?"selected":""}>Volumen</option>
+      <option value="Preparación" ${faseSugerida==="Preparación"?"selected":""}>Preparación (modelo de hipertrofia en déficit)</option>
       <option value="Definición" ${faseSugerida==="Definición"?"selected":""}>Definición</option>
       <option value="Peak week" ${faseSugerida==="Peak week"?"selected":""}>Peak week</option>
-      <option value="Transición">Transición / descanso activo</option>
+      <option value="Transición" ${faseSugerida==="Transición"?"selected":""}>Transición / descanso activo</option>
       <option value="Performance">Performance</option>
       <option value="Longevidad">Longevidad</option>
       <option value="Rehabilitación">Rehabilitación</option>
-      <option value="Fuerza máxima">Fuerza máxima</option>
-      <option value="Mantención">Mantención</option>
+      <option value="Fuerza máxima" ${faseSugerida==="Fuerza máxima"?"selected":""}>Fuerza máxima</option>
+      <option value="Mantención" ${faseSugerida==="Mantención"?"selected":""}>Mantención</option>
       <option value="Retorno post-pausa">Retorno post-pausa</option>
      </select></label>
     <div class="campos" style="margin-bottom:12px">
@@ -2435,14 +2449,16 @@ async function renovarMesociclo(){
   const sexo = document.getElementById("renovarSexo").value;
   const nivel = document.getElementById("renovarNivel").value;
   const objetivoMapa = {
-   "Volumen":"hipertrofia","Definición":"definicion","Peak week":"competicion","Transición":"salud",
+   "Volumen":"hipertrofia","Preparación":"hipertrofia","Definición":"definicion","Peak week":"competicion","Transición":"salud",
    "Performance":"performance","Longevidad":"longevidad","Rehabilitación":"rehabilitacion",
    "Fuerza máxima":"fuerza_maxima","Mantención":"mantencion","Retorno post-pausa":"retorno"
   };
   const objetivo = objetivoMapa[fase] || "hipertrofia";
   const hoy = new Date().toISOString().slice(0,10);
-  act.sem = 4;
-  const semDias = 28;
+  const _semBloque = Math.max(1, Math.min(8, +(document.getElementById("renovarSem")?.value) || 4));
+  act.sem = _semBloque;
+  const semDias = _semBloque*7;
+  (function(){ const fs = document.getElementById("fSem"); if(fs){ if(![...fs.options].some(o=>+o.value===_semBloque)){ const o=document.createElement("option"); o.value=_semBloque; o.textContent=_semBloque+" semanas"; fs.appendChild(o); } fs.value=_semBloque; } })();
   const nuevoChk = new Date(Date.now()+semDias*86400000).toISOString().slice(0,10);
   act.ini_f = hoy; act.chk = nuevoChk;
   const disciplina = document.getElementById("renovarDisciplina")?.value || "fisicoculturismo";
@@ -2464,6 +2480,7 @@ async function renovarMesociclo(){
      {n:"Cardio",ej: poolDisciplina ? [] : [["Caminata en cinta LISS","30 min","accesorio",r.obj.cardio]]}
     ]};
   });
+  try{ if(window.ppcPostGenerar) window.ppcPostGenerar(act, fase); }catch(e){}
   pintarDias();
   const elFIni = document.getElementById("fIni"); if(elFIni) elFIni.value = hoy;
   const elFChk = document.getElementById("fChk"); if(elFChk) elFChk.value = nuevoChk;
@@ -2473,13 +2490,14 @@ async function renovarMesociclo(){
    const snap = await ref.get();
    const planActual = (snap.exists && snap.data().plan) || {};
    const mesos = Array.isArray(planActual.mesociclos) ? planActual.mesociclos.slice() : [];
-   mesos.push({fecha_inicio: hoy, fase, nota, dias:filasDia.length, nivel, sexo, edad});
+   mesos.push({fecha_inicio: hoy, fase, nota, dias:filasDia.length, nivel, sexo, edad, semanas:_semBloque});
    const hist = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
    hist.push({fecha: new Date().toISOString(), tipo:"entrenamiento", resumen: "Mesociclo renovado - fase: "+fase+" - "+filasDia.length+" días"+(nota?" - "+nota:""), snapshotDays: act.dias});
    const MESES_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
    const fechaHoy = new Date(hoy+"T12:00:00");
    const nuevoMesocicloLabel = MESES_ES[fechaHoy.getMonth()]+" "+fechaHoy.getFullYear();
-   const planFinal = Object.assign({}, planActual, {days: act.dias, startDate: hoy, checkDate: nuevoChk, mesocicloLabel: nuevoMesocicloLabel, mesociclos: mesos.slice(-30), historial: hist.slice(-15)});
+   const _wm = (window.ppcWeekMeta && act.macro && Array.isArray(act.macro.bloques) && act.macro.bloques.length) ? window.ppcWeekMeta(act, _semBloque) : null;
+   const planFinal = Object.assign({}, planActual, {days: act.dias, startDate: hoy, checkDate: nuevoChk, mesocicloLabel: nuevoMesocicloLabel, mesociclos: mesos.slice(-30), historial: hist.slice(-15)}, _wm ? {weekMeta:_wm, periodizacion:Object.assign({}, planActual.periodizacion||{}, {deload: act.macro.descarga === "fija" ? +(document.getElementById("kDl")?.value || 0.7) : 1})} : {});
    await ref.set({plan: planFinal}, {merge:true});
   }
   m.remove();
@@ -3683,7 +3701,7 @@ async function fbGuardarPlan(a){
  const _semActual = _dd<0 ? 1 : Math.min(_totalSem, Math.floor(_dd/7)+1);
  const _mesTxt = new Date().toLocaleDateString("es-CL",{month:"long"});
  const _params = [
-  {l:"Mesociclo", v:`${_mesTxt.charAt(0).toUpperCase()+_mesTxt.slice(1)} · ${_fases[_semActual-1]||"Acumulación"} · Semana ${_semActual} de ${_totalSem}`},
+  {l:"Mesociclo", v:(window.ppcMacro && a.macro && a.macro.bloques) ? (window.ppcMacro.texto(a.macro, window.ppcMacro.ubicar(a.macro)) || `Semana ${_semActual} de ${_totalSem}`) : `${_mesTxt.charAt(0).toUpperCase()+_mesTxt.slice(1)} · ${_fases[_semActual-1]||"Acumulación"} · Semana ${_semActual} de ${_totalSem}`},
   {l:"Frecuencia", v:`${dias.length} sesiones semanales · `+dias.map(d=>d.n.split("·").slice(1).join("·").trim()||d.n).join(", ")},
   {l:"Zona horaria", v:`Plan ajustado a horario de ${paisCorto(a.tz)}`}
  ];
@@ -3693,7 +3711,7 @@ async function fbGuardarPlan(a){
   "Intensificación":"Semana de mayor volumen e intensidad: principales +2 series, accesorios +1, dropset de cierre. Máximo esfuerzo con técnica (RIR 0-1).",
   "Descarga":"Reducción planificada del volumen (~40% menos series) para recuperar y supercompensar. Cargas cómodas, sin fallo. Prepara el cuerpo para el próximo bloque."
  };
- const _weekMeta = Array.from({length:_totalSem}, (_,i)=>{
+ const _weekMeta = (window.ppcWeekMeta && a.macro && Array.isArray(a.macro.bloques) && a.macro.bloques.length) ? window.ppcWeekMeta(a, _totalSem) : Array.from({length:_totalSem}, (_,i)=>{
   const fase = _fases[Math.min(i,3)] || "Acumulación";
   return { n:i+1, label:`Semana ${i+1} · ${fase}`, desc:_descFases[fase]||"" };
  });
@@ -3725,13 +3743,13 @@ async function fbGuardarPlan(a){
    s2: +(document.getElementById("kS2")?.value || 1),
    s3principal: +(document.getElementById("kS3p")?.value || 2),
    s3accesorio: +(document.getElementById("kS3a")?.value || 1),
-   deload: +(document.getElementById("kDl")?.value || 0.7)
+   deload: (a.macro && Array.isArray(a.macro.bloques) && a.macro.bloques.length && a.macro.descarga !== "fija") ? 1 : +(document.getElementById("kDl")?.value || 0.7)
   },
-  macrociclo: {
+  macrociclo: Object.assign({}, a.macro || {}, {
    tipo: document.getElementById("fMacroTipo")?.value || "mantencion",
    nombre: document.getElementById("fMacroNombre")?.value || "",
    meta: document.getElementById("fMacroMeta")?.value || ""
-  },
+  }),
   actualizado: new Date().toISOString(),
   porCoach: true
  };
@@ -6587,6 +6605,454 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
     pintar();
     document.addEventListener("click", function(e){ if(e.target.closest && e.target.closest(".tab,.item")) setTimeout(refrescar, 250); });
   }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
+})();
+</script>
+<style id="ppcMacroCss">
+#ppcMacroBox{margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+#ppcMacroBox .mzpos{font-size:13.5px;line-height:1.5;margin:4px 0 10px;color:var(--tx)}
+#ppcMacroBox .mzpos b{color:var(--gold)}
+.mzstrip{display:flex;gap:3px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch}
+.mzb{flex:0 0 auto;min-width:58px;border-radius:8px;padding:6px 7px;background:var(--card2);border:1px solid var(--line);font-size:11px;line-height:1.3;color:var(--mu)}
+.mzb b{display:block;color:var(--tx);font-size:11.5px;font-weight:600}
+.mzb.prep{background:rgba(232,193,92,.10)}
+.mzb.peak{background:rgba(235,87,87,.14)}
+.mzb.puente,.mzb.trans{opacity:.85}
+.mzb.on{border:2px solid var(--gold);color:var(--tx)}
+.mzb.pas{opacity:.45}
+.mzgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0}
+.mzind{display:grid;gap:7px;margin:10px 0}
+.mzi{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--card2);font-size:12.5px;line-height:1.45;color:var(--mu)}
+.mzi b{color:var(--tx)}
+.mzi .dot{flex:0 0 10px;height:10px;border-radius:50%;margin-top:4px;background:var(--fa)}
+.mzi.ok .dot{background:var(--ok)}.mzi.wa .dot{background:var(--wa)}.mzi.al .dot{background:var(--al)}
+.mzbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.mzbtns button{min-height:40px}
+#ppcMacroChip{font-size:12px;color:var(--gold);margin-top:3px;font-family:var(--mono);letter-spacing:.2px}
+.mzsug{margin:0 0 12px;padding:10px 12px;border:1px solid var(--gold2);border-radius:10px;font-size:12.5px;line-height:1.5;color:var(--mu)}
+.mzsug b{color:var(--tx)}
+.mzvol{margin-top:8px;font-size:12.5px;line-height:1.5;color:var(--mu)}
+.mzvol b{color:var(--tx)}
+</style>
+<script id="ppcMacro">
+/* ═══ Macrociclo: calendario guardado, ubicación automática, reglas por fase y ajustes por datos ═══ */
+(function(){
+  "use strict";
+  var $i = function(id){ return document.getElementById(id); };
+  var escM = function(s){ return String(s==null?"":s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
+  var pad = function(n){ return (n<10?"0":"")+n; };
+  var hoy = function(){ var d = new Date(); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); };
+  var toD = function(s){ return new Date(s+"T12:00:00"); };
+  var add = function(s, n){ var d = toD(s); d.setDate(d.getDate()+n); return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); };
+  var diff = function(a, b){ return Math.round((toD(b) - toD(a))/86400000); };
+  var esF = function(s){ return /^\d{4}-\d{2}-\d{2}$/.test(s||""); };
+  var fmt = function(s){ return esF(s) ? s.slice(8,10)+"-"+s.slice(5,7)+"-"+s.slice(2,4) : "—"; };
+  var r1 = function(n){ return (Math.round(n*100)/100).toFixed(2).replace(".", ","); };
+
+  /* ── Descripción de cada fase (se usa en la app y en el panel) ── */
+  var DESC = {
+    "Off-season":"Construir músculo: volumen alto y progresivo, la mayoría de las series en 6-12 repeticiones cerca del fallo.",
+    "Acumulación":"Construir músculo: volumen alto y progresivo, la mayoría de las series en 6-12 repeticiones cerca del fallo.",
+    "Intensificación":"Fuerza: menos series, más carga en los básicos (3-8 repeticiones) y técnica impecable.",
+    "Puente":"Llevar las calorías a mantención antes de la preparación. Mismo entrenamiento, cargas estables.",
+    "Preparación":"Modelo de hipertrofia en déficit: mantén cargas y rangos; la dieta y el cardio hacen el déficit.",
+    "Peak week":"Semana de la meta: menos volumen, más de 12 repeticiones, sin fallo ni excéntricos pesados.",
+    "Transición":"Recuperar: volumen bajo, lejos del fallo, retomar calorías de forma gradual."
+  };
+  var RITMO = { /* % del peso por semana: [mín, máx] */
+    "Off-season":[0.25,0.5], "Acumulación":null, "Intensificación":[-0.25,0.25], "Puente":[-0.25,0.25],
+    "Preparación":[-1,-0.5], "Peak week":null, "Transición":[0,0.5]
+  };
+
+  /* Divide n semanas en bloques de 3 a 6 (ideal = tamaño preferido) */
+  function partir(n, ideal){
+    if(n <= 0) return [];
+    if(n <= 6) return [n];
+    var k = Math.max(1, Math.round(n/ideal));
+    while(Math.floor(n/k) > 6) k++;
+    while(k > 1 && Math.floor(n/k) < 3) k--;
+    var base = Math.floor(n/k), extra = n % k, out = [];
+    for(var i=0;i<k;i++) out.push(base + (i < extra ? 1 : 0));
+    return out;
+  }
+
+  /* Construye el calendario completo. cfg: {tipo, meta, inicio, semPrep, semPuente, semTrans, descarga} */
+  function construir(cfg){
+    var ini = esF(cfg.inicio) ? cfg.inicio : hoy();
+    var bloques = [];
+    var push = function(fase, tipo, sem){ bloques.push({fase:fase, tipo:tipo, sem:sem}); };
+    var conMeta = (cfg.tipo === "competencia" || cfg.tipo === "evento") && esF(cfg.meta) && cfg.meta > ini;
+    if(conMeta){
+      var peakIni = add(cfg.meta, -6);
+      var dispo = Math.max(0, Math.floor(diff(ini, peakIni)/7));
+      var sp = Math.min(+cfg.semPrep||16, dispo);
+      var su = Math.min(+cfg.semPuente||4, Math.max(0, dispo - sp));
+      if(dispo - sp - su > 0 && dispo - sp - su < 3 && su > 0){ su += dispo - sp - su; }
+      var so = Math.max(0, dispo - sp - su);
+      if(so > 0 && so < 3){ sp += so; so = 0; }
+      partir(so, 5).forEach(function(s, i){ push(cfg.tipo === "evento" ? "Acumulación" : "Off-season", (i % 3 === 2) ? "Intensificación" : "Acumulación", s); });
+      if(su) push("Puente", "Puente", su);
+      partir(sp, 5).forEach(function(s, i, arr){ push("Preparación", arr.length > 1 ? "Preparación "+(i+1) : "Preparación", s); });
+      push("Peak week", cfg.tipo === "evento" ? "Afinamiento" : "Peak week", 1);
+      push("Transición", "Transición", Math.max(2, Math.min(4, +cfg.semTrans||3)));
+    } else {
+      /* Mantención continua: ciclos acumulación - acumulación - intensificación durante un año */
+      var total = 0, ciclo = [["Acumulación",5],["Acumulación",5],["Intensificación",4]], j = 0;
+      while(total < 52){ var c = ciclo[j % 3]; push(c[0], c[0], c[1]); total += c[1]; j++; }
+    }
+    /* Fechas: los días sueltos (0-6) entre hoy y el primer lunes de bloque van al primer bloque */
+    var fin = conMeta ? add(cfg.meta, -6) : null, cursor = ini;
+    if(conMeta){
+      var semAntesPeak = bloques.filter(function(b){ return b.fase !== "Peak week" && b.fase !== "Transición"; }).reduce(function(s,b){ return s+b.sem; }, 0);
+      var sueltos = diff(ini, fin) - semAntesPeak*7;
+      bloques.forEach(function(b, i){
+        b.ini = cursor;
+        b.dias = b.sem*7 + (i === 0 && sueltos > 0 && b.fase !== "Peak week" ? sueltos : 0);
+        cursor = add(cursor, b.dias);
+      });
+    } else {
+      bloques.forEach(function(b){ b.ini = cursor; b.dias = b.sem*7; cursor = add(cursor, b.dias); });
+    }
+    return {
+      tipo: cfg.tipo || "mantencion", nombre: cfg.nombre || "", meta: conMeta ? cfg.meta : (cfg.meta||""),
+      inicio: ini, semPrep: +cfg.semPrep||16, semPuente: +cfg.semPuente||4, semTrans: +cfg.semTrans||3,
+      descarga: cfg.descarga || "reactiva", bloques: bloques, creado: new Date().toISOString(), version: 1
+    };
+  }
+
+  /* Dónde está el atleta en una fecha */
+  function ubicar(mc, fecha){
+    if(!mc || !Array.isArray(mc.bloques) || !mc.bloques.length) return null;
+    fecha = fecha || hoy();
+    var bs = mc.bloques, i;
+    for(i=0;i<bs.length;i++){
+      var b = bs[i], d = diff(b.ini, fecha);
+      if(d >= 0 && d < b.dias){
+        var semana = Math.min(b.sem, Math.floor(d/7)+1);
+        var r = {idx:i, bloque:b, semana:semana, total:bs.length, restanDias: b.dias - d, sig: bs[i+1] || null};
+        if(esF(mc.meta) && mc.meta >= fecha) r.faltanSem = Math.ceil(diff(fecha, mc.meta)/7);
+        return r;
+      }
+    }
+    if(fecha < bs[0].ini) return {antes:true, sig: bs[0], total: bs.length};
+    return {despues:true, total: bs.length};
+  }
+  function textoUbicacion(mc, u){
+    if(!u) return "";
+    if(u.antes) return "El macrociclo empieza el "+fmt(u.sig.ini)+".";
+    if(u.despues) return "El macrociclo terminó: define una nueva meta y recalcula.";
+    return "Bloque "+(u.idx+1)+" de "+u.total+" · "+u.bloque.tipo+(u.bloque.tipo !== u.bloque.fase ? " ("+u.bloque.fase+")" : "")+
+      " · semana "+u.semana+" de "+u.bloque.sem+(u.faltanSem !== undefined ? " · faltan "+u.faltanSem+" semanas para la meta" : "");
+  }
+
+  /* Fase del modal "Renovar" que corresponde a cada bloque */
+  function opcionDe(b){
+    if(!b) return null;
+    if(b.fase === "Preparación") return "Preparación";
+    if(b.fase === "Peak week") return "Peak week";
+    if(b.fase === "Transición") return "Transición";
+    if(b.fase === "Puente") return "Mantención";
+    if(b.tipo === "Intensificación") return "Fuerza máxima";
+    return "Volumen";
+  }
+  /* Sugerencia para renovar: el bloque que toca hoy (o el siguiente si al actual le quedan menos de 2 semanas) */
+  function sugerencia(a){
+    var mc = a && a.macro, u = ubicar(mc);
+    if(!u) return null;
+    if(u.antes) return {bloque:u.sig, sem:u.sig.sem, opcion:opcionDe(u.sig), texto:"Primer bloque del macrociclo ("+u.sig.tipo+")"};
+    if(u.despues) return null;
+    if(u.restanDias < 14 && u.sig){
+      return {bloque:u.sig, sem:Math.min(8, u.sig.sem + Math.round(u.restanDias/7)), opcion:opcionDe(u.sig),
+        texto:"Al bloque actual le quedan "+u.restanDias+" días: se suman al siguiente ("+u.sig.tipo+")"};
+    }
+    var semRest = Math.max(1, Math.round(u.restanDias/7));
+    return {bloque:u.bloque, sem:Math.min(8, semRest), opcion:opcionDe(u.bloque),
+      texto: u.semana === 1 ? "Bloque "+(u.idx+1)+" de "+u.total+" ("+u.bloque.tipo+")" : "Resto del bloque "+(u.idx+1)+" ("+u.bloque.tipo+"): "+semRest+" semana(s)"};
+  }
+
+  /* weekMeta que recibe la app según la fase y el modo de descarga */
+  function weekMeta(a, N){
+    N = Math.max(1, +N||4);
+    var mc = a && a.macro, f0 = (mc && mc.bloques && mc.bloques.length && esF(a.ini_f) && a.ini_f >= mc.bloques[0].ini) ? a.ini_f : hoy(), u = ubicar(mc, f0);
+    var fase = u && u.bloque ? u.bloque.fase : null;
+    var reactiva = !mc || mc.descarga !== "fija";
+    var base = fase ? DESC[fase] : "";
+    var out = [];
+    for(var w=1; w<=N; w++){
+      var lab, d;
+      if(fase === "Peak week"){ lab = "Peak week"; d = DESC["Peak week"]; }
+      else if(fase === "Transición"){ lab = "Transición"; d = DESC["Transición"]; }
+      else if(w === 1){ lab = "Base"; d = "Fija cargas de referencia con técnica sólida (RIR 2-3)."; }
+      else if(!reactiva && w === N && N >= 3){ lab = "Descarga"; d = "Menos series y lejos del fallo, misma carga. Recupera para el próximo bloque."; }
+      else if((reactiva && w === N) || (!reactiva && w === N-1)){ lab = "Intensificación"; d = "Semana de mayor exigencia: principales +2 series, accesorios +1 (RIR 0-1)."; }
+      else { lab = "Progresión"; d = "Sube carga o repeticiones donde la técnica fue estable (RIR 1-2)."; }
+      out.push({n:w, label:(fase ? fase+" · " : "")+lab, desc:(base && base !== d ? base+" " : "")+d});
+    }
+    return out;
+  }
+
+  /* Ajustes al entrenamiento recién generado según la fase */
+  function postGenerar(a, faseModal){
+    (a.dias||[]).forEach(function(d){
+      (d.secs||[]).forEach(function(s){
+        if(!/^Entrenamiento/i.test(s.n)) return;
+        s.ej = (s.ej||[]).map(function(e){
+          e = e.slice(); var tip = e[3] || "";
+          var m = String(e[1]).match(/^(\d+)\s*[×xX]\s*(.*)$/);
+          if(faseModal === "Peak week" && m){
+            e[1] = Math.max(2, Math.round(+m[1]*0.6))+" × 12-15";
+            tip = "Peak week: sin fallo (RIR 2-3), evita excéntricos pesados";
+          } else if(faseModal === "Transición" && m){
+            e[1] = Math.max(2, Math.round(+m[1]*0.6))+" × "+m[2];
+            tip = (tip ? tip+" · " : "")+"Transición: RIR 2-4";
+          } else if(!/RIR/i.test(tip)){
+            var rir = e[2] === "principal" ? "RIR 1-3" : e[2] === "mantenimiento" ? "RIR 2-3" : "RIR 0-1";
+            tip = tip ? tip+" · "+rir : rir;
+          }
+          e[3] = tip; return e;
+        });
+      });
+    });
+  }
+
+  /* ── Guardar el calendario en la nube ── */
+  async function guardarMacro(a){
+    var id = window.FB_ID ? FB_ID[a.id] : (typeof FB_ID !== "undefined" ? FB_ID[a.id] : null);
+    if(!FB.on || !id){ toast("Calendario guardado en pantalla · se sube con Guardar en la nube"); return false; }
+    try{
+      await FB.db.collection("athletes").doc(id).set({plan:{macrociclo: a.macro}}, {merge:true});
+      return true;
+    }catch(e){ toast("No se pudo guardar el calendario: "+e.message); return false; }
+  }
+
+  /* ── Datos para los indicadores ── */
+  var CACHE = {};
+  async function datosNube(a){
+    if(CACHE[a.id] && Date.now() - CACHE[a.id].t < 120000) return CACHE[a.id].d;
+    var id = FB_ID[a.id]; if(!FB.on || !id) return null;
+    try{ var s = await FB.db.collection("athletes").doc(id).get(); var d = s.exists ? s.data() : null; CACHE[a.id] = {t:Date.now(), d:d}; return d; }catch(e){ return null; }
+  }
+  function ritmoPeso(a, d){
+    var log = [];
+    ((d && d.progressLog) || []).forEach(function(e){ if(e && esF(e.date) && typeof e.weight === "number") log.push([e.date, e.weight]); });
+    if(!log.length) (a.hist||[]).forEach(function(h){ var w = parseFloat(String(h[1]).replace(",", ".")); if(esF(h[0]) && !isNaN(w)) log.push([h[0], w]); });
+    log.sort(function(x,y){ return x[0] < y[0] ? -1 : 1; });
+    if(log.length < 2) return null;
+    var last = log[log.length-1], ref = null;
+    for(var i=log.length-2;i>=0;i--){ if(diff(log[i][0], last[0]) >= 21){ ref = log[i]; break; } }
+    if(!ref) ref = log[0];
+    var dias = diff(ref[0], last[0]); if(dias < 10) return null;
+    return {pct: (last[1]-ref[1])/ref[1]*100/(dias/7), desde: ref[0], hasta: last[0], dias: dias};
+  }
+  function adherencia(a, d){
+    if(!d || !esF(a.ini_f)) return null;
+    var tc = d.trainingChecks || {}, ini = a.ini_f, h = hoy();
+    var dias = Math.min(diff(ini, h), (+a.sem||4)*7); if(dias < 7) return null;
+    var hechas = {};
+    Object.keys(tc).forEach(function(k){ if(tc[k]){ var f = k.slice(0,10); if(f >= ini && f <= h) hechas[f] = 1; } });
+    var plan = Math.max(1, Math.round(dias/7*((a.dias||[]).length||4)));
+    return {pct: Math.min(100, Math.round(Object.keys(hechas).length/plan*100)), hechas:Object.keys(hechas).length, plan:plan};
+  }
+  function fatiga(d){
+    var df = (d && d.dailyFeel) || {}, h = hoy(), desde = add(h, -14), e = [], an = [];
+    Object.keys(df).forEach(function(f){ if(f >= desde && f <= h && df[f]){ if(typeof df[f].energia === "number") e.push(df[f].energia); if(typeof df[f].animo === "number") an.push(df[f].animo); } });
+    if(e.length + an.length < 5) return null;
+    var pr = function(v){ return v.length ? v.reduce(function(s,x){ return s+x; },0)/v.length : null; };
+    return {energia: pr(e), animo: pr(an), n: Math.max(e.length, an.length)};
+  }
+
+  /* ── Avisos de volumen por músculo (se agregan al bloque "Volumen del mesociclo") ── */
+  function avisosVolumen(){
+    var el = $i("avisosVol"); if(!el || typeof leerDOM !== "function") return;
+    var vieja = $i("mzVol"); if(vieja) vieja.remove();
+    var dias = leerDOM(), sets = {}, freq = {}, maxSes = {};
+    var IGN = ["cardio","movilidad","respiracion","equilibrio","core","full body","otro","lumbar"];
+    dias.forEach(function(d){
+      var visto = {}, ses = {};
+      d.secs.forEach(function(s){
+        if(!/^Entrenamiento/i.test(s.n)) return;
+        s.ej.forEach(function(e){
+          var m = String(e[1]).match(/^(\d+)/); if(!m || !e[0]) return;
+          var meta = typeof metaEj === "function" ? metaEj(e[0]) : null; var g = meta ? meta[1] : null;
+          if(!g || IGN.indexOf(g) >= 0) return;
+          var n = parseInt(m[1]); sets[g] = (sets[g]||0) + n; ses[g] = (ses[g]||0) + n;
+          if(!visto[g]){ visto[g] = 1; freq[g] = (freq[g]||0) + 1; }
+        });
+      });
+      Object.keys(ses).forEach(function(g){ maxSes[g] = Math.max(maxSes[g]||0, ses[g]); });
+    });
+    var LB = typeof GRUPO_LB !== "undefined" ? GRUPO_LB : {};
+    var nom = function(g){ return (LB[g] || g).toString().toLowerCase(); };
+    var bajo = [], unDia = [], alto = [];
+    Object.keys(sets).forEach(function(g){
+      if(sets[g] < 10) bajo.push(nom(g)+" ("+sets[g]+")");
+      else if(freq[g] === 1) unDia.push(nom(g)+" ("+sets[g]+")");
+      if(maxSes[g] > 11) alto.push(nom(g)+" ("+maxSes[g]+")");
+    });
+    if(!bajo.length && !unDia.length && !alto.length) return;
+    var div = document.createElement("div"); div.id = "mzVol"; div.className = "mzvol";
+    div.innerHTML = (bajo.length ? "<div><b>Bajo 10 series por semana:</b> "+escM(bajo.join(", "))+".</div>" : "")+
+      (unDia.length ? "<div><b>10 o más series en un solo día:</b> "+escM(unDia.join(", "))+" · conviene repartir en 2 días.</div>" : "")+
+      (alto.length ? "<div><b>Más de 11 series de un músculo en una sesión:</b> "+escM(alto.join(", "))+" · el beneficio extra es poco detectable.</div>" : "");
+    el.insertAdjacentElement("afterend", div);
+  }
+  if(typeof recalcular === "function"){
+    var _rec = recalcular;
+    recalcular = function(){ var r = _rec.apply(this, arguments); try{ avisosVolumen(); }catch(e){} return r; };
+  }
+
+  /* ── Caja del macrociclo en la ficha ── */
+  function caja(){
+    var box = $i("ppcMacroBox"); if(box) return box;
+    var meta = $i("fMacroMeta"); if(!meta) return null;
+    var sec = meta.closest("details") || meta.closest(".sec"); if(!sec) return null;
+    box = document.createElement("div"); box.id = "ppcMacroBox";
+    box.innerHTML =
+      '<div class="lb">Calendario del macrociclo</div>'+
+      '<div class="mzpos" id="mzPos"></div>'+
+      '<div class="mzstrip" id="mzStrip"></div>'+
+      '<div class="mzind" id="mzInd"></div>'+
+      '<div class="mzgrid">'+
+        '<label><span class="lb">Inicio</span><input class="in" type="date" id="mzIni"></label>'+
+        '<label><span class="lb">Descarga</span><select class="in" id="mzDl"><option value="reactiva">Reactiva (según fatiga)</option><option value="fija">Fija en la última semana</option></select></label>'+
+        '<label><span class="lb">Semanas de preparación</span><input class="in mono" type="number" min="4" max="30" id="mzPrep" value="16"></label>'+
+        '<label><span class="lb">Semanas de puente</span><input class="in mono" type="number" min="0" max="8" id="mzPuente" value="4"></label>'+
+        '<label><span class="lb">Semanas de transición</span><input class="in mono" type="number" min="2" max="4" id="mzTrans" value="3"></label>'+
+      '</div>'+
+      '<div class="mzbtns"><button class="b2" type="button" id="mzCrear">Crear calendario desde hoy</button><button class="b2" type="button" id="mzTodos">Iniciar en todos los atletas</button></div>';
+    var campos = sec.querySelector(".campos");
+    (campos ? campos.parentNode : sec).appendChild(box);
+    box.addEventListener("click", function(ev){
+      if(ev.target.id === "mzCrear") crearDesdeFicha();
+      if(ev.target.id === "mzTodos") iniciarTodos();
+    });
+    return box;
+  }
+  function chip(a){
+    var c = $i("ppcMacroChip"), h = $i("hCt");
+    if(!c && h){ c = document.createElement("div"); c.id = "ppcMacroChip"; h.insertAdjacentElement("afterend", c); }
+    if(!c) return;
+    var u = ubicar(a && a.macro);
+    c.textContent = u && !u.antes && !u.despues ? textoUbicacion(a.macro, u) : (a && a.macro ? textoUbicacion(a.macro, u) : "Sin calendario de macrociclo");
+  }
+  function pintar(a){
+    a = a || (typeof act !== "undefined" ? act : null); if(!a) return;
+    var box = caja(); chip(a); if(!box) return;
+    var mc = a.macro && Array.isArray(a.macro.bloques) && a.macro.bloques.length ? a.macro : null;
+    $i("mzIni").value = mc ? mc.inicio : hoy();
+    $i("mzPrep").value = mc ? mc.semPrep : 16; $i("mzPuente").value = mc ? mc.semPuente : 4;
+    $i("mzTrans").value = mc ? mc.semTrans : 3; $i("mzDl").value = mc ? (mc.descarga||"reactiva") : "reactiva";
+    $i("mzCrear").textContent = mc ? "Recalcular calendario" : "Crear calendario desde hoy";
+    if(!mc){
+      $i("mzPos").innerHTML = "Este atleta aún no tiene calendario. Define el tipo de objetivo y, si compite, la fecha meta; luego pulsa <b>Crear calendario desde hoy</b>.";
+      $i("mzStrip").innerHTML = ""; $i("mzInd").innerHTML = ""; return;
+    }
+    var u = ubicar(mc), metaCambio = (mc.meta||"") !== ($i("fMacroMeta").value||"") || (mc.tipo||"") !== ($i("fMacroTipo").value||"");
+    $i("mzPos").innerHTML = "<b>Hoy:</b> "+escM(textoUbicacion(mc, u))+(metaCambio ? '<br><span style="color:var(--wa)">La meta o el tipo cambiaron: pulsa Recalcular calendario.</span>' : "");
+    $i("mzStrip").innerHTML = mc.bloques.map(function(b, i){
+      var cls = b.fase === "Preparación" ? "prep" : b.fase === "Peak week" ? "peak" : b.fase === "Puente" ? "puente" : b.fase === "Transición" ? "trans" : "";
+      var fin = add(b.ini, b.dias-1);
+      if(u && u.idx === i) cls += " on"; else if(fin < hoy()) cls += " pas";
+      return '<div class="mzb '+cls+'" title="'+escM(b.fase+" · "+fmt(b.ini)+" a "+fmt(fin))+'"><b>'+escM(b.tipo)+'</b>'+b.sem+' sem · '+fmt(b.ini).slice(0,5)+'</div>';
+    }).join("");
+    indicadores(a);
+  }
+  async function indicadores(a){
+    var el = $i("mzInd"); if(!el) return;
+    el.innerHTML = '<div class="mzi"><span class="dot"></span><span>Leyendo datos del atleta…</span></div>';
+    var d = await datosNube(a);
+    if(!act || act.id !== a.id) return;
+    var u = ubicar(a.macro), fase = u && u.bloque ? u.bloque.fase : null;
+    if(fase === "Preparación" && u.faltanSem !== undefined && u.faltanSem <= 5) fase = "Preparación final";
+    var html = [];
+    var rp = ritmoPeso(a, d);
+    var rango = fase === "Preparación final" ? [-0.5,-0.25] : (fase ? RITMO[fase] : null);
+    if(rp){
+      var cls = "", txt = "";
+      if(rango){
+        var dist = rp.pct < rango[0] ? rango[0]-rp.pct : rp.pct > rango[1] ? rp.pct-rango[1] : 0;
+        cls = dist === 0 ? "ok" : dist <= 0.25 ? "wa" : "al";
+        txt = dist === 0 ? "dentro del rango de la fase" : (rp.pct < rango[0] ? "más rápido de lo indicado: revisa kcal" : "más lento de lo indicado: revisa kcal");
+        txt += " ("+r1(rango[0])+" a "+r1(rango[1])+" %/sem)";
+      } else txt = "sin rango definido para esta fase";
+      html.push('<div class="mzi '+cls+'"><span class="dot"></span><span><b>Ritmo de peso:</b> '+(rp.pct>0?"+":"")+r1(rp.pct)+' %/semana ('+fmt(rp.desde)+' a '+fmt(rp.hasta)+') · '+escM(txt)+'</span></div>');
+    } else html.push('<div class="mzi"><span class="dot"></span><span><b>Ritmo de peso:</b> faltan registros de peso con al menos 10 días de diferencia.</span></div>');
+    var ad = adherencia(a, d);
+    if(ad){
+      var c2 = ad.pct >= 85 ? "ok" : ad.pct >= 70 ? "wa" : "al";
+      html.push('<div class="mzi '+c2+'"><span class="dot"></span><span><b>Adherencia del bloque:</b> '+ad.pct+' % ('+ad.hechas+' de '+ad.plan+' sesiones)'+(ad.pct < 70 ? ' · al renovar, <b>repite el bloque</b> en vez de subir volumen.' : '')+'</span></div>');
+    } else html.push('<div class="mzi"><span class="dot"></span><span><b>Adherencia del bloque:</b> sin datos suficientes todavía.</span></div>');
+    var fa = fatiga(d);
+    if(fa){
+      var minF = Math.min(fa.energia==null?5:fa.energia, fa.animo==null?5:fa.animo);
+      var c3 = minF <= 2.5 ? "al" : minF <= 3 ? "wa" : "ok";
+      html.push('<div class="mzi '+c3+'"><span class="dot"></span><span><b>Energía y ánimo (14 días):</b> energía '+(fa.energia==null?"—":r1(fa.energia))+' · ánimo '+(fa.animo==null?"—":r1(fa.animo))+' de 5'+
+        (c3 === "al" ? ' · <b>descarga reactiva recomendada</b>: 1 semana con ~40 % menos series y RIR 3-4, misma carga.' : c3 === "wa" ? ' · vigila la recuperación.' : '')+'</span></div>');
+    } else html.push('<div class="mzi"><span class="dot"></span><span><b>Energía y ánimo:</b> menos de 5 registros en los últimos 14 días.</span></div>');
+    el.innerHTML = html.join("");
+  }
+
+  function cfgDesdeFicha(){
+    return { tipo: $i("fMacroTipo").value, nombre: $i("fMacroNombre").value, meta: $i("fMacroMeta").value,
+      inicio: $i("mzIni").value || hoy(), semPrep: +$i("mzPrep").value || 16, semPuente: +$i("mzPuente").value || 0,
+      semTrans: +$i("mzTrans").value || 3, descarga: $i("mzDl").value };
+  }
+  async function crearDesdeFicha(){
+    if(!act) return;
+    var cfg = cfgDesdeFicha();
+    if((cfg.tipo === "competencia" || cfg.tipo === "evento") && !(esF(cfg.meta) && cfg.meta > cfg.inicio)){
+      toast("Falta una fecha meta futura para una competencia o evento"); return;
+    }
+    act.macro = construir(cfg);
+    pintar(act);
+    var ok = await guardarMacro(act);
+    toast(ok ? "Calendario guardado · "+act.macro.bloques.length+" bloques" : "Calendario creado en pantalla");
+  }
+  async function iniciarTodos(){
+    if(!FB.on || !(window.AUTH ? AUTH.user : (typeof AUTH !== "undefined" && AUTH.user))){ toast("Inicia sesión para guardar en la nube"); return; }
+    var activos = ATLETAS.filter(function(x){ return x.estado !== "pausa" && FB_ID[x.id]; });
+    if(!confirm("Se creará un calendario desde hoy para "+activos.length+" atletas activos que aún no tienen uno. Los que compiten usan su fecha meta guardada; el resto queda en mantención continua. ¿Continuar?")) return;
+    var hechos = 0, saltados = 0;
+    for(var i=0;i<activos.length;i++){
+      var a = activos[i];
+      try{
+        var s = await FB.db.collection("athletes").doc(FB_ID[a.id]).get();
+        var p = (s.exists && s.data().plan) || {}, m0 = p.macrociclo || a.macro || {};
+        if(Array.isArray(m0.bloques) && m0.bloques.length){ a.macro = m0; saltados++; continue; }
+        var tipo = m0.tipo || "mantencion";
+        if((tipo === "competencia" || tipo === "evento") && !(esF(m0.meta) && m0.meta > hoy())) tipo = "mantencion";
+        a.macro = construir({tipo:tipo, nombre:m0.nombre||"", meta:m0.meta||"", inicio:hoy(), semPrep:16, semPuente:4, semTrans:3, descarga:"reactiva"});
+        await FB.db.collection("athletes").doc(FB_ID[a.id]).set({plan:{macrociclo:a.macro}}, {merge:true});
+        hechos++;
+      }catch(e){}
+    }
+    toast("Calendario creado en "+hechos+" atletas · "+saltados+" ya tenían uno");
+    if(act) pintar(act);
+  }
+
+  /* ── Planificación anual: si hay calendario, muestra el real ── */
+  function anual(a){
+    var mc = a && a.macro;
+    if(!mc || !Array.isArray(mc.bloques) || !mc.bloques.length || !window.ppcModal) return false;
+    var u = ubicar(mc);
+    window.ppcModal("Macrociclo · "+escM(a.n), '<div class="hvacio" style="margin-bottom:10px">'+escM(textoUbicacion(mc, u))+'</div>'+
+      '<div style="overflow-x:auto"><table class="ppctabla"><tr><th>#</th><th>Bloque</th><th>Fase</th><th>Fechas</th><th>Semanas</th></tr>'+
+      mc.bloques.map(function(b, i){ return '<tr'+(u && u.idx === i ? ' style="color:var(--gold);font-weight:600"' : '')+'><td>'+(i+1)+'</td><td>'+escM(b.tipo)+'</td><td>'+escM(b.fase)+'</td><td>'+fmt(b.ini)+' a '+fmt(add(b.ini, b.dias-1))+'</td><td>'+b.sem+'</td></tr>'; }).join("")+
+      '</table></div><div class="hvacio" style="margin-top:10px">'+escM(DESC[u && u.bloque ? u.bloque.fase : ""] || "")+'</div>');
+    return true;
+  }
+
+  window.ppcMacro = {construir:construir, ubicar:ubicar, texto:textoUbicacion, pintar:pintar};
+  window.ppcMacroSugerencia = sugerencia;
+  window.ppcWeekMeta = weekMeta;
+  window.ppcPostGenerar = postGenerar;
+  window.ppcMacroAnual = anual;
+  window.ppcMacroPintar = pintar;
+
+  document.addEventListener("change", function(ev){
+    if(ev.target && /^(fMacroMeta|fMacroTipo)$/.test(ev.target.id) && act) pintar(act);
+  });
+  function init(){ caja(); if(typeof act !== "undefined" && act) pintar(act); try{ avisosVolumen(); }catch(e){} }
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
 })();
 </script>

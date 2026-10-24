@@ -1102,6 +1102,7 @@ athleteRef.onSnapshot((doc)=>{
       mesocicloLabel = p.mesocicloLabel || DEFAULT_PLAN.mesocicloLabel;
       params = p.params || DEFAULT_PLAN.params;
       weekMeta = p.weekMeta || DEFAULT_PLAN.weekMeta;
+      window.__macro = p.macrociclo || null;
       if(p.periodizacion){
         if(p.periodizacion.maxSetsSession) MAX_SETS_SESSION = p.periodizacion.maxSetsSession;
         PERIODIZACION = {
@@ -1579,6 +1580,7 @@ function esEjercicioCardio(nombre){
 }
 
 function computeReps(item, sectionName, isLast, week){
+  week = ppcMapSemana(week);
   if(!/^Entrenamiento/.test(sectionName)) return { text:item.reps, notes:[] };
   if(esEjercicioCardio(item.name)) return { text:item.reps, notes:[] };
   const m = item.reps.match(/^(\d+)(\s*[×xX]\s*)(.*)$/);
@@ -1662,12 +1664,39 @@ function videoSearchUrl(name){
   return `https://www.youtube.com/results?search_query=${q}`;
 }
 
+/* ── Macrociclo (panel coach): bloques de 1 a 8 semanas y fase actual ── */
+function ppcNsem(){ var n = (weekMeta && weekMeta.length) || 4; return Math.max(1, Math.min(8, n)); }
+function ppcMapSemana(w){
+  var N = ppcNsem(), reactiva = (PERIODIZACION && PERIODIZACION.deload >= 1);
+  if(N === 4 && !reactiva) return w;
+  if(N <= 1) return 1;
+  if(w <= 1) return 1;
+  if(reactiva) return w >= N ? 3 : 2;
+  if(w >= N) return 4;
+  if(w === N-1) return 3;
+  return 2;
+}
+function ppcFaseTexto(){
+  var mc = window.__macro; if(!mc || !mc.bloques || !mc.bloques.length) return '';
+  var hoyS = todayStr(), t = function(s){ return new Date(s+'T12:00:00').getTime(); };
+  for(var i=0;i<mc.bloques.length;i++){
+    var b = mc.bloques[i], d = Math.round((t(hoyS) - t(b.ini))/86400000);
+    if(d >= 0 && d < b.dias){
+      var sem = Math.min(b.sem, Math.floor(d/7)+1);
+      var txt = (b.fase === 'Off-season' ? 'Off-season · ' + b.tipo : b.tipo) + ' · semana ' + sem + ' de ' + b.sem;
+      if(mc.meta && mc.meta >= hoyS){ var f = Math.ceil((t(mc.meta) - t(hoyS))/604800000); txt += ' · faltan ' + f + (f === 1 ? ' semana' : ' semanas') + ' para tu meta'; }
+      return txt;
+    }
+  }
+  return '';
+}
+
 function computeCurrentWeek(){
   if(!planStartDate) return null;
   const diffDays = diasEntreStr(planStartDate, todayStr());
   if(diffDays < 0) return null; // el plan aún no empieza
   const week = Math.floor(diffDays / 7) + 1;
-  return Math.min(Math.max(week,1), 4);
+  return Math.min(Math.max(week,1), ppcNsem());
 }
 
 function weekDateRange(weekN){
@@ -1800,6 +1829,9 @@ function renderHeader(){
   const elMeta = document.getElementById('headerMeta');
   if(objetivo){ elMeta.style.display = ''; elMeta.innerHTML = `Tu meta: ${objetivo}`; }
   else { elMeta.style.display = 'none'; elMeta.innerHTML = ''; }
+  (function(){ var ft = ppcFaseTexto(), el = document.getElementById('headerFase');
+    if(!el && elMeta && elMeta.parentNode){ el = document.createElement('p'); el.id = 'headerFase'; el.className = 'athlete-sub'; el.style.cssText = 'margin-top:4px;font-family:var(--font-mono);font-size:12px;letter-spacing:.2px;opacity:.9'; elMeta.parentNode.insertBefore(el, elMeta.nextSibling); }
+    if(el){ el.style.display = ft ? '' : 'none'; el.textContent = ft ? '📍 ' + ft : ''; } })();
   renderHeaderFeel();
   var _sc = document.getElementById('statStrip');
   if(_sc) _sc.style.display = 'none';
@@ -1891,7 +1923,7 @@ function renderViewSwitch(){
     <button class="view-btn ${activeView==='training'?'active':''}" data-view="training">
       <span class="vb-bg">🏋️</span>
       <div class="vb-label">ENTRENO</div>
-      <div class="vb-spec">5 días · Semanas 1-4</div>
+      <div class="vb-spec">5 días · Semanas 1-${ppcNsem()}</div>
     </button>
     <button class="view-btn ${activeView==='progress'?'active':''}" data-view="progress">
       <span class="vb-bg">📈</span>
@@ -1907,8 +1939,8 @@ function renderViewSwitch(){
 function renderWeekRow(){
   const el = document.getElementById('weekRow');
   const currentW = computeCurrentWeek();
-  el.innerHTML = [1,2,3,4].map(w=>
-    `<button class="week-btn ${w===activeWeek?'active':''} ${!isWeekEditable(w)?'locked':''}" data-week="${w}">SEMANA ${w}${w===currentW?' •':(isWeekEditable(w)?'':' 🔒')}</button>`
+  el.innerHTML = Array.from({length:ppcNsem()}, function(_,i){ return i+1; }).map(w=>
+    `<button class="week-btn ${w===activeWeek?'active':''} ${!isWeekEditable(w)?'locked':''}" data-week="${w}">${ppcNsem()>4?'S':'SEMANA '}${w}${w===currentW?' •':(isWeekEditable(w)?'':' 🔒')}</button>`
   ).join('');
   el.querySelectorAll('.week-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{ activeWeek = parseInt(btn.dataset.week); renderAll(); });
