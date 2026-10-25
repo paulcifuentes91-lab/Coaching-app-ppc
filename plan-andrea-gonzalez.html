@@ -871,6 +871,8 @@ athleteRef.onSnapshot((doc)=>{
     dailyFeel = data.dailyFeel || {};
     insignias = data.insignias || {};
     headerObjetivo = (data.contacto && data.contacto.objetivoHeader) || '';
+    window.__dietaTipo = (data.contacto && data.contacto.dietaTipo) || window.__dietaTipo || 'omnivoro';
+    if(data.contacto && data.contacto.sinGluten!==undefined) window.__sinGluten = (data.contacto.sinGluten==='si' || data.contacto.sinGluten===true);
     diasLibres = data.diasLibres || {};
     progressPhotos = data.progressPhotos || [];
     healthLog = data.healthLog || {};
@@ -3477,20 +3479,60 @@ function swapsHoy(){
   if(!o || o.fecha !== hoy) o = {fecha:hoy, s:{}};
   return {key:key, o:o};
 }
+/* ppcSwapV2 · equivalencias por origen (animal / huevo-lácteo / vegano), whey primero, sin gluten */
+FOODS["granola"] = FOODS["granola"] || [450,10,64,18,"carbo"];
+FOODS["cereal integral"] = FOODS["cereal integral"] || [360,10,72,3,"carbo"];
+var ORIGEN = {"pechuga de pollo":"a","carne roja magra":"a","pescado blanco":"a","salmón":"a","atún en agua":"a","pavo":"a","lomo de cerdo":"a","camarones":"a",
+  "huevo entero":"h","claras de huevo":"h","yogurt griego":"h","queso":"h","kefir":"h","leche descremada":"h","yogurt natural":"h","queso cottage":"h",
+  "whey":"h","proteína aislada":"h","caseína":"h","tofu":"v","tempeh":"v","seitán":"v","lentejas cocidas":"v","garbanzos cocidos":"v","porotos negros cocidos":"v",
+  "edamame":"v","leche de almendras":"v","leche de soya":"v","proteína vegetal":"v"};
+var CON_GLUTEN = ["pan","pan integral","pasta cocida","pasta integral cocida","cuscús cocido","seitán","corn flakes","granola","cereal integral"];
+var CARBO_PREF = ["arroz blanco cocido","papa cocida","camote cocido","zapallo","avena","pan","pan integral","cereal integral","granola","corn flakes","quinoa cocida","arroz integral cocido","pasta cocida"];
+var CARBO_OCULTOS = ["arroz cocido","arroz basmati cocido","harina de arroz","legumbres cocidas"];
+function ppcDietaAtleta(){ return window.__dietaTipo || "omnivoro"; }
+function ppcSinGluten(){ return !!window.__sinGluten; }
 function equivalencias(it){
   var base = FOODS[it.clave], idx = BASE[base[4]] || 2;
   var objetivo = base[idx]*it.g/100; if(objetivo <= 0.5) return [];
-  var kcalBase = base[0]*it.g/100;
-  var ex = EQ_EXTRA[base[4]] || {cats:[], nombres:[]};
-  return Object.keys(FOODS).filter(function(k){
+  var kcalBase = base[0]*it.g/100, catB = base[4];
+  var oB = ORIGEN[it.clave] || "";
+  var dieta = ppcDietaAtleta(), sg = ppcSinGluten();
+  var ex = EQ_EXTRA[catB] || {cats:[], nombres:[]};
+  var esProteina = (catB==="prot" || catB==="polvo" || catB==="lacteos");
+  var cats = [catB].concat(ex.cats);
+  if(catB==="prot" || catB==="lacteos") cats.push("polvo");
+  var lista = Object.keys(FOODS).filter(function(k){
     if(k===it.clave || GENERICOS.indexOf(k)>=0) return false;
-    var c = FOODS[k][4];
-    return (c===base[4] || ex.cats.indexOf(c)>=0 || ex.nombres.indexOf(k)>=0) && FOODS[k][idx] >= 2;
+    var c = FOODS[k][4], o = ORIGEN[k] || "";
+    if(!(cats.indexOf(c)>=0 || ex.nombres.indexOf(k)>=0)) return false;
+    if(FOODS[k][idx] < 2) return false;
+    if(catB==="carbo" && CARBO_OCULTOS.indexOf(k)>=0) return false;
+    if(sg && CON_GLUTEN.indexOf(k)>=0) return false;
+    if(esProteina){
+      if(oB==="v" && o!=="v") return false;            // vegano -> solo vegano
+      if((oB==="a"||oB==="h") && o==="v") return false;  // animal / lácteo -> sin opciones veganas
+      if(dieta==="vegano" && o!=="v") return false;
+      if(dieta==="vegetariano" && o==="a") return false;
+    }
+    return true;
   }).map(function(k){
-    var f = FOODS[k], g = Math.round(objetivo/f[idx]*100/5)*5; // redondeo a 5 g
-    return {nombre:k, g:g, kcal:Math.round(f[0]*g/100), p:Math.round(f[1]*g/100), c:Math.round(f[2]*g/100), gr:Math.round(f[3]*g/100)};
-  }).filter(function(e){ return e.g>=10 && e.g<=500 && Math.abs(e.kcal-kcalBase) <= Math.max(60, kcalBase*0.35); })
-    .sort(function(a,b){ return Math.abs(a.kcal-kcalBase)-Math.abs(b.kcal-kcalBase); }).slice(0,8);
+    var f = FOODS[k], g = Math.round(objetivo/f[idx]*100/5)*5;
+    return {nombre:k, g:g, kcal:Math.round(f[0]*g/100), p:Math.round(f[1]*g/100), c:Math.round(f[2]*g/100), gr:Math.round(f[3]*g/100), polvo:(f[4]==="polvo")};
+  }).filter(function(e){
+    if(e.polvo) return e.g>=10 && e.g<=200;                       // el polvo no exige kcal parecidas
+    var maxG = (catB==="carbo") ? 800 : 500;
+    var tol = (catB==="carbo") ? Math.max(120, kcalBase*0.8) : Math.max(60, kcalBase*0.35);
+    return e.g>=10 && e.g<=maxG && Math.abs(e.kcal-kcalBase) <= tol;
+  });
+  lista.sort(function(a,b){
+    if(esProteina && a.polvo!==b.polvo) return a.polvo ? -1 : 1;  // whey / proteína en polvo primero
+    if(catB==="carbo"){
+      var ia = CARBO_PREF.indexOf(a.nombre), ib = CARBO_PREF.indexOf(b.nombre);
+      ia = ia<0 ? 99 : ia; ib = ib<0 ? 99 : ib; if(ia!==ib) return ia-ib;
+    }
+    return Math.abs(a.kcal-kcalBase)-Math.abs(b.kcal-kcalBase);
+  });
+  return lista.slice(0, catB==="carbo" ? 12 : 9);
 }
 /* Una sola opción por línea: "170 g carne o pechuga de pollo", "200 g papa, camote o 120 g arroz"
    o "… (o 100 g quinoa / pan)" se muestran solo con la primera; el resto queda como
