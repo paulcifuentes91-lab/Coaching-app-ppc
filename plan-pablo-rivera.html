@@ -378,12 +378,12 @@ const DEFAULT_PLAN = {
   "dia-3",
   "dia-4",
   "dia-5",
-  "dia-6",
+  null,
   null
  ],
  "statChips": [
   {
-   "v": "5+1",
+   "v": "5",
    "l": "Días/sem"
   },
   {
@@ -403,7 +403,7 @@ const DEFAULT_PLAN = {
   ],
   [
    "Frecuencia",
-   "5 días de pesas + 1 día de cardio · domingo libre"
+   "Lunes a viernes entrenamiento · sábado y domingo descanso"
   ],
   [
    "Intensidad",
@@ -419,7 +419,7 @@ const DEFAULT_PLAN = {
   ],
   [
    "Cardio",
-   "Miércoles 35-40 min LISS + 10-15 min tras las sesiones de pierna · meta de pasos: 8.000-10.000 al día"
+   "30-45 min LISS al terminar las pesas o en ayunas por la mañana (lunes a viernes) · fin de semana solo caminar · meta de pasos: 8.000-10.000 al día"
   ],
   [
    "Sueño",
@@ -436,10 +436,6 @@ const DEFAULT_PLAN = {
   [
    "Movilidad",
    "10 min diarios, antes o después de entrenar"
-  ],
-  [
-   "Posing",
-   "5-10 min, 3 a 4 veces por semana"
   ]
  ],
  "weekMeta": [
@@ -468,7 +464,7 @@ const DEFAULT_PLAN = {
   {
    "id": "dia-1",
    "dayTag": "Día 1 · Lun",
-   "name": "Torso A (empuje + tracción vertical)",
+   "name": "Pecho y hombros",
    "accent": "#5B8DEF",
    "sections": [
     {
@@ -477,13 +473,13 @@ const DEFAULT_PLAN = {
       {
        "name": "Movilidad de hombro y escápula con banda",
        "reps": "5 min",
-       "tip": "Círculos, pase de banda, retracciones escapulares",
+       "tip": "Círculos, pase de banda, retracciones",
        "tier": "accesorio"
       },
       {
        "name": "Rotación externa con banda",
        "reps": "2 X 15",
-       "tip": "Codo pegado al cuerpo, sin compensar",
+       "tip": "Codo pegado al cuerpo",
        "tier": "accesorio"
       }
      ]
@@ -498,191 +494,9 @@ const DEFAULT_PLAN = {
        "tier": "principal"
       },
       {
-       "name": "Jalón al pecho agarre neutro",
-       "reps": "4 X 8-10",
-       "tip": "Lleva los codos hacia las costillas, sin balanceo",
-       "tier": "principal"
-      },
-      {
-       "name": "Press de pecho en máquina",
-       "reps": "3 X 10-12",
-       "tip": "Pausa de 1 s abajo",
-       "tier": "accesorio"
-      },
-      {
-       "name": "Remo en máquina con apoyo de pecho",
-       "reps": "3 X 10-12",
-       "tip": "Aprieta escápulas 1 s al final",
-       "tier": "accesorio"
-      },
-      {
-       "name": "Elevaciones laterales en polea",
-       "reps": "4 X 12-15",
-       "tip": "Sin impulso, codo ligeramente flexionado",
-       "tier": "accesorio"
-      },
-      {
-       "name": "Extensión de tríceps en polea",
-       "reps": "3 X 12-15",
-       "tip": "Codos fijos",
-       "tier": "accesorio"
-      }
-     ]
-    },
-    {
-     "name": "Posing",
-     "items": [
-      {
-       "name": "Front Double Biceps",
-       "reps": "3 X 20 seg",
-       "tip": "Brazos y espalda bombeados",
-       "tier": "accesorio"
-      },
-      {
-       "name": "Front Lat Spread",
-       "reps": "3 X 20 seg",
-       "tip": "Máxima apertura dorsal",
-       "tier": "accesorio"
-      }
-     ]
-    }
-   ]
-  },
-  {
-   "id": "dia-2",
-   "dayTag": "Día 2 · Mar",
-   "name": "Pierna A (cuádriceps)",
-   "accent": "#E8C15C",
-   "sections": [
-    {
-     "name": "Calentamiento",
-     "items": [
-      {
-       "name": "Movilidad de cadera y tobillo",
-       "reps": "5 min",
-       "tip": "Sentadilla profunda asistida, rotaciones de cadera",
-       "tier": "accesorio"
-      },
-      {
-       "name": "Sentadilla goblet liviana",
-       "reps": "2 X 10",
-       "tip": "Serie de aproximación antes de la carga",
-       "tier": "accesorio"
-      }
-     ]
-    },
-    {
-     "name": "Entrenamiento",
-     "items": [
-      {
-       "name": "Sentadilla libre o en máquina Hack",
-       "reps": "4 X 8-10",
-       "tip": "Profundidad completa con técnica sólida",
-       "tier": "principal"
-      },
-      {
-       "name": "Prensa de piernas",
-       "reps": "3 X 10-12",
-       "tip": "Pies a la altura de los hombros, sin bloquear rodillas",
-       "tier": "principal"
-      },
-      {
-       "name": "Extensión de cuádriceps",
-       "reps": "3 X 12-15",
-       "tip": "Pausa de 1 s arriba",
-       "tier": "accesorio"
-      },
-      {
-       "name": "Curl femoral sentado",
-       "reps": "3 X 10-12",
-       "tip": "Recorrido completo",
-       "tier": "accesorio"
-      },
-      {
-       "name": "Elevación de talones de pie",
-       "reps": "4 X 12-15",
-       "tip": "Pausa abajo en el estiramiento",
-       "tier": "accesorio"
-      },
-      {
-       "name": "Crunch en polea alta",
-       "reps": "3 X 15",
-       "tip": "Redondea la columna, no tires con los brazos",
-       "tier": "accesorio"
-      }
-     ]
-    }
-   ]
-  },
-  {
-   "id": "dia-3",
-   "dayTag": "Día 3 · Mié",
-   "name": "Cardio y movilidad",
-   "accent": "#4FD1A5",
-   "sections": [
-    {
-     "name": "Cardio",
-     "items": [
-      {
-       "name": "Cardio LISS (caminata inclinada o bicicleta)",
-       "reps": "35-40 min",
-       "tip": "Ritmo en que puedes conversar · ayunas o después de comer liviano"
-      }
-     ]
-    },
-    {
-     "name": "Recuperación",
-     "items": [
-      {
-       "name": "Movilidad de cadera y columna torácica",
-       "reps": "10 min",
-       "tip": "Gato-camello, apertura torácica, rotaciones"
-      },
-      {
-       "name": "Posing y vacum",
-       "reps": "5-10 min",
-       "tip": "Práctica de poses y vacum en ayunas"
-      }
-     ]
-    }
-   ]
-  },
-  {
-   "id": "dia-4",
-   "dayTag": "Día 4 · Jue",
-   "name": "Torso B (tracción + empuje)",
-   "accent": "#FF7FAE",
-   "sections": [
-    {
-     "name": "Calentamiento",
-     "items": [
-      {
-       "name": "Movilidad de hombro y escápula con banda",
-       "reps": "5 min",
-       "tip": "Antes de la primera serie de remo",
-       "tier": "accesorio"
-      },
-      {
-       "name": "Face pull liviano",
-       "reps": "2 X 15",
-       "tip": "Activa hombro posterior",
-       "tier": "accesorio"
-      }
-     ]
-    },
-    {
-     "name": "Entrenamiento",
-     "items": [
-      {
-       "name": "Remo con apoyo de pecho (T o máquina)",
-       "reps": "4 X 8-10",
-       "tip": "Pecho pegado, sin tirón de torso",
-       "tier": "principal"
-      },
-      {
-       "name": "Press de hombros con mancuernas sentado",
-       "reps": "4 X 8-10",
-       "tip": "Banco a 80°, rango completo controlado",
+       "name": "Press plano con barra o en máquina",
+       "reps": "3 X 8-10",
+       "tip": "Pausa breve abajo",
        "tier": "principal"
       },
       {
@@ -692,9 +506,15 @@ const DEFAULT_PLAN = {
        "tier": "accesorio"
       },
       {
-       "name": "Pull over en polea",
-       "reps": "3 X 12-15",
-       "tip": "Dorsal en estiramiento, brazos casi rectos",
+       "name": "Press de hombros con mancuernas sentado",
+       "reps": "3 X 8-10",
+       "tip": "Rango completo controlado",
+       "tier": "principal"
+      },
+      {
+       "name": "Elevaciones laterales en polea",
+       "reps": "4 X 12-15",
+       "tip": "Sin impulso, codo ligeramente flexionado",
        "tier": "accesorio"
       },
       {
@@ -702,28 +522,26 @@ const DEFAULT_PLAN = {
        "reps": "3 X 15-20",
        "tip": "Sin impulso",
        "tier": "accesorio"
-      },
+      }
+     ]
+    },
+    {
+     "name": "Cardio",
+     "items": [
       {
-       "name": "Curl con barra Z",
-       "reps": "3 X 10-12",
-       "tip": "Sin balanceo",
-       "tier": "accesorio"
-      },
-      {
-       "name": "Extensión de tríceps sobre la cabeza",
-       "reps": "3 X 10-12",
-       "tip": "Codos apuntando al frente",
-       "tier": "accesorio"
+       "name": "Cardio LISS (caminata inclinada o bicicleta)",
+       "reps": "30-45 min",
+       "tip": "Después de pesas o en ayunas por la mañana · ritmo en que puedes conversar"
       }
      ]
     }
    ]
   },
   {
-   "id": "dia-5",
-   "dayTag": "Día 5 · Vie",
-   "name": "Pierna B (femoral y glúteo)",
-   "accent": "#B58CFF",
+   "id": "dia-2",
+   "dayTag": "Día 2 · Mar",
+   "name": "Femoral y glúteo",
+   "accent": "#E8C15C",
    "sections": [
     {
      "name": "Calentamiento",
@@ -752,9 +570,9 @@ const DEFAULT_PLAN = {
        "tier": "principal"
       },
       {
-       "name": "Sentadilla búlgara o zancadas caminando",
-       "reps": "3 X 10 c/pierna",
-       "tip": "Torso levemente inclinado para mayor glúteo",
+       "name": "Hip thrust",
+       "reps": "4 X 8-12",
+       "tip": "Pausa de 1 s arriba",
        "tier": "principal"
       },
       {
@@ -764,32 +582,124 @@ const DEFAULT_PLAN = {
        "tier": "accesorio"
       },
       {
-       "name": "Hip thrust",
-       "reps": "3 X 10-12",
-       "tip": "Pausa de 1 s arriba",
-       "tier": "accesorio"
-      },
-      {
-       "name": "Elevación de talones sentado",
-       "reps": "4 X 15",
+       "name": "Curl femoral sentado",
+       "reps": "3 X 12",
        "tip": "Recorrido completo",
        "tier": "accesorio"
       },
       {
-       "name": "Plancha con carga",
-       "reps": "3 X 30-45 seg",
-       "tip": "Costillas abajo, glúteos firmes",
+       "name": "Zancadas caminando",
+       "reps": "3 X 10 c/pierna",
+       "tip": "Torso levemente inclinado para más glúteo",
        "tier": "accesorio"
+      },
+      {
+       "name": "Abducción de cadera en máquina",
+       "reps": "3 X 15",
+       "tip": "Pausa de 1 s al abrir",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Cardio",
+     "items": [
+      {
+       "name": "Cardio LISS (caminata inclinada o bicicleta)",
+       "reps": "30-45 min",
+       "tip": "Después de pesas o en ayunas por la mañana · ritmo en que puedes conversar"
       }
      ]
     }
    ]
   },
   {
-   "id": "dia-6",
-   "dayTag": "Día 6 · Sáb",
-   "name": "Hombros y brazos (especialización)",
-   "accent": "#FF9F5B",
+   "id": "dia-3",
+   "dayTag": "Día 3 · Mié",
+   "name": "Espalda y bíceps",
+   "accent": "#4FD1A5",
+   "sections": [
+    {
+     "name": "Calentamiento",
+     "items": [
+      {
+       "name": "Movilidad de hombro y escápula con banda",
+       "reps": "5 min",
+       "tip": "Antes de la primera serie",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Face pull liviano",
+       "reps": "2 X 15",
+       "tip": "Activa hombro posterior",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Entrenamiento",
+     "items": [
+      {
+       "name": "Jalón al pecho agarre neutro",
+       "reps": "4 X 8-10",
+       "tip": "Codos hacia las costillas, sin balanceo",
+       "tier": "principal"
+      },
+      {
+       "name": "Remo con apoyo de pecho (T o máquina)",
+       "reps": "4 X 8-10",
+       "tip": "Pecho pegado, sin tirón de torso",
+       "tier": "principal"
+      },
+      {
+       "name": "Remo unilateral en polea o mancuerna",
+       "reps": "3 X 10-12",
+       "tip": "Aprieta escápula 1 s",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Pull over en polea",
+       "reps": "3 X 12-15",
+       "tip": "Dorsal en estiramiento, brazos casi rectos",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Curl con barra Z",
+       "reps": "3 X 10",
+       "tip": "Sin balanceo",
+       "tier": "principal"
+      },
+      {
+       "name": "Curl inclinado con mancuernas",
+       "reps": "3 X 10-12",
+       "tip": "Estiramiento completo del bíceps",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Curl martillo",
+       "reps": "3 X 12",
+       "tip": "Agarre neutro",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Cardio",
+     "items": [
+      {
+       "name": "Cardio LISS (caminata inclinada o bicicleta)",
+       "reps": "30-45 min",
+       "tip": "Después de pesas o en ayunas por la mañana · ritmo en que puedes conversar"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "dia-4",
+   "dayTag": "Día 4 · Jue",
+   "name": "Pecho, tríceps y hombros",
+   "accent": "#FF7FAE",
    "sections": [
     {
      "name": "Calentamiento",
@@ -801,9 +711,9 @@ const DEFAULT_PLAN = {
        "tier": "accesorio"
       },
       {
-       "name": "Curl liviano de activación",
-       "reps": "2 X 15",
-       "tip": "Aproximación antes de la carga",
+       "name": "Flexiones o press liviano de aproximación",
+       "reps": "2 X 12",
+       "tip": "Serie de aproximación",
        "tier": "accesorio"
       }
      ]
@@ -812,9 +722,27 @@ const DEFAULT_PLAN = {
      "name": "Entrenamiento",
      "items": [
       {
+       "name": "Press plano con mancuernas",
+       "reps": "4 X 8-10",
+       "tip": "Codos a 45°, rango completo",
+       "tier": "principal"
+      },
+      {
        "name": "Press de hombros en máquina",
        "reps": "3 X 10",
        "tip": "Controlado, sin rebotar abajo",
+       "tier": "principal"
+      },
+      {
+       "name": "Aperturas en peck deck",
+       "reps": "3 X 12-15",
+       "tip": "Aprieta 1 s al centro",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Fondos asistidos o press cerrado",
+       "reps": "3 X 8-10",
+       "tip": "Codos cerca del cuerpo",
        "tier": "principal"
       },
       {
@@ -824,45 +752,108 @@ const DEFAULT_PLAN = {
        "tier": "accesorio"
       },
       {
-       "name": "Curl inclinado con mancuernas",
-       "reps": "4 X 10-12",
-       "tip": "Estiramiento completo del bíceps",
-       "tier": "principal"
-      },
-      {
-       "name": "Fondos asistidos o press cerrado",
-       "reps": "3 X 8-10",
-       "tip": "Codos cerca del cuerpo",
-       "tier": "principal"
-      },
-      {
        "name": "Extensión de tríceps con cuerda",
        "reps": "3 X 12-15",
        "tip": "Abre la cuerda al final",
        "tier": "accesorio"
       },
       {
-       "name": "Curl martillo",
-       "reps": "3 X 12",
-       "tip": "Agarre neutro",
-       "tier": "accesorio"
-      },
-      {
-       "name": "Face pull",
-       "reps": "3 X 15-20",
-       "tip": "Codos altos, hombro posterior",
+       "name": "Extensión de tríceps sobre la cabeza",
+       "reps": "3 X 10-12",
+       "tip": "Codos apuntando al frente",
        "tier": "accesorio"
       }
      ]
     },
     {
-     "name": "Posing",
+     "name": "Cardio",
      "items": [
       {
-       "name": "Most Muscular",
-       "reps": "3 X 15 seg",
-       "tip": "Cierre del bloque",
+       "name": "Cardio LISS (caminata inclinada o bicicleta)",
+       "reps": "30-45 min",
+       "tip": "Después de pesas o en ayunas por la mañana · ritmo en que puedes conversar"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "dia-5",
+   "dayTag": "Día 5 · Vie",
+   "name": "Cuádriceps y glúteo",
+   "accent": "#B58CFF",
+   "sections": [
+    {
+     "name": "Calentamiento",
+     "items": [
+      {
+       "name": "Movilidad de cadera y tobillo",
+       "reps": "5 min",
+       "tip": "Sentadilla profunda asistida",
        "tier": "accesorio"
+      },
+      {
+       "name": "Sentadilla goblet liviana",
+       "reps": "2 X 10",
+       "tip": "Aproximación antes de la carga",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Entrenamiento",
+     "items": [
+      {
+       "name": "Sentadilla libre o en máquina Hack",
+       "reps": "4 X 8-10",
+       "tip": "Profundidad completa con técnica sólida",
+       "tier": "principal"
+      },
+      {
+       "name": "Prensa de piernas",
+       "reps": "3 X 10-12",
+       "tip": "Pies a la altura de los hombros, sin bloquear rodillas",
+       "tier": "principal"
+      },
+      {
+       "name": "Sentadilla búlgara",
+       "reps": "3 X 10 c/pierna",
+       "tip": "Torso inclinado para mayor glúteo",
+       "tier": "principal"
+      },
+      {
+       "name": "Extensión de cuádriceps",
+       "reps": "3 X 12-15",
+       "tip": "Pausa de 1 s arriba",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Patada de glúteo en polea",
+       "reps": "3 X 12-15",
+       "tip": "Sin arquear la zona lumbar",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Elevación de talones de pie",
+       "reps": "4 X 12-15",
+       "tip": "Pausa abajo en el estiramiento",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Crunch en polea alta",
+       "reps": "3 X 15",
+       "tip": "Redondea la columna, no tires con los brazos",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Cardio",
+     "items": [
+      {
+       "name": "Cardio LISS (caminata inclinada o bicicleta)",
+       "reps": "30-45 min",
+       "tip": "Después de pesas o en ayunas por la mañana · ritmo en que puedes conversar"
       }
      ]
     }
@@ -875,11 +866,11 @@ const DEFAULT_PLAN = {
    "Déficit moderado · proteína alta · carbohidratos concentrados alrededor del entrenamiento (17:00-19:30)"
   ],
   [
-   "Días de entreno (Lun, Mar, Jue, Vie, Sáb)",
+   "Días de entreno (Lun a Vie)",
    "~2.367 kcal · 209P / 213C / 75G"
   ],
   [
-   "Días de descanso (Mié, Dom)",
+   "Días de descanso (Sáb, Dom)",
    "~2.024 kcal · 193P / 134C / 79G"
   ],
   [
@@ -898,7 +889,7 @@ const DEFAULT_PLAN = {
  "mealWindows": [
   {
    "id": "entreno",
-   "label": "Días de entreno · Lun, Mar, Jue, Vie, Sáb",
+   "label": "Días de entreno · Lun a Vie",
    "accent": "#5B8DEF",
    "macros": {
     "kcal": 2367,
@@ -957,7 +948,7 @@ const DEFAULT_PLAN = {
   },
   {
    "id": "descanso",
-   "label": "Días de descanso · Mié y Dom",
+   "label": "Días de descanso · Sáb y Dom",
    "accent": "#4FD1A5",
    "macros": {
     "kcal": 2024,
@@ -1980,7 +1971,7 @@ function renderViewSwitch(){
     <button class="view-btn ${activeView==='training'?'active':''}" data-view="training">
       <span class="vb-bg">🏋️</span>
       <div class="vb-label">ENTRENO</div>
-      <div class="vb-spec">${days.filter(d=>d.id!=="dia-3").length} días · Semanas 1-${ppcNsem()}</div>
+      <div class="vb-spec">${days.length} días · Semanas 1-${ppcNsem()}</div>
     </button>
     <button class="view-btn ${activeView==='progress'?'active':''}" data-view="progress">
       <span class="vb-bg">📈</span>
