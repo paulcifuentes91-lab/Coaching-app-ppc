@@ -1225,15 +1225,30 @@ athleteRef.onSnapshot((doc)=>{
     setProgress = data.setProgress || {};
 
     /* Resiembra única (v3): si la nube guarda una versión anterior del plan de Pablo,
-       se reemplaza por la rutina/dieta actual del código. Conserva fechas, macrociclo y alimentos propios. */
+       se reemplaza SOLO el entrenamiento (días, orden semanal y parámetros) por el del
+       código. La dieta, suplementos, notas de nutrición, fechas, macrociclo y alimentos
+       propios se conservan tal como están en la nube (editados desde el panel). */
     if(data.plan && data.plan.pabloSeed !== 'v3'){
       const old = data.plan;
-      const nuevo = Object.assign({}, old, JSON.parse(JSON.stringify(DEFAULT_PLAN)), {pabloSeed:'v3'});
-      if(old.startDate) nuevo.startDate = old.startDate;
-      if(old.checkDate) nuevo.checkDate = old.checkDate;
-      if(old.accessExpiresAt !== undefined) nuevo.accessExpiresAt = old.accessExpiresAt;
+      const base = JSON.parse(JSON.stringify(DEFAULT_PLAN));
+      // Firestore no acepta arrays anidados: los params [l,v] se guardan como
+      // objetos {l,v}, igual que los guarda el panel (la app lee ambos formatos).
+      // Con arrays anidados .set() lanza un error sincrónico y la app quedaba
+      // en "Conectando…".
+      const lv = function(a){ return (a||[]).map(function(x){ return Array.isArray(x) ? {l:x[0], v:x[1]} : x; }); };
+      const nuevo = Object.assign({}, old, {
+        days: base.days,
+        weeklyOrder: base.weeklyOrder,
+        params: lv(base.params),
+        pabloSeed: 'v3'
+      });
       data.plan = nuevo;
-      athleteRef.set({ plan: nuevo }, { merge:true }).catch(function(){});
+      // Un solo intento por sesión: si la nube rechaza el guardado, el snapshot
+      // revertido no vuelve a disparar otro .set() en bucle.
+      if(!window.__pabloSeedIntentado){
+        window.__pabloSeedIntentado = true;
+        try{ athleteRef.set({ plan: nuevo }, { merge:true }).catch(function(){}); }catch(e){ console.error('Resiembra no guardada', e); }
+      }
     }
     if(data.plan){
       const p = data.plan;
