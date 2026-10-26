@@ -1224,6 +1224,17 @@ athleteRef.onSnapshot((doc)=>{
     loadHistory = data.loadHistory || {};
     setProgress = data.setProgress || {};
 
+    /* Resiembra única (v3): si la nube guarda una versión anterior del plan de Pablo,
+       se reemplaza por la rutina/dieta actual del código. Conserva fechas, macrociclo y alimentos propios. */
+    if(data.plan && data.plan.pabloSeed !== 'v3'){
+      const old = data.plan;
+      const nuevo = Object.assign({}, old, JSON.parse(JSON.stringify(DEFAULT_PLAN)), {pabloSeed:'v3'});
+      if(old.startDate) nuevo.startDate = old.startDate;
+      if(old.checkDate) nuevo.checkDate = old.checkDate;
+      if(old.accessExpiresAt !== undefined) nuevo.accessExpiresAt = old.accessExpiresAt;
+      data.plan = nuevo;
+      athleteRef.set({ plan: nuevo }, { merge:true }).catch(function(){});
+    }
     if(data.plan){
       const p = data.plan;
       headerEyebrow = p.eyebrow || DEFAULT_PLAN.eyebrow;
