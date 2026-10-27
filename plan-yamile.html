@@ -2764,10 +2764,10 @@ function renderMealCard(){
     html += `<div class="week-locked-banner">🔒 Este no es tu bloque de hoy — bloqueado, cambia a la pestaña correcta</div>`;
   }
 
-  mw.meals.forEach(meal=>{
+  mw.meals.forEach((meal,mIdx)=>{
     html += `
       <div class="row">
-        <div class="ex-info">
+        <div class="ex-info meal-info" data-m="${mIdx}">
           <div class="ex-name">${meal.name}${meal.sub? ' · '+meal.sub : ''}</div>
           ${meal.items.map(food=>`<div class="ex-tip">· ${food}</div>`).join('')}
         </div>
