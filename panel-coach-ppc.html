@@ -2504,6 +2504,7 @@ async function renovarMesociclo(){
    const _wm = (window.ppcWeekMeta && act.macro && Array.isArray(act.macro.bloques) && act.macro.bloques.length) ? window.ppcWeekMeta(act, _semBloque) : null;
    const planFinal = Object.assign({}, planActual, {days: act.dias, startDate: hoy, checkDate: nuevoChk, mesocicloLabel: nuevoMesocicloLabel, mesociclos: mesos.slice(-30), historial: hist.slice(-15)}, _wm ? {weekMeta:_wm, periodizacion:Object.assign({}, planActual.periodizacion||{}, {deload: act.macro.descarga === "fija" ? +(document.getElementById("kDl")?.value || 0.7) : 1})} : {});
    await ref.set({plan: planFinal}, {merge:true});
+   await ppcAplicarRemapCargas(ref, snap.exists ? snap.data() : {}, planActual.days, act.dias);
   }
   m.remove();
   pintarMesocicloCalendario();
@@ -3693,6 +3694,62 @@ async function fbTraer(a){
 }
 
 /* ── Guardar el plan editado en el panel ── */
+
+/* ───── Cargas que siguen al ejercicio (no a la posición) ─────
+   La app guarda kg / historial / récords con la clave "dia-N-seccion-ejercicio" (posición).
+   Si cambian los ejercicios (renovar mesociclo o editar la rutina) esas claves quedarían
+   apuntando a otro ejercicio. Aquí se reasignan por nombre; lo que no tiene equivalente
+   se archiva en cargasArchivo (nunca se pierde). */
+function ppcNormEj(n){ return String(n||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\s+/g," ").trim(); }
+function ppcDiasPlano(days){
+  const out = [];
+  (days||[]).forEach((dy,di)=>{
+    const id = dy.id || ("dia-"+(di+1));
+    const secs = dy.sections || (dy.secs||[]).map(sc=>({items:(sc.ej||[]).filter(e=>e&&e[0]).map(e=>({name:e[0]}))}));
+    (secs||[]).forEach((sc,si)=>{ (sc.items||[]).forEach((it,ii)=>{ out.push({key:id+"-"+si+"-"+ii, dia:id, nom:ppcNormEj(it.name), name:it.name||""}); }); });
+  });
+  return out;
+}
+function ppcRemapCargas(oldDays, newDays, d){
+  d = d || {};
+  const L = d.exerciseLoads||{}, H = d.loadHistory||{}, P = d.exercisePRs||{};
+  const keys = new Set([...Object.keys(L), ...Object.keys(H), ...Object.keys(P)]);
+  if(!keys.size || !Array.isArray(oldDays) || !oldDays.length || !Array.isArray(newDays) || !newDays.length) return null;
+  const tiene = k => L[k]!==undefined || (H[k]&&H[k].length) || P[k]!==undefined;
+  const viejos = ppcDiasPlano(oldDays).filter(x=>x.nom && tiene(x.key)), nuevos = ppcDiasPlano(newDays);
+  const usado = new Set(), nL = {}, nH = {}, nP = {};
+  nuevos.forEach(nv=>{
+    if(!nv.nom) return;
+    const c = viejos.filter(v=>v.nom===nv.nom && !usado.has(v.key));
+    const v = c.find(x=>x.dia===nv.dia) || c[0];
+    if(!v) return;
+    usado.add(v.key);
+    if(L[v.key]!==undefined) nL[nv.key] = L[v.key];
+    if(H[v.key]) nH[nv.key] = H[v.key];
+    if(P[v.key]!==undefined) nP[nv.key] = P[v.key];
+  });
+  if(JSON.stringify([nL,nH,nP]) === JSON.stringify([L,H,P])) return null;
+  const hoy = new Date().toISOString().slice(0,10);
+  const arch = Object.assign({}, d.cargasArchivo||{}), sin = Object.assign({}, arch._sinNombre||{});
+  viejos.forEach(v=>{
+    if(usado.has(v.key)) return;
+    const e = {nombre:v.name, dia:v.dia, fecha:hoy}; if(L[v.key]!==undefined) e.kg=L[v.key]; if(H[v.key]) e.hist=H[v.key]; if(P[v.key]!==undefined) e.pr=P[v.key];
+    arch[v.nom] = e;
+  });
+  const conocidas = new Set(ppcDiasPlano(oldDays).map(x=>x.key));
+  keys.forEach(k=>{ if(!conocidas.has(k)){ const e={}; if(L[k]!==undefined) e.kg=L[k]; if(H[k]) e.hist=H[k]; if(P[k]!==undefined) e.pr=P[k]; sin[k]=e; } });
+  if(Object.keys(sin).length) arch._sinNombre = sin;
+  return {exerciseLoads:nL, loadHistory:nH, exercisePRs:nP, cargasArchivo:arch, movidas:usado.size, archivadas:viejos.length-usado.size};
+}
+async function ppcAplicarRemapCargas(ref, snapData, oldDays, newDays){
+  try{
+    const r = ppcRemapCargas(oldDays, newDays, snapData);
+    if(!r) return;
+    const {movidas, archivadas, ...campos} = r;
+    await ref.update(campos);
+    toast("Cargas reasignadas por ejercicio · "+movidas+" conservadas"+(archivadas?" · "+archivadas+" archivadas":""));
+  }catch(e){ console.warn("remap cargas:", e); toast("No se pudieron reasignar las cargas: "+e.message); }
+}
 async function fbGuardarPlan(a){
  if(!FB.on){ toast("Sin conexión a Firebase"); return false; }
  const id = FB_ID[a.id];
@@ -3790,6 +3847,7 @@ async function fbGuardarPlan(a){
   if((planActual.accessExpiresAt||"") !== (plan.accessExpiresAt||"")) _cambios.push({campo:"accessExpiresAt", valorAnterior: planActual.accessExpiresAt||null, valorNuevo: plan.accessExpiresAt||null});
   if(JSON.stringify(planActual.days||[]) !== JSON.stringify(plan.days)) _cambios.push({campo:"entrenamiento (días)", valorAnterior: (planActual.days||[]).length+" día(s)", valorNuevo: plan.days.length+" día(s)"});
   await ref.set({ plan: planFinal, contacto }, { merge:true });
+  await ppcAplicarRemapCargas(ref, snap.exists ? snap.data() : {}, planActual.days, plan.days);
   fbAuditoria(id, "fbGuardarPlan", _cambios);
   return true;
  }catch(e){ toast("No se pudo guardar: "+e.message); return false; }
