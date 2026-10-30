@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Planes y precios · Pro Performance Coach</title>
-<meta name="description" content="Asesoría online y entrenamiento presencial con Paul Cifuentes, Pro Performance Coach. Valores y formas de contratar.">
+<meta name="description" content="Asesoría online con Paul Cifuentes, Pro Performance Coach. Valores y formas de contratar.">
 <meta name="theme-color" content="#0E0F12">
 <link rel="icon" href="./icons/icon-192.png">
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
@@ -67,34 +67,12 @@
     <p class="sub">Pro Performance Coach · Paul Cifuentes</p>
   </header>
 
-  <div class="seg" role="tablist">
-    <button class="on" data-p="online">Asesoría online</button>
-    <button data-p="presencial">Presencial</button>
-  </div>
-
   <!-- ONLINE -->
   <section class="panel on" id="p-online">
     <div class="cycles" id="cycles"></div>
 
     <div class="card" id="card-basica"></div>
     <div class="card star" id="card-avanzada"></div>
-  </section>
-
-  <!-- PRESENCIAL -->
-  <section class="panel" id="p-presencial">
-    <div class="card">
-      <span class="tag">Mensual</span>
-      <h2>A domicilio</h2>
-      <p class="for">Entrenamiento presencial en tu domicilio.</p>
-      <ul class="rows" id="rows-dom"></ul>
-    </div>
-    <div class="card">
-      <span class="tag">Mensual</span>
-      <h2>En gimnasio</h2>
-      <p class="for">Sesiones presenciales en gimnasio.</p>
-      <ul class="rows" id="rows-gym"></ul>
-    </div>
-    <p class="note">Los valores presenciales son por mes. Coordinamos horarios y lugar por WhatsApp.</p>
   </section>
 
   <div class="contact">
@@ -114,12 +92,10 @@ const ONLINE = {
   avanzada: {nombre:"Asesoría avanzada · Performance", para:"Atletas y usuarios avanzados.", precios:{mensual:100000, trimestral:270000, semestral:480000, anual:840000}, star:true}
 };
 const CICLOS = {mensual:{n:"Mensual",m:1}, trimestral:{n:"Trimestral",m:3}, semestral:{n:"Semestral",m:6}, anual:{n:"Anual",m:12}};
-const DOMICILIO = [["2 x semana",250000],["3 x semana",300000],["4 x semana",350000]];
-const GIMNASIO  = [["2 x semana",300000],["3 x semana",350000]];
 
 /* Links de pago de Mercado Pago: pega aquí cada link y el botón "Pagar" aparece solo.
    Claves: "basica-mensual", "basica-trimestral", "basica-semestral", "basica-anual",
-           "avanzada-mensual", … y para presencial "dom-2", "dom-3", "dom-4", "gym-2", "gym-3". */
+           "avanzada-mensual",. */
 const PAGO = {
   // "basica-mensual": "https://mpago.la/xxxxxxx",
 };
@@ -157,30 +133,12 @@ function pintarOnline(){
       btns(k+"-"+ciclo, "Hola Paul, me interesa la "+p.nombre+" (plan "+CICLOS[ciclo].n.toLowerCase()+", "+CLP(total)+").");
   });
 }
-function pintarFilas(id, lista, pref, lugar){
-  document.getElementById(id).innerHTML = lista.map(([n,p],i)=>{
-    const veces = n.charAt(0); n = n.replace("x","veces por");
-    const clave = pref+"-"+veces;
-    const link = PAGO[clave] ? '<a href="'+PAGO[clave]+'" target="_blank" rel="noopener" style="color:#E8C15C;border-color:#E8C15C">Pagar</a>' : '';
-    return '<li><div class="n">'+n+'<small>por mes</small></div><div class="right"><span class="p">'+CLP(p)+'</span>'+link+
-      '<a href="'+wa("Hola Paul, me interesa el entrenamiento presencial "+lugar+", "+n+" ("+CLP(p)+" al mes).")+'" target="_blank" rel="noopener">WhatsApp</a></div></li>';
-  }).join("");
-}
 document.getElementById("cycles").addEventListener("click",e=>{
   const b = e.target.closest("button[data-c]"); if(!b) return;
   ciclo = b.dataset.c; pintarCiclos(); pintarOnline();
 });
-document.querySelector(".seg").addEventListener("click",e=>{
-  const b = e.target.closest("button[data-p]"); if(!b) return;
-  document.querySelectorAll(".seg button").forEach(x=>x.classList.toggle("on",x===b));
-  document.querySelectorAll(".panel").forEach(x=>x.classList.toggle("on",x.id==="p-"+b.dataset.p));
-  if(history.replaceState) history.replaceState(null,"","#"+b.dataset.p);
-});
 document.getElementById("waGeneral").href = wa("Hola Paul, quiero más información sobre tus planes.");
 pintarCiclos(); pintarOnline();
-pintarFilas("rows-dom", DOMICILIO, "dom", "a domicilio");
-pintarFilas("rows-gym", GIMNASIO, "gym", "en gimnasio");
-if(location.hash==="#presencial") document.querySelector('.seg [data-p="presencial"]').click();
 </script>
 </body>
 </html>
