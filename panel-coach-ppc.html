@@ -6126,8 +6126,6 @@ try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
     ["Asesoría básica","basica",{m:80000,t:210000,s:360000,a:600000},"Principiantes, tercera edad y embarazo"],
     ["Asesoría avanzada · Performance","avanzada",{m:100000,t:270000,s:480000,a:840000},"Atletas y usuarios avanzados"]
   ];
-  var DOM = [["2 x semana",250000],["3 x semana",300000],["4 x semana",350000]];
-  var GYM = [["2 x semana",300000],["3 x semana",350000]];
   var CICLO = {m:1,t:3,s:6,a:12}, CNOM = {m:"Mensual",t:"Trimestral",s:"Semestral",a:"Anual"};
   function clp(n){ return "$"+Math.round(n).toLocaleString("es-CL"); }
   function esc2(s){ return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
@@ -6139,8 +6137,6 @@ try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
       Object.keys(CNOM).forEach(function(c){ t += "• "+CNOM[c]+": "+clp(p[2][c])+(CICLO[c]>1?" ("+clp(p[2][c]/CICLO[c])+"/mes)":"")+"\n"; });
       t += "\n";
     });
-    t += "*Presencial a domicilio (por mes)*\n"+DOM.map(function(x){return "• "+x[0]+": "+clp(x[1]);}).join("\n")+"\n\n";
-    t += "*Presencial en gimnasio (por mes)*\n"+GYM.map(function(x){return "• "+x[0]+": "+clp(x[1]);}).join("\n")+"\n\n";
     t += "Todos los valores y cómo contratar: "+URL_PRECIOS;
     return t;
   }
@@ -6149,9 +6145,6 @@ try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
     ONL.forEach(function(p){ h += '<tr style="border-top:1px solid var(--borde,#2D3138)"><td style="padding:8px 4px"><b>'+(p[1]==="basica"?"Básica":"Avanzada")+'</b></td>'+
       ["m","t","s","a"].map(function(c){return '<td style="text-align:right;padding:8px 3px;white-space:nowrap;font-size:12px">'+clp(p[2][c])+'</td>';}).join("")+'</tr>'; });
     h += '</table></div>';
-    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;font-size:13px">'+
-      '<div><b>Presencial domicilio</b> <span style="opacity:.7">/mes</span>'+DOM.map(function(x){return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid var(--borde,#2D3138)"><span>'+x[0]+'</span><span>'+clp(x[1])+'</span></div>';}).join("")+'</div>'+
-      '<div><b>Presencial gimnasio</b> <span style="opacity:.7">/mes</span>'+GYM.map(function(x){return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid var(--borde,#2D3138)"><span>'+x[0]+'</span><span>'+clp(x[1])+'</span></div>';}).join("")+'</div></div>';
     h += '<div style="margin-top:16px;padding:12px;border:1px solid var(--borde,#2D3138);border-radius:12px"><b>Enviar cotización</b>'+
       '<div style="display:grid;gap:8px;margin-top:8px">'+
       '<input class="in" id="cotNombre" placeholder="Nombre del interesado">'+
@@ -6175,8 +6168,6 @@ try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
     ONL.forEach(function(p){ Object.keys(CNOM).forEach(function(c){
       var tot = p[2][c], m = CICLO[c], base = p[2].m*m, ahorro = Math.round((1-tot/base)*100);
       l.push({k:p[1]+"-"+c, n:p[0]+" · "+CNOM[c], total:tot, mes:tot/m, meses:m, ahorro:ahorro, desc:p[3]}); }); });
-    DOM.forEach(function(x,i){ l.push({k:"dom-"+i, n:"Presencial a domicilio · "+x[0], total:x[1], mes:x[1], meses:1, ahorro:0}); });
-    GYM.forEach(function(x,i){ l.push({k:"gym-"+i, n:"Presencial en gimnasio · "+x[0], total:x[1], mes:x[1], meses:1, ahorro:0}); });
     return l;
   }
   function opcionesCot(){ return servicios().map(function(s){ return '<option value="'+s.k+'">'+esc2(s.n)+' — '+clp(s.total)+'</option>'; }).join(""); }
@@ -6226,8 +6217,6 @@ try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
     var opts = '<option value="">Elegir tarifa…</option>';
     ONL.forEach(function(p){ opts += '<optgroup label="'+esc2(p[0])+'">'+["m","t","s","a"].map(function(c){
       return '<option value="'+Math.round(p[2][c]/CICLO[c])+'|online">'+CNOM[c]+' · '+clp(p[2][c]/CICLO[c])+'/mes</option>'; }).join("")+'</optgroup>'; });
-    opts += '<optgroup label="Presencial domicilio">'+DOM.map(function(x){return '<option value="'+x[1]+'|presencial">'+x[0]+' · '+clp(x[1])+'/mes</option>';}).join("")+'</optgroup>';
-    opts += '<optgroup label="Presencial gimnasio">'+GYM.map(function(x){return '<option value="'+x[1]+'|presencial">'+x[0]+' · '+clp(x[1])+'/mes</option>';}).join("")+'</optgroup>';
     var n = document.createElement("label");
     n.innerHTML = '<span class="lb">Tarifa (rellena monto y modalidad)</span><select class="in" id="fTarifa">'+opts+'</select>';
     lab.parentNode.insertBefore(n, lab);
