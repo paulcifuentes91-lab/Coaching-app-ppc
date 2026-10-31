@@ -802,7 +802,8 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
     </div>
     <div class="sec"><div class="st">Pago y clasificación <span class="aux">solo lo ves tú · alimenta Pagos e Ingresos en Inicio</span></div>
       <div class="campos">
-        <label><span class="lb">Monto mensual (CLP)</span><input class="in mono" id="fPagoMonto" type="number" placeholder="100000"></label>
+        <label><span class="lb">Monto del plan (CLP · total del ciclo)</span><input class="in mono" id="fPagoMonto" type="number" placeholder="480000"></label>
+        <label><span class="lb">Ciclo de pago</span><select class="in" id="fPagoMeses"><option value="1">Mensual</option><option value="3">Trimestral (3 meses)</option><option value="6">Semestral (6 meses)</option><option value="12">Anual (12 meses)</option></select></label>
         <label><span class="lb">Estado de pago</span><select class="in" id="fPagoEstado"><option value="">Sin estado</option><option value="pagado">Pagado</option><option value="pendiente">Pendiente</option><option value="moroso">Atrasado</option></select></label>
         <label><span class="lb">Próximo cobro</span><input class="in" type="date" id="fPagoProximo"></label>
         <label><span class="lb">Modalidad</span><select class="in" id="fModalidad"><option value="online">Online</option><option value="presencial">Presencial</option></select></label>
@@ -1241,6 +1242,8 @@ const ptsF = s => s.split("-").map(Number);
 const addDays = (s,n)=>{ const p=ptsF(s); return new Date(Date.UTC(p[0],p[1]-1,p[2]+n)).toISOString().slice(0,10); };
 const diffDays = (a,b)=>{ const pa=ptsF(a), pb=ptsF(b); return Math.round((Date.UTC(pb[0],pb[1]-1,pb[2])-Date.UTC(pa[0],pa[1]-1,pa[2]))/86400000); };
 const addMonth = s => { const p=ptsF(s); const d=new Date(Date.UTC(p[0],p[1],p[2])); return d.toISOString().slice(0,10); };
+const addNMes = (s,n)=>{ const p=ptsF(s); const d=new Date(Date.UTC(p[0],p[1]-1+(n||1),p[2])); if(d.getUTCDate()!==p[2]) d.setUTCDate(0); return d.toISOString().slice(0,10); };
+const ppcMensual = a => (+a.pagoMonto||0)/(+a.pagoMeses||1);
 const esFecha = s => /^\d{4}-\d{2}-\d{2}$/.test(s||"");
 const fmtF = s => esFecha(s) ? s.slice(8,10)+"-"+s.slice(5,7)+"-"+s.slice(2,4) : "—";
 const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -1338,13 +1341,13 @@ window.ppcAlertasExtra = function(a){
 /* ───── Merge de datos comerciales desde Firestore (contacto) hacia ATLETAS ───── */
 window.ppcMergeContacto = function(a, datos){
   const c = datos && datos.contacto; if(!c) return;
-  ["pagoMonto","pagoEstado","pagoProximo","modalidad","dietaTipo","sinGluten"].forEach(k=>{ if(c[k]!==undefined) a[k]=c[k]; });
+  ["pagoMonto","pagoMeses","pagoEstado","pagoProximo","modalidad","dietaTipo","sinGluten"].forEach(k=>{ if(c[k]!==undefined) a[k]=c[k]; });
   if(Array.isArray(c.etiquetas)) a.etiquetas = c.etiquetas;
 };
 /* Ficha: pinta los campos nuevos y devuelve lo que hay que guardar en `contacto` */
 window.ppcExtrasFicha = function(a){
   const set = (id,v)=>{ const el=$id(id); if(el) el.value=v; };
-  set("fPagoMonto", a.pagoMonto||""); set("fPagoEstado", a.pagoEstado||"");
+  set("fPagoMonto", a.pagoMonto||""); set("fPagoMeses", String(a.pagoMeses||1)); set("fPagoEstado", a.pagoEstado||"");
   set("fPagoProximo", a.pagoProximo||""); set("fModalidad", a.modalidad||"online");
   set("fEtiquetas", (a.etiquetas||[]).join(", "));
   set("fDietaTipo", a.dietaTipo||"omnivoro"); set("fSinGluten", a.sinGluten||"no");
@@ -1354,6 +1357,7 @@ window.ppcContactoExtra = function(a){
   const monto = g("fPagoMonto");
   const out = {
     pagoMonto: monto===undefined ? (a.pagoMonto||0) : (+String(monto).replace(/[^0-9.]/g,"")||0),
+    pagoMeses: +(g("fPagoMeses")||a.pagoMeses||1) || 1,
     pagoEstado: g("fPagoEstado")!==undefined ? g("fPagoEstado") : (a.pagoEstado||""),
     pagoProximo: g("fPagoProximo")!==undefined ? g("fPagoProximo") : (a.pagoProximo||""),
     modalidad: g("fModalidad") || a.modalidad || "online",
@@ -1416,20 +1420,20 @@ window.ppcExtrasHome = function(){
     const act_ = ATLETAS.filter(a=>a.estado!=="pausa");
     const conMonto = act_.filter(a=>+a.pagoMonto>0);
     if(!conMonto.length){ cI.innerHTML = `<div class="hvacio">Sin montos cargados todavía. Completa "Pago y clasificación" en la ficha de cada atleta.</div>`; return; }
-    const sum = arr => arr.reduce((s,a)=>s+(+a.pagoMonto||0),0);
+    const sum = arr => arr.reduce((s,a)=>s+ppcMensual(a),0);
     const esperado = sum(conMonto);
     const cobrado = sum(conMonto.filter(a=>a.pagoEstado==="pagado"));
     const pendiente = sum(conMonto.filter(a=>a.pagoEstado==="pendiente"||a.pagoEstado==="moroso"));
     const porPlan = {}, porMod = {};
-    conMonto.forEach(a=>{ const p=a.tipoPlan||"basico"; (porPlan[p]=porPlan[p]||{n:0,m:0}); porPlan[p].n++; porPlan[p].m+=+a.pagoMonto;
-      const m=a.modalidad||"online"; (porMod[m]=porMod[m]||{n:0,m:0}); porMod[m].n++; porMod[m].m+=+a.pagoMonto; });
+    conMonto.forEach(a=>{ const p=a.tipoPlan||"basico"; (porPlan[p]=porPlan[p]||{n:0,m:0}); porPlan[p].n++; porPlan[p].m+=ppcMensual(a);
+      const m=a.modalidad||"online"; (porMod[m]=porMod[m]||{n:0,m:0}); porMod[m].n++; porMod[m].m+=ppcMensual(a); });
     const barras = obj => Object.entries(obj).sort((x,y)=>y[1].m-x[1].m).map(([k,v])=>`
       <div class="hadh"><span class="hadn" style="min-width:86px;text-transform:capitalize">${esc(({basico:"Básico"})[k]||k)}</span>
         <div class="hadb"><i class="ok" style="width:${Math.round(v.m/esperado*100)}%"></i></div>
         <span class="hadv">${v.n} · ${CLP(v.m)}</span></div>`).join("");
     cI.innerHTML = `
       <div class="segkpis">
-        <div class="segkpi tot"><b>${CLP(esperado)}</b><span>Mensual esperado</span></div>
+        <div class="segkpi tot"><b>${CLP(esperado)}</b><span>Mensual esperado (equivalente)</span></div>
         <div class="segkpi ok"><b>${CLP(cobrado)}</b><span>Cobrado</span></div>
         <div class="segkpi pend"><b>${CLP(pendiente)}</b><span>Pendiente</span></div>
         <div class="segkpi rev"><b>${CLP(Math.round(esperado/conMonto.length))}</b><span>Ticket promedio</span></div>
@@ -1467,7 +1471,7 @@ document.addEventListener("click", async e=>{
     const a = ATLETAS.find(x=>x.id===bP.dataset.ppcPagado); if(!a) return;
     const hoy = hoyStr();
     const base = esFecha(a.pagoProximo) && a.pagoProximo > hoy ? a.pagoProximo : hoy;
-    const parcial = {pagoEstado:"pagado", pagoProximo: addMonth(base)};
+    const parcial = {pagoEstado:"pagado", pagoProximo: addNMes(base, +a.pagoMeses||1)};
     bP.disabled = true;
     if(await guardarContactoParcial(a, parcial)){
       Object.assign(a, parcial); toast(`Pago de ${nom1(a)} registrado · próximo cobro ${fmtF(parcial.pagoProximo)}`);
@@ -2080,7 +2084,7 @@ function cargar(a){
    if(c.nivel && c.nivel!==a.nivel){ a.nivel=c.nivel; cambio=true; }
    if(c.objetivoManual!==undefined && c.objetivoManual!==a.objetivoManual){ a.objetivoManual=c.objetivoManual; cambio=true; }
    if(c.supRevision && c.supRevision!==a.supRevision){ a.supRevision=c.supRevision; cambio=true; }
-   try{ if(typeof ppcMergeContacto==="function"){ const _antes=JSON.stringify([a.pagoMonto,a.pagoEstado,a.pagoProximo,a.modalidad,a.etiquetas]); ppcMergeContacto(a, snap.data()); if(JSON.stringify([a.pagoMonto,a.pagoEstado,a.pagoProximo,a.modalidad,a.etiquetas])!==_antes){ cambio=true; ppcExtrasFicha(a); } } }catch(e){}
+   try{ if(typeof ppcMergeContacto==="function"){ const _antes=JSON.stringify([a.pagoMonto,a.pagoMeses,a.pagoEstado,a.pagoProximo,a.modalidad,a.etiquetas]); ppcMergeContacto(a, snap.data()); if(JSON.stringify([a.pagoMonto,a.pagoMeses,a.pagoEstado,a.pagoProximo,a.modalidad,a.etiquetas])!==_antes){ cambio=true; ppcExtrasFicha(a); } } }catch(e){}
    /* Los DIAS DE ENTRENAMIENTO nunca se sincronizaban desde la nube aca -
       solo fechas/contacto/nutricion. Si algo se agregaba (ej. cardio) a
       p.days por fuera de esta sesion del panel (otra sesion, otro dia),
@@ -5734,6 +5738,8 @@ const fmtF = s => esFecha(s) ? s.slice(8,10)+"-"+s.slice(5,7)+"-"+s.slice(2,4) :
 const hoyStr = ()=>{ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
 const CLP = n => "$" + Math.round(+n||0).toLocaleString("es-CL");
 const addMonth = s => { const p=ptsF(s); const d=new Date(Date.UTC(p[0],p[1],p[2])); return d.toISOString().slice(0,10); };
+const addNMes = (s,n)=>{ const p=ptsF(s); const d=new Date(Date.UTC(p[0],p[1]-1+(n||1),p[2])); if(d.getUTCDate()!==p[2]) d.setUTCDate(0); return d.toISOString().slice(0,10); };
+const ppcMensual = a => (+a.pagoMonto||0)/(+a.pagoMeses||1);
 const modal = (t,h)=>modal(t,h);
 const abrirResumen = a=>window.ppcAbrirResumen(a);
 const PANEL = {d:{dismissAn:{}, snooze:{}, bitacora:{}, prosOcultos:{}, embudo:{}, ingHist:{}}, cargado:false, cargando:false};
@@ -5944,14 +5950,14 @@ function mejorarIngresos(){
   const act_ = ATLETAS.filter(a=>a.estado!=="pausa"), conMonto = act_.filter(a=>+a.pagoMonto>0);
   if(!conMonto.length) return;
   const hoy = hoyStr(), mes = hoy.slice(0,7);
-  const esperado = conMonto.reduce((s,a)=>s+(+a.pagoMonto||0),0);
-  const cobrado = conMonto.filter(a=>a.pagoEstado==="pagado").reduce((s,a)=>s+(+a.pagoMonto||0),0);
+  const esperado = conMonto.reduce((s,a)=>s+ppcMensual(a),0);
+  const cobrado = conMonto.filter(a=>a.pagoEstado==="pagado").reduce((s,a)=>s+ppcMensual(a),0);
   const prevH = PANEL.d.ingHist[mes];
   if(!prevH || prevH.esperado!==esperado || prevH.cobrado!==cobrado){ PANEL.d.ingHist[mes] = {esperado, cobrado}; if(PANEL.cargado) guardar(); else try{ localStorage.setItem("ppc_panel", JSON.stringify(PANEL.d)); }catch(e){} }
   const pm = addMeses(mes+"-01", -1).slice(0,7), ant = PANEL.d.ingHist[pm];
   const venc30 = conMonto.filter(a=>{ const d=diasHasta(a.vence); return d!==null && d>=0 && d<=30; });
   const vencidos = conMonto.filter(a=>{ const d=diasHasta(a.vence); return d!==null && d<0; });
-  const suma = arr => arr.reduce((s,a)=>s+(+a.pagoMonto||0),0);
+  const suma = arr => arr.reduce((s,a)=>s+ppcMensual(a),0);
   const cmp = ant ? (()=>{ const dif = esperado-ant.esperado, pc = ant.esperado ? Math.round(dif/ant.esperado*100) : 0;
     return `${dif>=0?"+":"−"}${CLP(Math.abs(dif))} (${dif>=0?"+":""}${pc}%) vs ${pm}`; })() : "la comparación aparece el próximo mes";
   c.insertAdjacentHTML("beforeend", `<div class="lb" style="margin-top:12px">Renovaciones y comparación</div>
@@ -5987,7 +5993,7 @@ async function confirmarRenovar(a, m){
   if(!AUTH || !AUTH.user){ toast("Inicia sesión para guardar cambios"); const am=$id("authModal"); if(am) am.classList.add("on"); return; }
   if(!id || !FB.on){ toast("Este atleta aún no está en la nube"); return; }
   const hoy = hoyStr(), contacto = {};
-  if(pago){ const b2 = esFecha(a.pagoProximo) && a.pagoProximo>hoy ? a.pagoProximo : hoy; contacto.pagoEstado = "pagado"; contacto.pagoProximo = addMonth(b2); }
+  if(pago){ const b2 = esFecha(a.pagoProximo) && a.pagoProximo>hoy ? a.pagoProximo : hoy; contacto.pagoEstado = "pagado"; contacto.pagoProximo = addNMes(b2, +a.pagoMeses||1); }
   try{
     const data = {plan:{accessExpiresAt:nueva}};
     if(pago) data.contacto = contacto;
@@ -6168,6 +6174,15 @@ try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
   }
   function btnTab(id, txt, on){ return '<button class="add" id="'+id+'" style="flex:1;'+(on?'border-color:var(--gold,#E8C15C);color:var(--gold,#E8C15C)':'opacity:.7')+'">'+txt+'</button>'; }
   function barraTab(){ return btnTab("trfTabOnline","Online",TAB==="online")+btnTab("trfTabPres","Presencial",TAB==="presencial"); }
+  function accionesTab(){
+    var pres = TAB==="presencial", n = pres ? "presencial" : "online", url = pres ? URL_PRES : URL_PRECIOS;
+    return '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">'+
+      '<button class="add" id="trfCopiarLink">Copiar link '+n+'</button>'+
+      '<button class="add" id="trfCopiarTxt">Copiar tabla '+n+' en texto</button>'+
+      '<button class="add" id="trfWA">Enviar tabla '+n+' por WhatsApp</button>'+
+      '<button class="add" id="trfVer">Ver página '+n+'</button></div>'+
+      '<div style="font-size:12px;opacity:.7;margin-top:8px">Link '+n+': '+url+'</div>';
+  }
   function tabla(){
     var h = '<div style="display:flex;gap:8px;margin-bottom:10px" id="trfTabs">'+barraTab()+'</div>';
     h += '<div id="trfTablas">'+tablaPrecios(TAB)+'</div>';
@@ -6181,14 +6196,7 @@ try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
       '<div id="cotVista" style="white-space:pre-wrap;font-size:12.5px;background:var(--surface-2,#1F2227);border-radius:10px;padding:10px;max-height:190px;overflow:auto"></div>'+
       '<div style="display:flex;flex-wrap:wrap;gap:8px"><button class="add" id="cotEnviar">Enviar por WhatsApp</button><button class="add" id="cotCopiar">Copiar cotización</button></div>'+
       '</div></div>';
-    h += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">'+
-      '<button class="add" id="trfCopiarLink">Copiar link online</button>'+
-      '<button class="add" id="trfCopiarLinkPres">Copiar link presencial</button>'+
-      '<button class="add" id="trfCopiarTxt">Copiar tabla en texto</button>'+
-      '<button class="add" id="trfWA">Enviar por WhatsApp</button>'+
-      '<button class="add" id="trfVer">Ver página online</button>'+
-      '<button class="add" id="trfVerPres">Ver página presencial</button></div>'+
-      '<div style="font-size:12px;opacity:.7;margin-top:8px">Online: '+URL_PRECIOS+'<br>Presencial: '+URL_PRES+'</div>';
+    h += '<div id="trfAcc">'+accionesTab()+'</div>';
     return h;
   }
   /* Cotización personalizada: cada modalidad por separado */
@@ -6256,14 +6264,13 @@ try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
         TAB = b.id==="trfTabPres" ? "presencial" : "online";
         var tb=document.getElementById("trfTabs"), tt=document.getElementById("trfTablas");
         if(tb) tb.innerHTML = barraTab(); if(tt) tt.innerHTML = tablaPrecios(TAB);
+        var ac=document.getElementById("trfAcc"); if(ac) ac.innerHTML = accionesTab();
         return;
       }
-      if(b.id==="trfCopiarLink") copiar(URL_PRECIOS, "Link online copiado");
+      if(b.id==="trfCopiarLink") copiar(TAB==="presencial" ? URL_PRES : URL_PRECIOS, "Link "+TAB+" copiado");
       else if(b.id==="trfCopiarTxt") copiar(textoWA(TAB), "Tabla copiada");
       else if(b.id==="trfWA") window.open("https://wa.me/?text="+encodeURIComponent(textoWA(TAB)), "_blank");
-      else if(b.id==="trfVer") window.open(URL_PRECIOS, "_blank");
-      else if(b.id==="trfVerPres") window.open(URL_PRES, "_blank");
-      else if(b.id==="trfCopiarLinkPres") copiar(URL_PRES, "Link presencial copiado");
+      else if(b.id==="trfVer") window.open(TAB==="presencial" ? URL_PRES : URL_PRECIOS, "_blank");
     });
   }
   /* Selector de tarifa en la ficha: rellena Monto mensual y Modalidad */
@@ -6273,11 +6280,11 @@ try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
     function opcionesTarifa(mod){
       var opts = '<option value="">Elegir tarifa…</option>';
       if(mod==="presencial"){
-        opts += '<optgroup label="Presencial a domicilio">'+DOM.map(function(x){return '<option value="'+x[1]+'|presencial">'+x[0]+' · '+clp(x[1])+'/mes</option>';}).join("")+'</optgroup>';
-        opts += '<optgroup label="Presencial en gimnasio">'+GYM.map(function(x){return '<option value="'+x[1]+'|presencial">'+x[0]+' · '+clp(x[1])+'/mes</option>';}).join("")+'</optgroup>';
+        opts += '<optgroup label="Presencial a domicilio">'+DOM.map(function(x){return '<option value="'+x[1]+'|presencial|1">'+x[0]+' · '+clp(x[1])+'/mes</option>';}).join("")+'</optgroup>';
+        opts += '<optgroup label="Presencial en gimnasio">'+GYM.map(function(x){return '<option value="'+x[1]+'|presencial|1">'+x[0]+' · '+clp(x[1])+'/mes</option>';}).join("")+'</optgroup>';
       } else {
         ONL.forEach(function(p){ opts += '<optgroup label="'+esc2(p[0])+'">'+["m","t","s","a"].map(function(c){
-          return '<option value="'+Math.round(p[2][c]/CICLO[c])+'|online">'+CNOM[c]+' · '+clp(p[2][c]/CICLO[c])+'/mes</option>'; }).join("")+'</optgroup>'; });
+          return '<option value="'+p[2][c]+'|online|'+CICLO[c]+'">'+CNOM[c]+' · '+clp(p[2][c])+(CICLO[c]>1?' total ('+clp(p[2][c]/CICLO[c])+'/mes)':'/mes')+'</option>'; }).join("")+'</optgroup>'; });
       }
       return opts;
     }
@@ -6292,9 +6299,10 @@ try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
     n.querySelector("select").addEventListener("change", function(){
       var v = this.value; if(!v) return; var p = v.split("|");
       m.value = p[0]; var mod = document.getElementById("fModalidad"); if(mod) mod.value = p[1];
+      var cm = document.getElementById("fPagoMeses"); if(cm) cm.value = String(p[2]||1);
       m.dispatchEvent(new Event("input",{bubbles:true})); m.dispatchEvent(new Event("change",{bubbles:true}));
       this.value = "";
-      try{ toast("Monto cargado: "+clp(+p[0])+" (recuerda guardar)"); }catch(e){}
+      try{ toast("Monto del plan cargado: "+clp(+p[0])+(+p[2]>1?" ("+p[2]+" meses)":"")+" · recuerda guardar"); }catch(e){}
     });
   }
   function init(){ try{ montarHome(); }catch(e){ console.error(e); } try{ montarFicha(); }catch(e){ console.error(e); } }
