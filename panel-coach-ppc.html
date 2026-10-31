@@ -6122,6 +6122,7 @@ try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
 (function(){
   /* Tarifas oficiales (CLP). Mantener igual que precios.html */
   var URL_PRECIOS = BASE_URL + "precios.html";
+  var URL_PRES = BASE_URL + "precios-presencial.html";
   var ONL = [
     ["Asesoría básica","basica",{m:80000,t:210000,s:360000,a:600000},"Principiantes, tercera edad y embarazo"],
     ["Asesoría avanzada · Performance","avanzada",{m:100000,t:270000,s:480000,a:840000},"Atletas y usuarios avanzados"]
@@ -6140,7 +6141,7 @@ try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
       t = "*Entrenamiento presencial · Pro Performance Coach*\n\n";
       t += "*A domicilio (por mes)*\n"+DOM.map(function(x){return "• "+x[0]+": "+clp(x[1]);}).join("\n")+"\n\n";
       t += "*En gimnasio (por mes)*\n"+GYM.map(function(x){return "• "+x[0]+": "+clp(x[1]);}).join("\n")+"\n\n";
-      t += "Coordinamos horarios y lugar por WhatsApp.";
+      t += "Valores y cómo contratar: "+URL_PRES+"\nCoordinamos horarios y lugar por WhatsApp.";
       return t;
     }
     t = "*Asesoría online · Pro Performance Coach*\n\n";
@@ -6181,11 +6182,13 @@ try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
       '<div style="display:flex;flex-wrap:wrap;gap:8px"><button class="add" id="cotEnviar">Enviar por WhatsApp</button><button class="add" id="cotCopiar">Copiar cotización</button></div>'+
       '</div></div>';
     h += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">'+
-      '<button class="add" id="trfCopiarLink">Copiar link de precios (online)</button>'+
+      '<button class="add" id="trfCopiarLink">Copiar link online</button>'+
+      '<button class="add" id="trfCopiarLinkPres">Copiar link presencial</button>'+
       '<button class="add" id="trfCopiarTxt">Copiar tabla en texto</button>'+
       '<button class="add" id="trfWA">Enviar por WhatsApp</button>'+
-      '<button class="add" id="trfVer">Ver página online</button></div>'+
-      '<div style="font-size:12px;opacity:.7;margin-top:8px">Enlace (solo valores online): '+URL_PRECIOS+'</div>';
+      '<button class="add" id="trfVer">Ver página online</button>'+
+      '<button class="add" id="trfVerPres">Ver página presencial</button></div>'+
+      '<div style="font-size:12px;opacity:.7;margin-top:8px">Online: '+URL_PRECIOS+'<br>Presencial: '+URL_PRES+'</div>';
     return h;
   }
   /* Cotización personalizada: cada modalidad por separado */
@@ -6216,11 +6219,11 @@ try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
     if(s.desc) t += s.desc+"\n";
     var chk = document.getElementById("cotTabla");
     if(chk && chk.checked){
-      var otras = textoWA(s.mod).replace(/\n\nTodos los valores.*$/,"").replace(/\n\nCoordinamos horarios.*$/,"");
+      var otras = textoWA(s.mod).replace(/\n\nTodos los valores[\s\S]*$/,"").replace(/\n\nValores y cómo contratar[\s\S]*$/,"");
       t += "\n"+otras.replace(/^\*[^\n]*\*\n\n/,"*Otras opciones*\n\n")+"\n";
     }
     if(s.mod==="online") t += "\nPuedes ver todos los planes online aquí: "+URL_PRECIOS+"\n¿Te resuelvo alguna duda? 💪";
-    else t += "\nCoordinamos horarios y lugar por WhatsApp.\n¿Te resuelvo alguna duda? 💪";
+    else t += "\nPuedes ver los valores presenciales aquí: "+URL_PRES+"\nCoordinamos horarios y lugar por WhatsApp. ¿Te resuelvo alguna duda? 💪";
     return t;
   }
   function fonoCot(){
@@ -6255,10 +6258,12 @@ try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
         if(tb) tb.innerHTML = barraTab(); if(tt) tt.innerHTML = tablaPrecios(TAB);
         return;
       }
-      if(b.id==="trfCopiarLink") copiar(URL_PRECIOS, "Link de precios copiado");
+      if(b.id==="trfCopiarLink") copiar(URL_PRECIOS, "Link online copiado");
       else if(b.id==="trfCopiarTxt") copiar(textoWA(TAB), "Tabla copiada");
       else if(b.id==="trfWA") window.open("https://wa.me/?text="+encodeURIComponent(textoWA(TAB)), "_blank");
       else if(b.id==="trfVer") window.open(URL_PRECIOS, "_blank");
+      else if(b.id==="trfVerPres") window.open(URL_PRES, "_blank");
+      else if(b.id==="trfCopiarLinkPres") copiar(URL_PRES, "Link presencial copiado");
     });
   }
   /* Selector de tarifa en la ficha: rellena Monto mensual y Modalidad */
