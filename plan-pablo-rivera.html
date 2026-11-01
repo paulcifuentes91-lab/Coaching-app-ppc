@@ -1098,6 +1098,7 @@ let planCheckDate = DEFAULT_PLAN.checkDate;
 let weeklyOrder = DEFAULT_PLAN.weeklyOrder;
 let statChips = DEFAULT_PLAN.statChips;
 let mesocicloLabel = DEFAULT_PLAN.mesocicloLabel;
+function mesoVis(l){ return /^julio\b/i.test(String(l||'')) ? 'mesociclo actual' : l; }
 let params = DEFAULT_PLAN.params;
 let weekMeta = DEFAULT_PLAN.weekMeta;
 let days = DEFAULT_PLAN.days;
@@ -1270,6 +1271,12 @@ athleteRef.onSnapshot((doc)=>{
       window.__foodsCustom = p.foodsCustom || {};
       MEAL_PLAN_MACROS = p.macros || DEFAULT_PLAN.macros;
       supplementation = p.supplementation || DEFAULT_PLAN.supplementation;
+    try{ /* sin "Mesociclo Julio" en textos guardados */
+      const _f = function(t){ return typeof t==='string' ? t.replace(/Mesociclo\s+Julio\b\s*·?\s*/gi,'Mesociclo · ').replace(/^Julio\s*·\s*/i,'') : t; };
+      headerEyebrow = _f(headerEyebrow); headerMeta = _f(headerMeta);
+      params = (params||[]).map(function(r){ return Array.isArray(r) ? [r[0], _f(r[1])] : (r && typeof r==='object' ? Object.assign({}, r, {v:_f(r.v)}) : r); });
+      statChips = (statChips||[]).map(function(c){ return (c && /mesociclo/i.test(c.l) && /^julio$/i.test(c.v)) ? Object.assign({}, c, {v:'En curso'}) : c; });
+    }catch(e){}
       if(!days.find(d=>d.id===activeDay)) activeDay = days[0].id;
       if(!mealWindows.find(m=>m.id===activeMealWindow)) activeMealWindow = mealWindows[0].id;
     }
@@ -3281,8 +3288,8 @@ function renderAdherenceCard(){
   const el = document.getElementById('adherenceCard');
   const a = calcAdherence();
   const weekLabel = a.week
-    ? `Semana ${a.week} en curso · ${weekDateRange(a.week)} (${mesocicloLabel})`
-    : `Actividad reciente (${mesocicloLabel})`;
+    ? `Semana ${a.week} en curso · ${weekDateRange(a.week)} (${mesoVis(mesocicloLabel)})`
+    : `Actividad reciente (${mesoVis(mesocicloLabel)})`;
   const history = Object.keys(mesocicloHistory)
     .filter(label => label !== mesocicloLabel)
     .sort();
@@ -3754,7 +3761,7 @@ document.getElementById('resumenBtn').addEventListener('click',()=>{
   const f = dailyFeel[todayStr()] || {};
 
   let txt = `📊 Resumen semanal — ${headerNombre}\n`;
-  txt += `(${mesocicloLabel} · Semana ${computeCurrentWeek()||activeWeek} del mesociclo)\n\n`;
+  txt += `(${mesoVis(mesocicloLabel)} · Semana ${computeCurrentWeek()||activeWeek} del mesociclo)\n\n`;
   txt += `🏋️ Entreno: ${a.trainPct}% cumplimiento (últimas ${tHist.length} sesiones)\n`;
   tHist.forEach(h=>{ txt += `  · ${h.date} ${h.names}: ${h.pct}%\n`; });
   txt += `\n🥗 Dieta: ${a.mealPct}% cumplimiento (últimos ${mHist.length} días)\n`;
