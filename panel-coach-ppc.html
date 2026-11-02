@@ -1460,7 +1460,7 @@ document.addEventListener("click", async e=>{
     const a = ATLETAS.find(x=>x.id===bC.dataset.ppcCobrar); if(!a) return;
     const tel = (a.wa||"").replace(/[^0-9]/g,"");
     if(!tel){ toast("Falta el número de "+a.n); return; }
-    const monto = +a.pagoMonto>0 ? ` (${CLP(a.pagoMonto)})` : "";
+    const _d = window.ppcDeuda ? window.ppcDeuda(a) : null; const monto = (_d && _d.hayPlan) ? ` (${CLP(_d.cuota ? _d.cuota.m : _d.saldo)}${_d.cuota ? ", cuota "+_d.cuota.n : ", saldo"})` : (+a.pagoMonto>0 ? ` (${CLP(a.pagoMonto)})` : "");
     const txt = `Hola ${nom1(a)}, te recuerdo que está pendiente el pago de tu plan${monto}. ¿Me confirmas cuando lo realices? Gracias.`;
     window.open("https://wa.me/"+tel+"?text="+encodeURIComponent(txt),"_blank","noopener");
     return;
@@ -6121,6 +6121,116 @@ window.ppcMergeContacto = function(a, datos){
   try{ const p = datos && datos.plan; if(p && p.accessExpiresAt!==undefined){ a.vence = esFecha(p.accessExpiresAt) ? p.accessExpiresAt : ""; } }catch(e){}
 };
 try{ iniciarSidebar(); iniciarBotones(); }catch(e){}
+})();
+</script>
+
+<script id="ppcAbonos">
+(function(){
+"use strict";
+var $ = function(id){ return document.getElementById(id); };
+var CLPf = function(n){ return "$" + Math.round(+n||0).toLocaleString("es-CL"); };
+var hoy = function(){ var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+var okF = function(s){ return /^\d{4}-\d{2}-\d{2}$/.test(s||""); };
+var fF = function(s){ return okF(s) ? s.slice(8,10)+"-"+s.slice(5,7)+"-"+s.slice(2,4) : "—"; };
+var addM = function(s,n){ var p=s.split("-").map(Number); var d=new Date(Date.UTC(p[0],p[1]-1+n,p[2])); if(d.getUTCDate()!==p[2]) d.setUTCDate(0); return d.toISOString().slice(0,10); };
+var esc = function(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); };
+var uid = function(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); };
+var cur = null;
+
+function calc(a){
+  var plan = +a.pagoMonto||0;
+  var ab = (a.pagos||[]).reduce(function(s,p){return s+(+p.m||0);},0);
+  return {plan:plan, ab:ab, saldo:Math.max(0,plan-ab)};
+}
+function derivar(a){
+  var c = calc(a), cu = (a.cuotas||[]).filter(function(x){return !x.pagada;}).sort(function(x,y){return x.f<y.f?-1:1;});
+  var out = {};
+  if(c.plan>0 && c.saldo<=0){ out.pagoEstado="pagado"; }
+  else if(cu.length){ out.pagoProximo=cu[0].f; out.pagoEstado = cu[0].f<hoy() ? "moroso" : "pendiente"; }
+  else if(c.plan>0 && (a.pagos||[]).length){ out.pagoEstado = "pendiente"; }
+  return out;
+}
+window.ppcDeuda = function(a){
+  var c = calc(a), cu = (a.cuotas||[]).filter(function(x){return !x.pagada;}).sort(function(x,y){return x.f<y.f?-1:1;});
+  return {saldo:c.saldo, cuota: cu.length?cu[0]:null, hayPlan:(c.plan>0 && ((a.pagos||[]).length||(a.cuotas||[]).length))};
+};
+async function guardar(a){
+  var d = derivar(a); Object.assign(a, d);
+  var pr = $("fPagoEstado"); if(pr && d.pagoEstado!==undefined) pr.value = d.pagoEstado;
+  var px = $("fPagoProximo"); if(px && d.pagoProximo!==undefined) px.value = d.pagoProximo;
+  pintar(a);
+  if(!AUTH || !AUTH.user){ toast("Inicia sesión para guardar cambios"); var m=$("authModal"); if(m) m.classList.add("on"); return; }
+  var id = FB_ID[a.id];
+  if(!id || !FB.on){ toast("Sin conexión con la nube"); return; }
+  var parcial = Object.assign({pagos:a.pagos||[], cuotas:a.cuotas||[]}, d);
+  try{ await FB.db.collection("athletes").doc(id).set({contacto: parcial},{merge:true}); toast("Pago guardado"); }
+  catch(e){ toast("No se pudo guardar: "+e.message); }
+}
+function pintar(a){
+  var box = $("pagosBox"); if(!box) return;
+  var c = calc(a), pagos=(a.pagos||[]).slice().sort(function(x,y){return x.f<y.f?1:-1;});
+  var cuotas=(a.cuotas||[]).slice().sort(function(x,y){return x.f<y.f?-1:1;});
+  var h = '<div class="pgSum"><div><b>'+CLPf(c.plan)+'</b><span>Plan</span></div><div><b>'+CLPf(c.ab)+'</b><span>Abonado</span></div><div><b style="color:'+(c.saldo>0?'#ff9b6b':'#6fd08c')+'">'+CLPf(c.saldo)+'</b><span>Saldo</span></div></div>';
+  h += '<div class="lb" style="margin-top:10px">Registrar abono</div><div class="pgRow"><input class="in" type="date" id="pgF" value="'+hoy()+'"><input class="in mono" type="number" id="pgM" placeholder="Monto"><select class="in" id="pgMed"><option>Transferencia</option><option>Efectivo</option><option>Mercado Pago</option><option>Tarjeta</option><option>Otro</option></select><button type="button" class="btn" id="pgAdd">Agregar</button></div>';
+  h += '<div class="lb" style="margin-top:12px">Cuotas</div>';
+  if(cuotas.length){
+    h += cuotas.map(function(q){ var venc=!q.pagada && q.f<hoy();
+      return '<div class="pgItem"><span>Cuota '+q.n+' · '+fF(q.f)+(venc?' <em style="color:#ff9b6b">atrasada</em>':'')+'</span><b>'+CLPf(q.m)+'</b>'+(q.pagada?'<span style="color:#6fd08c">Pagada</span>':'<button type="button" class="btn" data-pg-pagar="'+q.n+'">Pagar</button>')+'</div>'; }).join("");
+    h += '<button type="button" class="btn" id="pgDelCu" style="margin-top:6px">Borrar cuotas</button>';
+  } else {
+    h += '<div class="pgRow"><input class="in" type="number" id="pgN" min="2" max="24" placeholder="N° cuotas"><input class="in" type="date" id="pgP" value="'+hoy()+'"><select class="in" id="pgI"><option value="1">Cada mes</option><option value="0.5">Cada 15 días</option></select><button type="button" class="btn" id="pgGen">Generar</button></div><div class="hvacio">Reparte el saldo ('+CLPf(c.saldo)+') en cuotas iguales.</div>';
+  }
+  h += '<div class="lb" style="margin-top:12px">Historial de abonos</div>';
+  h += pagos.length ? pagos.map(function(p){ return '<div class="pgItem"><span>'+fF(p.f)+' · '+esc(p.medio||"")+(p.cuota?' · cuota '+p.cuota:'')+'</span><b>'+CLPf(p.m)+'</b><button type="button" class="btn" data-pg-del="'+esc(p.id)+'" title="Eliminar">✕</button></div>'; }).join("") : '<div class="hvacio">Sin abonos registrados.</div>';
+  box.innerHTML = h;
+}
+function ensureBox(){
+  if($("pagosBox")) return;
+  var m = $("fPagoProximo"); if(!m) return;
+  var campos = m.closest(".campos"); if(!campos) return;
+  var d = document.createElement("div"); d.id="pagosBox"; d.style.marginTop="12px";
+  campos.parentNode.appendChild(d);
+}
+(function css(){ var s=document.createElement("style"); s.textContent=
+ "#pagosBox .pgSum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}#pagosBox .pgSum div{background:#1B1C21;border-radius:10px;padding:9px;text-align:center}#pagosBox .pgSum b{display:block;font-size:15px}#pagosBox .pgSum span{font-size:11px;opacity:.7}"+
+ "#pagosBox .pgRow{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}#pagosBox .pgRow .in{flex:1 1 100px;min-width:0}"+
+ "#pagosBox .pgItem{display:flex;align-items:center;gap:8px;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px}#pagosBox .pgItem span:first-child{flex:1}";
+ document.head.appendChild(s); })();
+
+var f0 = window.ppcExtrasFicha;
+window.ppcExtrasFicha = function(a){ if(f0) try{f0(a);}catch(e){} cur=a; ensureBox(); pintar(a); };
+var c0 = window.ppcContactoExtra;
+window.ppcContactoExtra = function(a){ var o = c0 ? c0(a) : {}; o.pagos=a.pagos||[]; o.cuotas=a.cuotas||[]; return o; };
+var m0 = window.ppcMergeContacto;
+window.ppcMergeContacto = function(a,datos){ if(m0) try{m0(a,datos);}catch(e){} var c=datos&&datos.contacto; if(!c) return; if(Array.isArray(c.pagos)) a.pagos=c.pagos; if(Array.isArray(c.cuotas)) a.cuotas=c.cuotas; };
+
+document.addEventListener("click", function(e){
+  var t=e.target; if(!t||!t.closest||!cur) return; var a=cur;
+  if(t.id==="pgAdd"){
+    var f=$("pgF").value, m=+$("pgM").value;
+    if(!okF(f)||!(m>0)){ toast("Ingresa fecha y monto"); return; }
+    (a.pagos=a.pagos||[]).push({id:uid(),f:f,m:Math.round(m),medio:$("pgMed").value}); guardar(a); return;
+  }
+  if(t.id==="pgGen"){
+    var n=Math.round(+$("pgN").value), p=$("pgP").value, iv=+$("pgI").value, c=calc(a);
+    if(!(n>=2)||!okF(p)){ toast("Indica N° de cuotas y primera fecha"); return; }
+    if(c.saldo<=0){ toast("No hay saldo por repartir"); return; }
+    var base=Math.floor(c.saldo/n), arr=[];
+    for(var i=0;i<n;i++){ var f2 = iv===1 ? addM(p,i) : (function(){var d=new Date(p+"T00:00:00Z"); d.setUTCDate(d.getUTCDate()+15*i); return d.toISOString().slice(0,10);})();
+      arr.push({n:i+1,f:f2,m: i===n-1 ? c.saldo-base*(n-1) : base, pagada:false}); }
+    a.cuotas=arr; guardar(a); return;
+  }
+  if(t.id==="pgDelCu"){ if(confirm("¿Borrar las cuotas? Los abonos se mantienen.")){ a.cuotas=[]; guardar(a);} return; }
+  var bp=t.closest("[data-pg-pagar]");
+  if(bp){ var q=(a.cuotas||[]).find(function(x){return String(x.n)===bp.dataset.pgPagar;}); if(!q) return;
+    q.pagada=true; (a.pagos=a.pagos||[]).push({id:uid(),f:hoy(),m:q.m,medio:"Transferencia",cuota:q.n}); guardar(a); return; }
+  var bd=t.closest("[data-pg-del]");
+  if(bd){ var id=bd.dataset.pgDel, p2=(a.pagos||[]).find(function(x){return x.id===id;});
+    if(!p2||!confirm("¿Eliminar este abono?")) return;
+    a.pagos=a.pagos.filter(function(x){return x.id!==id;});
+    if(p2.cuota){ var q2=(a.cuotas||[]).find(function(x){return x.n===p2.cuota;}); if(q2) q2.pagada=false; }
+    guardar(a); return; }
+});
 })();
 </script>
 
