@@ -4,7 +4,7 @@
    notificaciones push).
 
    UN SOLO fetch de todos los atletas por corrida (db.collection('athletes')
-   .get() una vez); para cada uno se evaluan las 6 reglas de REGLAS sobre
+   .get() una vez); para cada uno se evaluan las 7 reglas de REGLAS sobre
    los mismos datos ya traidos - ninguna regla hace lecturas adicionales a
    Firestore, así que agregar reglas no multiplica las consultas.
 
@@ -98,7 +98,8 @@ const VISTA_POR_REGLA = {
   motivacion: 'feel',
   como_te_sientes: 'feel',
   descanso: 'feel',
-  chequeo_proximo: 'progress'
+  chequeo_proximo: 'progress',
+  saludo_am: 'feel'
 };
 
 // Tolerancia alrededor de cada hora objetivo, para absorber el drift real
@@ -159,7 +160,87 @@ function fraseMotivacionDelDia() {
   return FRASES_MOTIVACION_GENERICAS[new Date().getUTCDate() % FRASES_MOTIVACION_GENERICAS.length];
 }
 
+
+/* ═══════════ SALUDO DE LAS 6 AM (adherencia indirecta) ═══════════
+   Pregunta por la persona en vez de recordar la tarea. Sin salud ni cifras
+   sensibles (se lee en la pantalla bloqueada). Dia de descanso: siempre un
+   saludo + mensaje de descanso. Dia de entreno: solo si hay algo real que
+   decir (faltó, racha, lunes, miercoles, entreno ayer); si no, no se envia.
+   Dias entrenados = fechas con checks de entrenamiento (claves
+   "YYYY-MM-DD-wN-dia-X-s-i" = true), mismo criterio que trainHistoryByDay()
+   del cliente. */
+function nombrePila(data, id) {
+  const n = ((data.contacto && data.contacto.nombre) || '').trim().split(/\s+/)[0];
+  return n || 'campeón';
+}
+function diasEntrenados(data) {
+  const out = new Set();
+  const checks = data.trainingChecks || data.checks || {}; // la app guarda los checks de entreno en trainingChecks
+  Object.keys(checks).forEach(k => {
+    if (checks[k] && /^\d{4}-\d{2}-\d{2}-/.test(k) && k.includes('-dia-')) out.add(k.slice(0, 10));
+  });
+  return out;
+}
+// null = sin plan configurado; true/false = descanso / entrena
+function esDiaDescanso(data, tz, fecha) {
+  const wo = data.plan && data.plan.weeklyOrder;
+  if (!Array.isArray(wo) || !wo.length) return null;
+  const jsDay = localWeekday(tz, fecha);
+  return !wo[(jsDay + 6) % 7];
+}
+function hashTxt(t) { let h = 0; for (const c of String(t)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; }
+function numDia(tz, ahora) { return Math.floor(Date.parse(localDateStr(tz, ahora) + 'T00:00:00Z') / 86400000); }
+
+const SALUDOS_DESCANSO = [
+  (n) => `Buenos días, ${n}. Hoy toca descansar, y descansar bien también es parte del plan. ¿Cómo amaneciste?`,
+  (n) => `${n}, hoy tu cuerpo recupera lo que construyó esta semana. Come bien, hidrátate y desconecta. ¿Cómo te sientes?`,
+  (n) => `Buen día, ${n}. Hoy no hay entreno y está bien. Descansa sin culpa, que así llegas con más energía a la próxima sesión.`,
+  (n) => `Hoy es día libre, ${n}. Camina un rato, duerme bien y date un gusto con calma. ¿Cómo estás?`
+];
+const CUERPOS_ANIMO = [
+  (n) => `${n}, ¿cómo cerró tu día? Cuéntame tu ánimo y energía en la app.`,
+  (n) => `${n}, ¿cómo te fue hoy? Registra tu ánimo y energía, que mañana ajustamos según cómo estés.`,
+  (n) => `Antes de cerrar el día, ${n}: primero tú, después el entrenamiento. ¿Cómo estuvo tu energía?`
+];
+
+// Devuelve {body} o false (no enviar)
+function armarSaludoAM(data, tz, ahora, id) {
+  const desc = esDiaDescanso(data, tz, ahora);
+  if (desc === null) return false;
+  const n = nombrePila(data, id);
+  const dia = numDia(tz, ahora), h = hashTxt(id);
+  if (desc) return { body: SALUDOS_DESCANSO[(dia + h) % SALUDOS_DESCANSO.length](n) };
+
+  const hechos = diasEntrenados(data);
+  const fechaDe = k => localDateStr(tz, new Date(ahora.getTime() - k * 86400000));
+  const programado = k => !esDiaDescanso(data, tz, new Date(ahora.getTime() - k * 86400000));
+  const ayer = hechos.has(fechaDe(1));
+
+  // Sesiones programadas consecutivas hacia atras (se saltan los descansos)
+  // y sesiones programadas seguidas sin hacer desde la ultima hecha.
+  let racha = 0, faltas = 0, seguirRacha = true, vioHecho = false;
+  for (let k = 1; k <= 30; k++) {
+    if (!programado(k)) continue;
+    if (hechos.has(fechaDe(k))) { vioHecho = true; if (seguirRacha) racha++; else break; }
+    else { if (!vioHecho) faltas++; seguirRacha = false; if (vioHecho) break; }
+  }
+  const sinHistorial = hechos.size === 0;
+  if (!sinHistorial && faltas >= 2) return { body: `${n}, te eché de menos por acá. Sin presiones, retomemos con calma cuando quieras. ¿Todo bien?` };
+  if (racha >= 3 && faltas === 0) return { body: `${n}, llevas ${racha} días seguidos. Me importa que sigas bien, no solo que sigas. ¿Cómo te sientes?` };
+  const wd = localWeekday(tz, ahora);
+  if (wd === 1) return { body: `Nueva semana, ${n}. ¿Cómo te sientes para empezar con calma?` };
+  if (wd === 3) return { body: `Mitad de semana, ${n}. Cuida tu descanso y tu comida, que ahí también se gana. ¿Cómo vas?` };
+  if (ayer) return { body: `Buenos días, ${n}. Ayer cumpliste tu sesión y eso suma más de lo que parece. ¿Vamos por otra hoy?` };
+  return false;
+}
+
 const REGLAS = [
+  {
+    id: 'saludo_am',
+    horas: ['06:00'],
+    condicion: (data, tz, ahora, id) => armarSaludoAM(data, tz, ahora, id),
+    armar: (ctx) => ({ title: 'Pro Performance Coach', body: (ctx && ctx.body) || 'Buenos días. ¿Cómo amaneciste hoy?' })
+  },
   {
     id: 'entreno',
     horas: ['08:00'],
@@ -191,9 +272,10 @@ const REGLAS = [
   {
     id: 'como_te_sientes',
     horas: ['21:30'],
-    armar: () => ({
+    condicion: (data, tz, ahora, id) => ({ n: nombrePila(data, id), dia: numDia(tz, ahora), h: hashTxt(id) }),
+    armar: (c) => ({
       title: '🧠 ¿Cómo te sientes hoy?',
-      body: 'Registra tu ánimo, energía y estrés del día en tu app'
+      body: c && c.n ? CUERPOS_ANIMO[(c.dia + c.h) % CUERPOS_ANIMO.length](c.n) : 'Registra tu ánimo, energía y estrés del día en tu app'
     })
   },
   {
@@ -248,7 +330,7 @@ const REGLAS = [
         continue;
       }
 
-      const ctx = regla.condicion ? regla.condicion(data, tz, ahora) : true;
+      const ctx = regla.condicion ? regla.condicion(data, tz, ahora, doc.id) : true;
       if (!ctx && !TEST_SEND) {
         console.log(`${nombre} [${regla.id}]: condición no se cumple - se salta`);
         continue;
@@ -272,7 +354,7 @@ const REGLAS = [
       if (RICH_NOTIF_ATLETAS.has(doc.id) && ARCHIVO_POR_ID[doc.id]) {
         const archivo = ARCHIVO_POR_ID[doc.id];
         const vista = VISTA_POR_REGLA[regla.id] || 'feel';
-        payloadData.image = `${BASE_URL}/icons/recordatorio-${regla.id}.png`;
+        payloadData.image = `${BASE_URL}/icons/recordatorio-${regla.id === 'saludo_am' ? 'como_te_sientes' : regla.id}.png`; // el saludo reutiliza la imagen de 'como_te_sientes'
         payloadData.icon = `${BASE_URL}/icons/icon-192.png`; // logo real de la marca (P con alas), no el "P" simple generado
         payloadData.url = `${BASE_URL}/${archivo}?vista=${vista}`;
         payloadData.athleteId = doc.id;
