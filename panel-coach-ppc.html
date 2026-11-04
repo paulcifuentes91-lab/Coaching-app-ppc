@@ -2044,12 +2044,16 @@ function cargar(a){
  pintarDias(); pintarBloques(); _postBloques(); pintarSups(); pintarHist(); recalcular(); v7cargar(); pintarMesocicloCalendario(); pintarPerfil();
  /* Sincronizar fechas reales desde Firebase - la ATLETAS de fabrica puede estar vieja */
  const _idSync = FB_ID[a.id];
- const _btnsGuardar = document.querySelectorAll('[data-save]');
+ // #fbGuardar ("Guardar en la nube") tambien se bloquea mientras llega la
+ // copia de la nube: si se pulsaba antes, guardaba los dias de fabrica de
+ // ATLETAS encima del plan editado (caso real: Felipe, nov-2026).
+ const _btnsGuardar = document.querySelectorAll('[data-save], #fbGuardar');
  if(_idSync && FB.on){
   _btnsGuardar.forEach(b=>{ b.disabled = true; b.dataset.txtOriginal = b.textContent; b.textContent = "Sincronizando..."; });
   FB.db.collection("athletes").doc(_idSync).get().then(snap=>{
    if(!snap.exists || !act || act.id!==a.id) return;
    const p = snap.data().plan || {};
+   a.__nubeDias = JSON.stringify(p.days || null); // ver fbGuardarPlan: evita pisar cambios hechos en otra pestaña/dispositivo
    let cambio = false;
    /* Mesociclo nuevo horneado en ATLETAS (inicio posterior al guardado en la
       nube): el archivo trae un bloque mas reciente que Firestore, asi que NO
@@ -2162,7 +2166,9 @@ function cargar(a){
    }
    if(_localMasNuevo) toast("Mesociclo nuevo de "+a.n+" (inicio "+a.ini_f+") aún no está en la nube · pulsa Guardar en la nube");
    _btnsGuardar.forEach(b=>{ b.disabled = false; b.textContent = b.dataset.txtOriginal || "Guardar cambios"; });
-  }).catch(()=>{ _btnsGuardar.forEach(b=>{ b.disabled = false; b.textContent = b.dataset.txtOriginal || "Guardar cambios"; }); });
+  }).catch(()=>{ _btnsGuardar.forEach(b=>{
+    if(b.id==="fbGuardar"){ b.disabled = true; b.textContent = "Sin sincronizar · reabre la ficha"; return; }
+    b.disabled = false; b.textContent = b.dataset.txtOriginal || "Guardar cambios"; }); });
  }
 }
 function pintarDiasLibres(diasLibres){
@@ -2355,13 +2361,25 @@ async function restaurarVersion(idx){
  const planActual = (snap.exists && snap.data().plan) || {};
  let planFinal;
  if(hh.tipo==="entrenamiento" && hh.snapshotDays){
-  planFinal = Object.assign({}, planActual, { days: hh.snapshotDays });
+  // Tambien se recalcula el orden semanal (antes quedaba el del plan actual:
+  // al restaurar 5 dias sobre un plan de 4, el quinto no aparecia nunca).
+  // Si cada dia trae su dia de la semana ("Lunes", "Mié"...), se ubica ahi;
+  // si no, mismo reparto que fbGuardarPlan.
+  const _n = hh.snapshotDays.length, _ids = hh.snapshotDays.map((d,i)=>d.id || ("dia-"+(i+1)));
+  const _sem = ["lun","mar","mie","jue","vie","sab","dom"];
+  const _pos = hh.snapshotDays.map(d=>_sem.indexOf(String(d.dayTag||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().slice(0,3)));
+  let _wo;
+  if(_pos.every(x=>x>=0) && new Set(_pos).size===_pos.length){ _wo = [null,null,null,null,null,null,null]; _pos.forEach((x,i)=>{ _wo[x] = _ids[i]; }); }
+  else _wo = _n>=7 ? _ids.slice(0,7) : _n===6 ? [..._ids,null] : _n===5 ? [_ids[0],_ids[1],null,_ids[2],_ids[3],_ids[4],null]
+    : _n===4 ? [_ids[0],_ids[1],null,_ids[2],_ids[3],null,null] : _n===3 ? [_ids[0],null,_ids[1],null,_ids[2],null,null]
+    : _n===2 ? [_ids[0],null,null,_ids[1],null,null,null] : [_ids[0],null,null,null,null,null,null];
+  planFinal = Object.assign({}, planActual, { days: hh.snapshotDays, weeklyOrder: _wo });
  } else if(hh.tipo==="nutricion" && hh.snapshotMealWindows){
   planFinal = Object.assign({}, planActual, { mealWindows: hh.snapshotMealWindows });
  } else { toast("Esta version no tiene copia guardada para restaurar"); return; }
  const hist2 = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
  hist2.push({ fecha: new Date().toISOString(), tipo: hh.tipo, resumen: "Restaurado desde version anterior" });
- planFinal.historial = hist2.slice(-15);
+ planFinal.historial = hist2.slice(-30);
  await ref.set({ plan: planFinal }, { merge:true });
  toast("Version restaurada - recarga la ficha para verla");
  document.getElementById("histModal")?.remove();
@@ -3841,6 +3859,10 @@ async function fbGuardarPlan(a){
   const ref = FB.db.collection("athletes").doc(id);
   const snap = await ref.get();
   const planActual = (snap.exists && snap.data().plan) || {};
+  if(a.__nubeDias !== undefined && JSON.stringify(planActual.days || null) !== a.__nubeDias &&
+     !confirm("El entrenamiento de "+a.n+" cambió en la nube desde que abriste su ficha (otra pestaña u otro dispositivo).\n\n¿Reemplazarlo igual con lo que ves aquí? Si no estás seguro, cancela y vuelve a abrir la ficha.")){
+    toast("No se guardó el entrenamiento · vuelve a abrir la ficha"); return false;
+  }
   const planFinal = Object.assign({}, planActual, plan);
   const hist = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
   hist.push({ fecha: new Date().toISOString(), tipo: "entrenamiento", resumen: dias.length+" día(s) de entrenamiento actualizados", snapshotDays: plan.days });
@@ -3851,6 +3873,7 @@ async function fbGuardarPlan(a){
   if((planActual.accessExpiresAt||"") !== (plan.accessExpiresAt||"")) _cambios.push({campo:"accessExpiresAt", valorAnterior: planActual.accessExpiresAt||null, valorNuevo: plan.accessExpiresAt||null});
   if(JSON.stringify(planActual.days||[]) !== JSON.stringify(plan.days)) _cambios.push({campo:"entrenamiento (días)", valorAnterior: (planActual.days||[]).length+" día(s)", valorNuevo: plan.days.length+" día(s)"});
   await ref.set({ plan: planFinal, contacto }, { merge:true });
+  a.__nubeDias = JSON.stringify(planFinal.days || null);
   await ppcAplicarRemapCargas(ref, snap.exists ? snap.data() : {}, planActual.days, plan.days);
   fbAuditoria(id, "fbGuardarPlan", _cambios);
   return true;
