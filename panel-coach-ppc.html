@@ -2352,10 +2352,15 @@ document.addEventListener("click", e=>{ if(e.target.id==="verHistorialBtn") verH
 async function restaurarVersion(idx){
  const hh = (window._histActual||[])[idx];
  if(!hh || !act) return;
+ // Sin sesion de coach Firestore rechaza el guardado: antes el error no se
+ // mostraba y parecia restaurado sin haber cambiado nada (caso Felipe, nov-2026).
+ if(!AUTH.user){ toast("Inicia sesión para restaurar"); document.getElementById("authModal").classList.add("on"); return; }
  const tipoTxt = hh.tipo==="entrenamiento" ? "el entrenamiento actual" : "la dieta actual";
  if(!confirm("¿Restaurar esta versión? Esto reemplazará "+tipoTxt+" de "+act.n+".")) return;
  const id = FB_ID[act.id];
  if(!id || !FB.on){ toast("Sin conexión a Firebase"); return; }
+ const atleta = act;
+ try{
  const ref = FB.db.collection("athletes").doc(id);
  const snap = await ref.get();
  const planActual = (snap.exists && snap.data().plan) || {};
@@ -2381,8 +2386,13 @@ async function restaurarVersion(idx){
  hist2.push({ fecha: new Date().toISOString(), tipo: hh.tipo, resumen: "Restaurado desde version anterior" });
  planFinal.historial = hist2.slice(-30);
  await ref.set({ plan: planFinal }, { merge:true });
- toast("Version restaurada - recarga la ficha para verla");
  document.getElementById("histModal")?.remove();
+ // Se vuelve a abrir la ficha: carga desde la nube la version restaurada, asi
+ // la pantalla no queda mostrando la anterior (y un "Guardar en la nube"
+ // posterior no la vuelve a pisar).
+ if(act === atleta) cargar(atleta);
+ toast("Versión restaurada ✓");
+ }catch(e){ toast("No se pudo restaurar: "+e.message); }
 }
 
 
