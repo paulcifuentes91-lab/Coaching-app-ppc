@@ -1843,11 +1843,52 @@ function calcularProgresion(seriesBase, modelo){
  else { s2=seriesBase+1; s3=seriesBase+2; s4=Math.max(2,Math.round(seriesBase*0.5)); }
  return "S1:"+s1+" · S2:"+s2+" · S3:"+s3+" · S4 descarga:"+s4;
 }
-function generarEjercicios(gruposStr, semilla, nivel, objetivo, seriesSesion, modelo){
+/* Periodización: ajusta repeticiones y volumen según el tipo (lineal = sin cambios) */
+const PER_DUP = [
+ {k:"pesado", n:"Día pesado", p:"4-6", a:"8-10", f:0.9},
+ {k:"medio", n:"Día medio", p:"8-10", a:"10-12", f:1},
+ {k:"liviano", n:"Día liviano", p:"12-15", a:"15-20", f:1.1}
+];
+const PER_BLOQUES = {
+ acumulacion:{n:"Acumulación", p:"10-12", a:"12-15", f:1.15},
+ transformacion:{n:"Transformación", p:"6-8", a:"10-12", f:1},
+ realizacion:{n:"Realización", p:"3-5", a:"6-8", f:0.8}
+};
+function perConfig(per){
+ if(!per || !per.tipo || per.tipo==="lineal") return null;
+ if(per.tipo==="dup") return PER_DUP[(+per.dia||0) % PER_DUP.length];
+ if(per.tipo==="bloques") return PER_BLOQUES[per.bloque] || PER_BLOQUES.acumulacion;
+ return null;
+}
+function perWeekMeta(tipo, bloque, N, base, fase){
+ if(tipo!=="dup" && tipo!=="bloques") return base;
+ if(fase==="Peak week" || fase==="Transición") return base;
+ N = Math.max(1, +N||4);
+ const out = [];
+ for(let w=1; w<=N; w++){
+  let lab, d;
+  const ultima = (w===N && N>=3);
+  if(tipo==="dup"){
+   if(w===1){ lab="DUP · Base"; d="Rota día pesado (4-6 rep), medio (8-10) y liviano (12-15). Fija cargas con técnica sólida (RIR 2-3)."; }
+   else if(ultima){ lab="DUP · Descarga"; d="Misma rotación pesado/medio/liviano con 40% menos series y lejos del fallo."; }
+   else { lab="DUP · Progresión"; d="Mantén la rotación y sube carga o repeticiones en cada tipo de día donde la técnica fue estable (RIR 1-2)."; }
+  } else {
+   const B = PER_BLOQUES[bloque] || PER_BLOQUES.acumulacion;
+   const foco = {acumulacion:"volumen y técnica con cargas moderadas", transformacion:"cargas más altas y menos repeticiones, convierte el volumen en fuerza", realizacion:"máxima intensidad con volumen bajo, descansos largos"}[bloque] || "";
+   if(w===1){ lab=B.n+" · Base"; d="Bloque de "+B.n.toLowerCase()+": "+foco+". Fija cargas de referencia (RIR 2-3)."; }
+   else if(ultima){ lab=B.n+" · Descarga"; d="Menos series y lejos del fallo, misma carga. Recupera antes del siguiente bloque."; }
+   else { lab=B.n+" · Progresión"; d="Sigue en "+foco+". Sube carga o repeticiones si la técnica es estable (RIR 1-2)."; }
+  }
+  out.push({n:w, label:lab, desc:d});
+ }
+ return out;
+}
+function generarEjercicios(gruposStr, semilla, nivel, objetivo, seriesSesion, per){
  const grupos = (gruposStr||"").split(",").map(g=>g.trim()).filter(Boolean);
  /* Volumen real de la sesion (calculado por ASIS.generar segun nivel/edad/sexo/objetivo) repartido entre los grupos del dia */
  const totalSeries = seriesSesion || (nivel==="principiante"?14:nivel==="avanzado"?26:20);
- const seriesPorGrupo = grupos.length ? totalSeries/grupos.length : totalSeries;
+ const _perF = (function(){ const c = perConfig(per); return c ? c.f : 1; })();
+ const seriesPorGrupo = (grupos.length ? totalSeries/grupos.length : totalSeries) * _perF;
  const REPS_POR_OBJETIVO = {
   fuerza:["4-6","8-10"], fuerza_maxima:["3-5","6-8"],
   definicion:["12-15","15-20"], competicion:["8-12","12-15"],
@@ -1862,6 +1903,14 @@ function generarEjercicios(gruposStr, semilla, nivel, objetivo, seriesSesion, mo
  /* seguridad: principiante no deberia trabajar en rangos muy bajos de repeticiones (tecnica primero) */
  if(nivel==="principiante" && (objetivo==="fuerza_maxima" || objetivo==="fuerza")){
   repsPrincipal = "6-8"; repsAccesorio = "10-12";
+ }
+ const _pc = perConfig(per);
+ let _fSeries = 1, _etiquetaPer = "";
+ if(_pc){
+  repsPrincipal = _pc.p; repsAccesorio = _pc.a; _fSeries = _pc.f;
+  /* seguridad: principiante no baja de 6 repeticiones */
+  if(nivel==="principiante" && /^[3-5]-/.test(repsPrincipal)){ repsPrincipal = "6-8"; repsAccesorio = "10-12"; }
+  _etiquetaPer = _pc.n;
  }
  const filas = [];
  grupos.forEach((g, gi)=>{
@@ -1880,7 +1929,8 @@ function generarEjercicios(gruposStr, semilla, nivel, objetivo, seriesSesion, mo
    asignadas += seriesEj;
    const reps = tier==="principal" ? repsPrincipal : repsAccesorio;
    const sust = SUSTITUTOS_EJ[nombre];
-   filas.push([nombre, seriesEj+" X "+reps, tier, sust ? ("Alternativa: "+sust) : ""]);
+   const _tip = [_etiquetaPer ? (per.tipo==="dup" ? _etiquetaPer+" (ondulante)" : "Bloque de "+_etiquetaPer.toLowerCase()) : "", sust ? ("Alternativa: "+sust) : ""].filter(Boolean).join(" · ");
+   filas.push([nombre, seriesEj+" X "+reps, tier, _tip]);
   }
  });
  if(!filas.length) filas.push(["", "4 X 10", "principal", ""]);
@@ -2451,10 +2501,15 @@ async function renovarMesociclo(){
       <option value="crossfit">CrossFit</option>
       <option value="funcional">Funcional</option>
      </select></label>
-     <label><span class="lb">Modelo de progresión</span><select class="in" id="renovarModelo">
-      <option value="lineal">Lineal (sube cada semana)</option>
-      <option value="ondulante">Ondulante (alterna alto/bajo)</option>
-      <option value="escalonado">Escalonado (2 sem. iguales, luego sube)</option>
+     <label><span class="lb">Tipo de periodización</span><select class="in" id="renovarPeriodizacion">
+      <option value="lineal">Lineal (sube cada semana · por defecto)</option>
+      <option value="dup">Ondulante diaria (pesado / medio / liviano)</option>
+      <option value="bloques">Por bloques (acumulación → transformación → realización)</option>
+     </select></label>
+     <label id="renovarBloqueWrap" style="display:none"><span class="lb">Bloque de este mesociclo</span><select class="in" id="renovarBloque">
+      <option value="acumulacion">Acumulación (volumen, 10-12 rep)</option>
+      <option value="transformacion">Transformación (fuerza-hipertrofia, 6-8 rep)</option>
+      <option value="realizacion">Realización (intensidad, 3-5 rep)</option>
      </select></label>
     </div>
     <div class="lb" style="margin-bottom:6px">Días de la semana (elige tipo o "Descanso")</div>
@@ -2477,6 +2532,9 @@ async function renovarMesociclo(){
    </div></div>`;
  document.body.appendChild(m);
  document.getElementById("renovarCerrar").onclick = ()=>m.remove();
+ (function(){ const sp=document.getElementById("renovarPeriodizacion"), w=document.getElementById("renovarBloqueWrap"), d=document.getElementById("renovarDisciplina");
+  const upd=()=>{ if(w) w.style.display = (sp&&sp.value==="bloques") ? "" : "none"; if(sp&&d){ sp.disabled = d.value!=="fisicoculturismo"; if(sp.disabled) sp.value="lineal"; } };
+  if(sp) sp.onchange=upd; if(d) d.addEventListener("change",upd); upd(); })();
  document.getElementById("renovarConfirmar").onclick = async ()=>{
   const filasDia = [...document.querySelectorAll("[data-tipo-dia]")].map(sel=>({dia:sel.dataset.tipoDia, tipo:sel.value})).filter(f=>f.tipo);
   if(!filasDia.length){ toast("Selecciona al menos un día de entreno antes de confirmar - todos quedaron en \"Descanso\""); return; }
@@ -2503,10 +2561,11 @@ async function renovarMesociclo(){
    altura:+String(act.est||170).replace(/[^0-9.]/g,"")||170, edad, sexo, act:"moderado", nivel, objetivo, dias:filasDia.length});
   const capEl = document.querySelector("#kMax"); if(capEl){ capEl.value = r.cap; if(typeof recalcular==="function") recalcular(); }
   const poolDisciplina = disciplina==="crossfit" ? EJERCICIOS_CROSSFIT : disciplina==="funcional" ? EJERCICIOS_FUNCIONAL : null;
+  const _perTipo = poolDisciplina ? "lineal" : (document.getElementById("renovarPeriodizacion")?.value || "lineal");
+  const _perBloque = document.getElementById("renovarBloque")?.value || "acumulacion";
   act.dias = filasDia.map((f,i)=>{
    const grupos = TIPOS_DIA[f.tipo] || "cuadriceps,espalda,pecho";
-   const modelo = document.getElementById("renovarModelo")?.value || "lineal";
-   const ejEntrenamiento = poolDisciplina ? generarCircuito(poolDisciplina, i, r.seriesSesion, objetivo, nivel) : generarEjercicios(grupos, i, nivel, objetivo, r.seriesSesion, modelo);
+   const ejEntrenamiento = poolDisciplina ? generarCircuito(poolDisciplina, i, r.seriesSesion, objetivo, nivel) : generarEjercicios(grupos, i, nivel, objetivo, r.seriesSesion, {tipo:_perTipo, dia:i, bloque:_perBloque});
    const etiquetaTipo = poolDisciplina ? (disciplina==="crossfit"?"WOD":"Circuito funcional") : f.tipo;
    return {n:`${f.dia} · ${etiquetaTipo}`, grupos,
     secs:[
@@ -2527,14 +2586,15 @@ async function renovarMesociclo(){
    const snap = await ref.get();
    const planActual = (snap.exists && snap.data().plan) || {};
    const mesos = Array.isArray(planActual.mesociclos) ? planActual.mesociclos.slice() : [];
-   mesos.push({fecha_inicio: hoy, fase, nota, dias:filasDia.length, nivel, sexo, edad, semanas:_semBloque});
+   mesos.push({fecha_inicio: hoy, fase, nota, dias:filasDia.length, nivel, sexo, edad, semanas:_semBloque, periodizacion:_perTipo, bloque:(_perTipo==="bloques"?_perBloque:null)});
    const hist = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
    hist.push({fecha: new Date().toISOString(), tipo:"entrenamiento", resumen: "Mesociclo renovado - fase: "+fase+" - "+filasDia.length+" días"+(nota?" - "+nota:""), snapshotDays: act.dias});
    const MESES_ES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
    const fechaHoy = new Date(hoy+"T12:00:00");
    const nuevoMesocicloLabel = MESES_ES[fechaHoy.getMonth()]+" "+fechaHoy.getFullYear();
-   const _wm = (window.ppcWeekMeta && act.macro && Array.isArray(act.macro.bloques) && act.macro.bloques.length) ? window.ppcWeekMeta(act, _semBloque) : null;
-   const planFinal = Object.assign({}, planActual, {days: act.dias, startDate: hoy, checkDate: nuevoChk, mesocicloLabel: nuevoMesocicloLabel, mesociclos: mesos.slice(-30), historial: hist.slice(-15)}, _wm ? {weekMeta:_wm, periodizacion:Object.assign({}, planActual.periodizacion||{}, {deload: act.macro.descarga === "fija" ? +(document.getElementById("kDl")?.value || 0.7) : 1})} : {});
+   const _wm0 = (window.ppcWeekMeta && act.macro && Array.isArray(act.macro.bloques) && act.macro.bloques.length) ? window.ppcWeekMeta(act, _semBloque) : null;
+   const _wm = perWeekMeta(_perTipo, _perBloque, _semBloque, _wm0, fase);
+   const planFinal = Object.assign({}, planActual, {days: act.dias, startDate: hoy, checkDate: nuevoChk, mesocicloLabel: nuevoMesocicloLabel, mesociclos: mesos.slice(-30), historial: hist.slice(-15)}, _wm ? {weekMeta:_wm, periodizacion:Object.assign({}, planActual.periodizacion||{}, {tipo:_perTipo, bloque:(_perTipo==="bloques"?_perBloque:null)}, (act.macro && act.macro.bloques && act.macro.bloques.length) ? {deload: act.macro.descarga === "fija" ? +(document.getElementById("kDl")?.value || 0.7) : 1} : {})} : {});
    await ref.set({plan: planFinal}, {merge:true});
    await ppcAplicarRemapCargas(ref, snap.exists ? snap.data() : {}, planActual.days, act.dias);
   }
