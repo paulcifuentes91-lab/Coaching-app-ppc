@@ -377,20 +377,1007 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7
    el plan vive en Firestore y se edita desde el Panel Admin, sin
    volver a tocar este código. */
 const DEFAULT_PLAN = {
- "eyebrow": "Mesociclo · Open Bodybuilding · Rumbo a octubre 2026",
+ "eyebrow": "Mesociclo · Off-season · Construcción muscular · Semana 1 a 4",
  "nombre": "Paul Cifuentes",
- "meta": "<b>Open Bodybuilding</b> · Preparación competitiva",
+ "meta": "<b>Open Bodybuilding</b> · Off-season post competencia · 101 kg · 11 % grasa",
  "accessExpiresAt": "2026-12-31",
- "startDate": "2026-07-07",
- "checkDate": "2026-08-03",
- "weeklyOrder": ["dia-1","dia-2",null,"dia-3","dia-4","dia-5",null],
- "statChips": [{"v":"Open","l":"Categoría"},{"v":"Oct 2026","l":"Competencia"},{"v":"5 días","l":"Frecuencia"}],
- "mesocicloLabel": "Julio 2026",
- "params": [["Categoría", "Open Bodybuilding · 34 años · 177 cm"], ["Competencia objetivo", "Octubre 2026"], ["Peso actual", "97,0 kg · desde 103 kg conservando masa muscular"], ["Peso objetivo en tarima", "94 a 95 kg con condición completa"], ["Fortalezas", "Cuádriceps muy competitivos · deltoides redondos · brazos completos · gran amplitud dorsal · densidad general"], ["A mejorar", "Estriación de glúteos · separación de femorales · detalle lumbar · protagonismo del pectoral superior en poses"], ["Posing consolidado", "Front Double Biceps · Rear Lat Spread · Side Chest · control abdominal"], ["Posing a perfeccionar", "Front Lat Spread · Rear Double Biceps · Side Triceps"], ["Estrategia", "Déficit progresivo sin recortes agresivos · mantener piernas llenas mientras mejora la condición"], ["Cierre", "Peak week bien ejecutada para máxima plenitud muscular"]], "weekMeta": [{"n": 1, "label": "Semana 1 · Acumulación", "desc": "Volumen base. Fija tus cargas de referencia con técnica sólida y RIR 2-3 (deja repeticiones en reserva). Registra los kg de cada ejercicio."}, {"n": 2, "label": "Semana 2 · Progresión", "desc": "Sube el volumen en los ejercicios principales (+1 serie) y aumenta carga donde la técnica fue estable. RIR 1-2."}, {"n": 3, "label": "Semana 3 · Intensificación", "desc": "Semana de mayor volumen e intensidad: principales +2 series, accesorios +1, dropset de cierre. Máximo esfuerzo con técnica (RIR 0-1)."}, {"n": 4, "label": "Semana 4 · Descarga (deload)", "desc": "Reducción planificada del volumen (~40% menos series) para recuperar y supercompensar. Cargas cómodas, sin fallo. Prepara el cuerpo para el próximo bloque."}],
- "days": [{"id": "dia-1", "dayTag": "Día 1", "name": "Espalda completa · Bíceps · Abdomen", "accent": "#5B8DEF", "sections": [{"name": "Entrenamiento", "items": [{"name": "Jalón al pecho", "reps": "4 X 10 a 12", "tier": "principal", "tip": "Anchura · codos abiertos · trabaja tu Front Lat Spread"}, {"name": "Remo Pendlay", "reps": "4 X 6 a 8", "tier": "principal", "tip": "Densidad · torso fijo, máxima tensión mecánica"}, {"name": "Remo en polea baja neutro", "reps": "4 X 10 a 12", "tier": "principal", "tip": "2 seg de contracción · espesor medio"}, {"name": "Pull over en polea", "reps": "3 X 12 a 15", "tier": "accesorio", "tip": "Estirar el dorsal · apertura para Lat Spread"}, {"name": "Encogimientos", "reps": "3 X 12 a 15", "tier": "accesorio", "tip": "Pausa arriba"}, {"name": "Curl con barra", "reps": "3 X 8 a 10", "tier": "accesorio", "tip": "Sin impulso · alta estabilidad"}, {"name": "Curl martillo", "reps": "3 X 10 a 12", "tier": "accesorio", "tip": "Braquial y antebrazo"}, {"name": "Crunch en polea alta", "reps": "3 X 15 a 20", "tier": "accesorio", "tip": "Abdomen profundo"}]}, {"name": "Posing", "items": [{"name": "Front Lat Spread", "reps": "4 X 20 seg", "tier": "accesorio", "tip": "Con el dorsal ya bombeado"}, {"name": "Rear Lat Spread", "reps": "3 X 20 seg", "tier": "accesorio", "tip": "Consolidado · mantener"}]}, {"name": "Cardio", "items": [{"name": "Caminata en cinta LISS", "reps": "35 a 45 min", "tier": "accesorio", "tip": "Baja intensidad"}]}]}, {"id": "dia-2", "dayTag": "Día 2", "name": "Cadena posterior · Femoral · Glúteo · Lumbar", "accent": "#63C295", "sections": [{"name": "Entrenamiento", "items": [{"name": "Peso muerto rumano", "reps": "4 X 8 a 10", "tier": "principal", "tip": "Bisagra pura · el estímulo más fuerte de tu semana"}, {"name": "Femoral acostado", "reps": "4 X 10 a 12", "tier": "principal", "tip": "Separación de isquios · pausa en contracción"}, {"name": "Hip thrust en máquina", "reps": "4 X 10 a 12", "tier": "principal", "tip": "Glúteo · 2 seg de tensión arriba"}, {"name": "Femoral sentada", "reps": "4 X 12 a 15", "tier": "principal", "tip": "Segundo ángulo de femoral · rango completo"}, {"name": "Extensión de cadera en polea", "reps": "3 X 15", "tier": "accesorio", "tip": "Por lado · contracción sostenida"}, {"name": "Hiperextensiones", "reps": "4 X 12", "tier": "accesorio", "tip": "Detalle lumbar · sin hiperextender"}, {"name": "Abductor en máquina", "reps": "3 X 20", "tier": "accesorio", "tip": "Glúteo medio · tronco adelante"}, {"name": "Elevación de piernas colgado", "reps": "3 X 15", "tier": "accesorio", "tip": "Abdomen inferior"}]}, {"name": "Cardio", "items": [{"name": "Caminata en cinta LISS", "reps": "35 a 45 min", "tier": "accesorio", "tip": "Post-entreno o PM"}]}]}, {"id": "dia-3", "dayTag": "Día 3", "name": "Pecho · Deltoides · Tríceps", "accent": "#E07A72", "sections": [{"name": "Entrenamiento", "items": [{"name": "Press inclinado con mancuernas", "reps": "4 X 8 a 10", "tier": "principal", "tip": "Pectoral superior primero · es tu punto a destacar en poses"}, {"name": "Press banca", "reps": "3 X 8 a 10", "tier": "principal", "tip": "Estable · máxima tensión"}, {"name": "Cruces en polea baja", "reps": "3 X 12 a 15", "tier": "accesorio", "tip": "Vector ascendente · pecho superior"}, {"name": "Aperturas en máquina", "reps": "3 X 12", "tier": "accesorio", "tip": "Rango completo"}, {"name": "Press hombro con mancuernas", "reps": "3 X 10", "tier": "principal", "tip": "Deltoides anterior"}, {"name": "Vuelos laterales", "reps": "4 X 12 a 15", "tier": "accesorio", "tip": "Sin impulso"}, {"name": "Tríceps con barra en polea alta", "reps": "3 X 10 a 12", "tier": "accesorio", "tip": "Codos fijos"}, {"name": "Extensión de tríceps sobre la cabeza", "reps": "3 X 12", "tier": "accesorio", "tip": "Cabeza larga"}]}, {"name": "Posing", "items": [{"name": "Side Chest", "reps": "3 X 20 seg", "tier": "accesorio", "tip": "Consolidado"}, {"name": "Side Triceps", "reps": "4 X 20 seg", "tier": "accesorio", "tip": "A perfeccionar · con el tríceps bombeado"}]}, {"name": "Cardio", "items": [{"name": "Caminata en cinta LISS", "reps": "35 a 45 min", "tier": "accesorio", "tip": "Baja intensidad"}]}]}, {"id": "dia-4", "dayTag": "Día 4", "name": "Cuádriceps · Gemelos · Core", "accent": "#E8C15C", "sections": [{"name": "Entrenamiento", "items": [{"name": "Extensión de cuádriceps", "reps": "3 X 15", "tier": "accesorio", "tip": "Preactivación · sin fallo"}, {"name": "Sentadilla hack", "reps": "4 X 8 a 10", "tier": "principal", "tip": "El único movimiento pesado del día"}, {"name": "Prensa 45", "reps": "3 X 10 a 12", "tier": "mantenimiento", "tip": "Mantener plenitud · tus cuádriceps ya están en su punto"}, {"name": "Sentadilla búlgara", "reps": "3 X 10", "tier": "accesorio", "tip": "Por lado · control total"}, {"name": "Extensión de cuádriceps", "reps": "3 X 12 a 15", "tier": "mantenimiento", "tip": "Cierre con pausa arriba"}, {"name": "Pantorrillas de pie", "reps": "4 X 12 a 15", "tier": "accesorio", "tip": "Pausa 2 seg en estiramiento"}, {"name": "Pantorrillas sentado", "reps": "4 X 15 a 20", "tier": "accesorio", "tip": "Sóleo"}, {"name": "Plancha isométrica", "reps": "3 X 60 seg", "tier": "accesorio", "tip": "Control del core"}]}, {"name": "Cardio", "items": [{"name": "Caminata en cinta LISS", "reps": "35 a 45 min", "tier": "accesorio", "tip": "Baja intensidad"}]}]}, {"id": "dia-5", "dayTag": "Día 5", "name": "Deltoides · Brazos · Refuerzo posterior", "accent": "#8C7BFF", "sections": [{"name": "Entrenamiento", "items": [{"name": "Press militar sentado", "reps": "3 X 8 a 10", "tier": "principal", "tip": "Deltoides anterior"}, {"name": "Vuelos laterales", "reps": "4 X 12 a 15", "tier": "accesorio", "tip": "Volumen extra · deltoides lateral"}, {"name": "Vuelos posteriores", "reps": "4 X 15", "tier": "accesorio", "tip": "Deltoides posterior · aporta al Rear Double Biceps"}, {"name": "Face pull", "reps": "3 X 15 a 20", "tier": "accesorio", "tip": "Salud de hombro y posterior"}, {"name": "Curl predicador", "reps": "3 X 10", "tier": "accesorio", "tip": "Pico de bíceps"}, {"name": "Press francés", "reps": "3 X 10", "tier": "accesorio", "tip": "Cabeza larga del tríceps"}, {"name": "Femoral sentada", "reps": "3 X 15", "tier": "accesorio", "tip": "Segunda dosis semanal de femoral · sin fatiga sistémica"}, {"name": "Extensión de cadera en polea", "reps": "3 X 15", "tier": "accesorio", "tip": "Segunda dosis de glúteo · por lado"}]}, {"name": "Posing", "items": [{"name": "Rear Double Biceps", "reps": "4 X 20 seg", "tier": "accesorio", "tip": "A perfeccionar · con posterior y brazos bombeados"}, {"name": "Front Double Biceps", "reps": "3 X 20 seg", "tier": "accesorio", "tip": "Consolidado"}, {"name": "Most Muscular", "reps": "3 X 15 seg", "tier": "accesorio", "tip": "Cierre"}]}, {"name": "Cardio", "items": [{"name": "Caminata en cinta LISS", "reps": "35 a 45 min", "tier": "accesorio", "tip": "Baja intensidad"}]}]}], "nutritionInfo": [["Objetivo", "Mantener masa muscular mientras mejora la condición"], ["Calorías", "3.450 a 3.550 kcal"], ["Distribución", "6 comidas · carbohidratos concentrados alrededor del entrenamiento"], ["Hidratación", "5 a 6 litros diarios"], ["Cardio", "LISS 35 a 45 min · 5 a 6 veces por semana"]], "mealWindows": [{"id": "actual", "label": "Fase actual", "accent": "#E8C15C", "macros": {"kcal": 3500, "proteinG": 290, "carbG": 450, "fatG": 60}, "meals": [{"name": "Comida 1", "sub": null, "items": ["Proteína y carbohidrato de digestión lenta", "Detalle por cargar"]}, {"name": "Comida 2", "sub": null, "items": ["Detalle por cargar"]}, {"name": "Comida 3 · Pre-entreno", "sub": "Carbohidratos concentrados", "items": ["Detalle por cargar"]}, {"name": "Comida 4 · Post-entreno", "sub": "Carbohidratos concentrados", "items": ["Detalle por cargar"]}, {"name": "Comida 5", "sub": null, "items": ["Detalle por cargar"]}, {"name": "Comida 6", "sub": null, "items": ["Detalle por cargar"]}]}], "macros": {
-  "kcal": 4401, "proteinG": 347, "carbG": 499, "fatG": 108
+ "startDate": "2026-11-10",
+ "checkDate": "2026-12-08",
+ "weeklyOrder": [
+  "dia-1",
+  "dia-2",
+  "dia-3",
+  "dia-4",
+  "dia-5",
+  "dia-6",
+  "dia-7"
+ ],
+ "statChips": [
+  {
+   "v": "30-40 MIN",
+   "l": "Cardio diario"
+  },
+  {
+   "v": "6+1",
+   "l": "Días/sem"
+  },
+  {
+   "v": "2-3",
+   "l": "RIR"
+  }
+ ],
+ "mesocicloLabel": "Noviembre 2026",
+ "params": [
+  [
+   "Categoría",
+   "Open Bodybuilding · 34 años · 177 cm"
+  ],
+  [
+   "Fase",
+   "Off-season · construcción muscular post competencia"
+  ],
+  [
+   "Estado actual",
+   "101 kg · 11 % de grasa · masa libre de grasa aprox. 90 kg"
+  ],
+  [
+   "Puntos a mejorar",
+   "Estriación de glúteos · separación de femorales · detalle lumbar · pectoral superior · Front Lat Spread"
+  ],
+  [
+   "Frecuencia",
+   "6 días de pesas y estabilización + domingo de cardio, movilidad y posing"
+  ],
+  [
+   "Intensidad",
+   "Progresiva · RIR 2-3 → 1-2 · principales sin llegar al fallo absoluto"
+  ],
+  [
+   "Descanso entre series",
+   "2-3 min en principales · 60-90 seg en accesorios"
+  ],
+  [
+   "Tempo",
+   "Bajada controlada de 2-3 s, subida firme"
+  ],
+  [
+   "Cardio",
+   "30 a 40 min todos los días · LISS zona 2 (120-130 lpm) · después de las pesas"
+  ],
+  [
+   "Ejercicios dinámicos",
+   "Al inicio de la sesión: saltos, lanzamientos y swing, siempre livianos y sin fatiga"
+  ],
+  [
+   "Estabilización",
+   "Core y control escapular y pélvico antes de las series pesadas"
+  ],
+  [
+   "Sueño",
+   "Meta 7 a 8 horas"
+  ],
+  [
+   "Hidratación",
+   "4 a 5 litros de agua al día"
+  ]
+ ],
+ "weekMeta": [
+  {
+   "n": 1,
+   "label": "Semana 1 · Base",
+   "desc": "Fija cargas de referencia con técnica sólida y RIR 2-3. Registra los kg de cada ejercicio y cuida la movilidad y estabilización: son la base de la progresión."
+  },
+  {
+   "n": 2,
+   "label": "Semana 2 · Progresión",
+   "desc": "Sube carga o repeticiones donde la técnica fue estable (+2,5 a 5 %). RIR 1-3."
+  },
+  {
+   "n": 3,
+   "label": "Semana 3 · Intensificación",
+   "desc": "Principales +1 serie y RIR 1-2. Prioriza glúteos, femorales y pectoral superior. Si llegas con mucha fatiga, mantén la carga de la semana 2."
+  },
+  {
+   "n": 4,
+   "label": "Semana 4 · Descarga",
+   "desc": "Baja el volumen a la mitad, misma técnica y lejos del fallo. Mantén el cardio. Con el chequeo armamos el siguiente bloque."
+  }
+ ],
+ "days": [
+  {
+   "id": "dia-1",
+   "dayTag": "Día 1",
+   "name": "Espalda · Bíceps · Abdomen",
+   "accent": "#5B8DEF",
+   "sections": [
+    {
+     "name": "Calentamiento dinámico",
+     "items": [
+      {
+       "name": "Movilidad torácica y escapular con banda",
+       "reps": "5 min",
+       "tip": "Rotaciones torácicas, círculos de hombro, pase de banda",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Gato-camello y rotación en cuadrupedia",
+       "reps": "2 X 10",
+       "tip": "Abre la columna torácica antes de jalar",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Lanzamiento de balón medicinal contra pared",
+       "reps": "3 X 8",
+       "tip": "Dinámico · explosivo, activa dorsales y core",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Estabilización",
+     "items": [
+      {
+       "name": "Dead bug",
+       "reps": "3 X 10 por lado",
+       "tip": "Lumbar pegada al suelo, exhala al extender",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Retracción escapular en banda o polea",
+       "reps": "2 X 15",
+       "tip": "Escápulas abajo y atrás, sin encoger hombros",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Entrenamiento",
+     "items": [
+      {
+       "name": "Jalón al pecho agarre amplio",
+       "reps": "4 X 10-12",
+       "tip": "Anchura · Front Lat Spread · codos hacia las caderas",
+       "tier": "principal"
+      },
+      {
+       "name": "Remo Pendlay",
+       "reps": "4 X 6-8",
+       "tip": "Densidad · torso fijo, tirón explosivo y bajada de 2 s",
+       "tier": "principal"
+      },
+      {
+       "name": "Remo en polea baja agarre neutro",
+       "reps": "3 X 10-12",
+       "tip": "Pausa de 1 s con escápulas juntas",
+       "tier": "principal"
+      },
+      {
+       "name": "Pullover en polea alta",
+       "reps": "3 X 12-15",
+       "tip": "Estira el dorsal, costillas abajo",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Curl con barra Z",
+       "reps": "3 X 8-10",
+       "tip": "Sin balanceo, bajada de 3 s",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Curl martillo",
+       "reps": "3 X 10-12",
+       "tip": "Braquial y braquiorradial",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Rueda abdominal o crunch en polea",
+       "reps": "3 X 12-15",
+       "tip": "Abdomen: exhala al contraer",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Cardio",
+     "items": [
+      {
+       "name": "Caminata inclinada en cinta (LISS)",
+       "reps": "35 min",
+       "tip": "Zona 2: 120-130 lpm, ritmo en que puedes conversar"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "dia-2",
+   "dayTag": "Día 2",
+   "name": "Cuádriceps · Gemelos · Core",
+   "accent": "#E8C15C",
+   "sections": [
+    {
+     "name": "Calentamiento dinámico",
+     "items": [
+      {
+       "name": "Movilidad de cadera, tobillo y rodilla",
+       "reps": "5 min",
+       "tip": "Sentadilla profunda asistida, rodillas empujando afuera",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Skipping o saltos de cuerda",
+       "reps": "3 X 30 seg",
+       "tip": "Dinámico · eleva la temperatura y la coordinación",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Sentadilla con salto liviana",
+       "reps": "3 X 5",
+       "tip": "Dinámico · aterriza suave, sin fatigarte",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Estabilización",
+     "items": [
+      {
+       "name": "Sentadilla búlgara con peso corporal",
+       "reps": "2 X 10 por lado",
+       "tip": "Control de cadera y rodilla, activa glúteo medio",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Plancha frontal",
+       "reps": "3 X 40 seg",
+       "tip": "Cuerpo en línea, glúteos apretados",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Pallof press",
+       "reps": "3 X 12 por lado",
+       "tip": "Anti-rotación, evita girar el torso",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Entrenamiento",
+     "items": [
+      {
+       "name": "Sentadilla libre o Hack",
+       "reps": "4 X 8-10",
+       "tip": "Profundidad con técnica sólida, bajada de 3 s",
+       "tier": "principal"
+      },
+      {
+       "name": "Prensa de piernas pies bajos",
+       "reps": "4 X 10-12",
+       "tip": "Rodillas sobre los pies, sin bloquear arriba",
+       "tier": "principal"
+      },
+      {
+       "name": "Zancadas caminando con mancuernas",
+       "reps": "3 X 12 por lado",
+       "tip": "Paso largo, torso erguido",
+       "tier": "principal"
+      },
+      {
+       "name": "Extensión de cuádriceps",
+       "reps": "3 X 12-15",
+       "tip": "Pausa de 1 s arriba",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Elevación de gemelos de pie",
+       "reps": "4 X 12-15",
+       "tip": "Rango completo, pausa de 1 s abajo",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Elevación de gemelos sentado",
+       "reps": "3 X 15-20",
+       "tip": "Sóleo: tempo lento",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Cardio",
+     "items": [
+      {
+       "name": "Bicicleta estática",
+       "reps": "30 min",
+       "tip": "Zona 2: 120-130 lpm, ritmo en que puedes conversar"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "dia-3",
+   "dayTag": "Día 3",
+   "name": "Recuperación activa · Estabilización",
+   "accent": "#4FD1A5",
+   "sections": [
+    {
+     "name": "Calentamiento dinámico",
+     "items": [
+      {
+       "name": "Movilidad articular general de pies a cabeza",
+       "reps": "8 min",
+       "tip": "Tobillos, caderas, columna, hombros y cuello",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Estabilización",
+     "items": [
+      {
+       "name": "Bird dog",
+       "reps": "3 X 10 por lado",
+       "tip": "Pausa de 2 s extendido, pelvis estable",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Plancha lateral",
+       "reps": "3 X 30 seg por lado",
+       "tip": "Cadera arriba, cuerpo alineado",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Puente de glúteo a una pierna",
+       "reps": "3 X 12 por lado",
+       "tip": "Pausa de 1 s arriba",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Rotación externa de hombro con banda",
+       "reps": "3 X 15 por lado",
+       "tip": "Salud del manguito rotador",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Serrato push-up plus",
+       "reps": "3 X 12",
+       "tip": "Estabilidad escapular",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Caminata del granjero",
+       "reps": "3 X 30 m",
+       "tip": "Postura erguida, agarre fuerte",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Estiramiento",
+     "items": [
+      {
+       "name": "Elongación pasiva de piernas, pecho y espalda",
+       "reps": "10 min",
+       "tip": "30 seg por posición, respiración lenta",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Cardio",
+     "items": [
+      {
+       "name": "Elíptico o bicicleta suave",
+       "reps": "40 min",
+       "tip": "Zona 2: 120-130 lpm, ritmo en que puedes conversar"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "dia-4",
+   "dayTag": "Día 4",
+   "name": "Pecho · Hombros · Tríceps",
+   "accent": "#FF7FAE",
+   "sections": [
+    {
+     "name": "Calentamiento dinámico",
+     "items": [
+      {
+       "name": "Movilidad de hombro con banda",
+       "reps": "5 min",
+       "tip": "Círculos, pase de banda, rotaciones",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Flexiones con retracción escapular",
+       "reps": "2 X 12",
+       "tip": "Dinámico · activa pecho y serrato",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Lanzamiento de balón medicinal al pecho",
+       "reps": "3 X 8",
+       "tip": "Dinámico · explosivo",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Estabilización",
+     "items": [
+      {
+       "name": "Rotación externa en polea",
+       "reps": "2 X 15 por lado",
+       "tip": "Codo pegado, manguito rotador",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Plancha con toque de hombro",
+       "reps": "3 X 10 por lado",
+       "tip": "Evita que la cadera gire",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Entrenamiento",
+     "items": [
+      {
+       "name": "Press inclinado con mancuernas 30°",
+       "reps": "4 X 8-10",
+       "tip": "Pectoral superior · bajada de 2 s, rango completo",
+       "tier": "principal"
+      },
+      {
+       "name": "Press plano con barra o máquina",
+       "reps": "4 X 6-8",
+       "tip": "Codos a 45°, pausa breve en el pecho",
+       "tier": "principal"
+      },
+      {
+       "name": "Aperturas en polea cruzada de abajo hacia arriba",
+       "reps": "3 X 12-15",
+       "tip": "Enfoque en la porción superior del pecho",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Press militar con mancuernas",
+       "reps": "4 X 8-10",
+       "tip": "Core firme, sin arquear la lumbar",
+       "tier": "principal"
+      },
+      {
+       "name": "Elevaciones laterales",
+       "reps": "4 X 12-15",
+       "tip": "Codo ligeramente flexionado, sin balanceo",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Extensión de tríceps en polea con cuerda",
+       "reps": "3 X 10-12",
+       "tip": "Abre la cuerda abajo",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Fondos o press francés",
+       "reps": "3 X 8-10",
+       "tip": "Control en la bajada",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Cardio",
+     "items": [
+      {
+       "name": "Caminata inclinada en cinta (LISS)",
+       "reps": "35 min",
+       "tip": "Zona 2: 120-130 lpm, ritmo en que puedes conversar"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "dia-5",
+   "dayTag": "Día 5",
+   "name": "Cadena posterior · Glúteo · Lumbar",
+   "accent": "#B58CFF",
+   "sections": [
+    {
+     "name": "Calentamiento dinámico",
+     "items": [
+      {
+       "name": "Movilidad de cadera y bisagra con bastón",
+       "reps": "5 min",
+       "tip": "Espalda neutra, cadera atrás",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Swing con kettlebell",
+       "reps": "3 X 12",
+       "tip": "Dinámico · potencia de cadera, no de brazos",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Salto al cajón bajo o salto horizontal",
+       "reps": "3 X 4",
+       "tip": "Dinámico · aterriza suave",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Estabilización",
+     "items": [
+      {
+       "name": "Peso muerto a una pierna sin carga",
+       "reps": "2 X 8 por lado",
+       "tip": "Equilibrio y control de cadera",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Copenhagen o abducción lateral en banda",
+       "reps": "2 X 12 por lado",
+       "tip": "Estabiliza pelvis y glúteo medio",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Hiperextensión isométrica",
+       "reps": "2 X 30 seg",
+       "tip": "Lumbar neutra, sin hiperextender",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Entrenamiento",
+     "items": [
+      {
+       "name": "Peso muerto rumano",
+       "reps": "4 X 8-10",
+       "tip": "Femoral · bisagra de cadera, barra pegada a las piernas",
+       "tier": "principal"
+      },
+      {
+       "name": "Hip thrust",
+       "reps": "4 X 8-12",
+       "tip": "Estriación de glúteo · pausa de 1 s arriba",
+       "tier": "principal"
+      },
+      {
+       "name": "Curl femoral tumbado",
+       "reps": "4 X 10-12",
+       "tip": "Separación de femorales · excéntrico de 3 s",
+       "tier": "principal"
+      },
+      {
+       "name": "Curl femoral sentado",
+       "reps": "3 X 12-15",
+       "tip": "Rango completo",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Sentadilla sumo o prensa pies altos",
+       "reps": "3 X 10-12",
+       "tip": "Glúteo y aductores",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Patada de glúteo en polea",
+       "reps": "3 X 12-15 por lado",
+       "tip": "Sin arquear la lumbar",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Hiperextensión lumbar",
+       "reps": "3 X 12-15",
+       "tip": "Detalle lumbar · subida controlada",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Cardio",
+     "items": [
+      {
+       "name": "Bicicleta estática",
+       "reps": "30 min",
+       "tip": "Zona 2: 120-130 lpm, ritmo en que puedes conversar"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "dia-6",
+   "dayTag": "Día 6",
+   "name": "Hombros · Brazos · Refuerzo posterior",
+   "accent": "#FF9F5B",
+   "sections": [
+    {
+     "name": "Calentamiento dinámico",
+     "items": [
+      {
+       "name": "Movilidad de hombro y escápula con banda",
+       "reps": "5 min",
+       "tip": "Círculos y pase de banda",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Face pull liviano",
+       "reps": "2 X 15",
+       "tip": "Activa deltoide posterior",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Estabilización",
+     "items": [
+      {
+       "name": "Y-T-W en banco inclinado con mancuernas livianas",
+       "reps": "2 X 8 de cada letra",
+       "tip": "Estabilidad escapular",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Plancha con toque de hombro",
+       "reps": "2 X 10 por lado",
+       "tip": "Control de pelvis",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Entrenamiento",
+     "items": [
+      {
+       "name": "Press Arnold",
+       "reps": "4 X 8-10",
+       "tip": "Tres cabezas del deltoides",
+       "tier": "principal"
+      },
+      {
+       "name": "Elevaciones laterales en polea",
+       "reps": "4 X 12-15",
+       "tip": "Tensión constante",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Pájaros en máquina o mancuernas",
+       "reps": "4 X 12-15",
+       "tip": "Deltoide posterior · Rear Double Biceps",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Remo al mentón agarre ancho",
+       "reps": "3 X 10-12",
+       "tip": "Codos por sobre las muñecas",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Curl inclinado con mancuernas",
+       "reps": "3 X 10-12",
+       "tip": "Estira la cabeza larga del bíceps",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Curl predicador",
+       "reps": "3 X 10-12",
+       "tip": "Sin despegar el brazo",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Press cerrado",
+       "reps": "3 X 8-10",
+       "tip": "Tríceps · Side Triceps",
+       "tier": "principal"
+      },
+      {
+       "name": "Extensión de tríceps sobre la cabeza",
+       "reps": "3 X 10-12",
+       "tip": "Estira la cabeza larga",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Encogimientos de trapecio",
+       "reps": "3 X 10-12",
+       "tip": "Pausa de 1 s arriba",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Cardio",
+     "items": [
+      {
+       "name": "Caminata inclinada en cinta (LISS)",
+       "reps": "35 min",
+       "tip": "Zona 2: 120-130 lpm, ritmo en que puedes conversar"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "dia-7",
+   "dayTag": "Día 7",
+   "name": "Cardio · Movilidad · Posing",
+   "accent": "#7FD1FF",
+   "sections": [
+    {
+     "name": "Calentamiento dinámico",
+     "items": [
+      {
+       "name": "Movilidad general y activación",
+       "reps": "8 min",
+       "tip": "Caderas, columna y hombros",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Posing técnico",
+     "items": [
+      {
+       "name": "Front Lat Spread",
+       "reps": "5 X 15 seg",
+       "tip": "Mejora de pose · apertura dorsal, codos adelante",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Rear Double Biceps",
+       "reps": "5 X 15 seg",
+       "tip": "Mejora de pose · sin elevar hombros",
+       "tier": "accesorio"
+      },
+      {
+       "name": "Side Triceps",
+       "reps": "5 X 15 seg",
+       "tip": "Mejora de pose · tríceps firme, pecho abierto",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Estiramiento",
+     "items": [
+      {
+       "name": "Elongación de piernas, espalda y pecho",
+       "reps": "10 min",
+       "tip": "Respiración lenta, 30 seg por posición",
+       "tier": "accesorio"
+      }
+     ]
+    },
+    {
+     "name": "Cardio",
+     "items": [
+      {
+       "name": "Caminata larga o bicicleta",
+       "reps": "40 min",
+       "tip": "Zona 2: 120-130 lpm, ritmo en que puedes conversar"
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "nutritionInfo": [
+  [
+   "Objetivo",
+   "Construir músculo manteniendo el 11 % de grasa · superávit leve"
+  ],
+  [
+   "Días de entreno (Lun, Mar, Jue, Vie y Sáb)",
+   "~3.681 kcal · 262P / 479C / 80G"
+  ],
+  [
+   "Días de recuperación (Mié y Dom)",
+   "~3.045 kcal · 244P / 323C / 86G"
+  ],
+  [
+   "Distribución",
+   "6 comidas · carbohidratos concentrados alrededor del entrenamiento"
+  ],
+  [
+   "Ritmo esperado",
+   "Subir ≈0,2-0,3 kg por semana · si la grasa sube más rápido, bajamos calorías"
+  ],
+  [
+   "Hidratación",
+   "4 a 5 litros diarios"
+  ],
+  [
+   "Cardio",
+   "30 a 40 min todos los días"
+  ]
+ ],
+ "mealWindows": [
+  {
+   "id": "entreno",
+   "label": "Días de entreno · Lun, Mar, Jue, Vie y Sáb",
+   "accent": "#5B8DEF",
+   "macros": {
+    "kcal": 3681,
+    "proteinG": 262,
+    "carbG": 479,
+    "fatG": 80
+   },
+   "meals": [
+    {
+     "name": "Comida 1 · Desayuno",
+     "sub": null,
+     "items": [
+      "3 huevos enteros",
+      "100 g claras",
+      "100 g avena",
+      "1 plátano mediano"
+     ]
+    },
+    {
+     "name": "Comida 2 · Media mañana",
+     "sub": null,
+     "items": [
+      "1 medida (30 g) de proteína whey o aislada",
+      "1 fruta grande",
+      "4 rebanadas de pan integral o 2 pan pita"
+     ]
+    },
+    {
+     "name": "Comida 3 · Almuerzo",
+     "sub": null,
+     "items": [
+      "170 g pechuga de pollo cocida",
+      "350 g arroz blanco cocido",
+      "200 g verduras libres (ensalada o salteadas)",
+      "2 cdtas aceite de oliva"
+     ]
+    },
+    {
+     "name": "Comida 4 · Pre-entreno",
+     "sub": null,
+     "items": [
+      "120 g pollo o pavo cocido",
+      "350 g camote o papa cocida",
+      "1 fruta mediana"
+     ]
+    },
+    {
+     "name": "Comida 5 · Post-entreno / Cena",
+     "sub": null,
+     "items": [
+      "170 g carne magra o pescado cocido",
+      "350 g arroz blanco cocido",
+      "250 g verduras libres",
+      "2 cdtas aceite de oliva"
+     ]
+    },
+    {
+     "name": "Comida 6 · Antes de dormir",
+     "sub": null,
+     "items": [
+      "200 g yogur griego natural sin azúcar",
+      "20 g almendras"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "descanso",
+   "label": "Días de recuperación · Mié y Dom",
+   "accent": "#4FD1A5",
+   "macros": {
+    "kcal": 3045,
+    "proteinG": 244,
+    "carbG": 323,
+    "fatG": 86
+   },
+   "meals": [
+    {
+     "name": "Comida 1 · Desayuno",
+     "sub": null,
+     "items": [
+      "3 huevos enteros",
+      "100 g claras",
+      "80 g avena",
+      "50 g palta"
+     ]
+    },
+    {
+     "name": "Comida 2 · Media mañana",
+     "sub": null,
+     "items": [
+      "1 medida (30 g) de proteína whey o aislada",
+      "1 fruta grande",
+      "20 g almendras"
+     ]
+    },
+    {
+     "name": "Comida 3 · Almuerzo",
+     "sub": null,
+     "items": [
+      "170 g pechuga de pollo cocida",
+      "250 g arroz blanco cocido",
+      "250 g verduras libres",
+      "2 cdtas aceite de oliva"
+     ]
+    },
+    {
+     "name": "Comida 4 · Media tarde",
+     "sub": null,
+     "items": [
+      "170 g pescado blanco o pollo cocido",
+      "250 g camote o papa cocida",
+      "150 g verduras libres"
+     ]
+    },
+    {
+     "name": "Comida 5 · Cena",
+     "sub": null,
+     "items": [
+      "170 g salmón o carne magra cocida",
+      "250 g arroz blanco cocido",
+      "250 g verduras libres"
+     ]
+    },
+    {
+     "name": "Comida 6 · Antes de dormir",
+     "sub": null,
+     "items": [
+      "200 g yogur griego natural sin azúcar",
+      "15 g almendras"
+     ]
+    }
+   ]
+  }
+ ],
+ "macros": {
+  "kcal": 3681,
+  "proteinG": 262,
+  "carbG": 479,
+  "fatG": 80
  },
- "supplementation": [{"moment": "Protocolo", "items": [["Tu suplementación se cargará aquí", "—"]]}]
+ "supplementation": [
+  {
+   "moment": "Mañana (con el desayuno)",
+   "items": [
+    [
+     "Multivitamínico",
+     "1 al día, según etiqueta"
+    ],
+    [
+     "Omega 3",
+     "Según etiqueta (2 g EPA+DHA al día), con comida"
+    ]
+   ]
+  },
+  {
+   "moment": "Pre o post-entreno",
+   "items": [
+    [
+     "Creatina monohidrato",
+     "5 g"
+    ],
+    [
+     "Proteína whey o aislada",
+     "1 medida (30 g)"
+    ]
+   ]
+  },
+  {
+   "moment": "Noche (30-60 min antes de dormir)",
+   "items": [
+    [
+     "Magnesio (glicinato o citrato)",
+     "Según etiqueta"
+    ]
+   ]
+  }
+ ]
 };
 
 let activeView = 'feel';
@@ -442,7 +1429,7 @@ let mealWindows = DEFAULT_PLAN.mealWindows;
 let MEAL_PLAN_MACROS = DEFAULT_PLAN.macros;
 let supplementation = DEFAULT_PLAN.supplementation;
 
-const HISTORICAL_ENTRIES = [{"date": "2026-05-10", "weight": 99.2, "waist": null, "arm": null, "thigh": null, "skinfolds": null, "bodyFatPct": null, "salud": null, "notes": "Inicio de preparación · buena base muscular, espalda ancha, cuádriceps dominantes"}, {"date": "2026-06-24", "weight": 102.7, "waist": null, "arm": null, "thigh": null, "skinfolds": null, "bodyFatPct": 11.9, "salud": null, "notes": "InBody · MME 52,6 kg · MLG 90,5 kg · grasa 12,2 kg · agua 66,3 L · proteínas 18,1 kg · minerales 6,03 kg · visceral nivel 5 · BMR 2.324 kcal · puntaje 111/100"}, {"date": "2026-07-01", "weight": 99.9, "waist": null, "arm": null, "thigh": null, "skinfolds": null, "bodyFatPct": null, "salud": null, "notes": "Mejora visual con buena condición"}, {"date": "2026-07-08", "weight": 101.0, "waist": null, "arm": null, "thigh": null, "skinfolds": null, "bodyFatPct": null, "salud": null, "notes": "Mayor volumen · condición estable · piernas muy llenas"}, {"date": "2026-07-15", "weight": 103.0, "waist": null, "arm": null, "thigh": null, "skinfolds": null, "bodyFatPct": null, "salud": null, "notes": "Peso máximo reciente manteniendo buena calidad física · ligera retención"}, {"date": "2026-07-21", "weight": 97.0, "waist": null, "arm": null, "thigh": null, "skinfolds": null, "bodyFatPct": null, "salud": null, "notes": "−6 kg desde 103 · mejor relación hombros-cintura, más separación en cuádriceps, mejor detalle dorsal, abdomen más definido"}]; // se construye desde su primer chequeo
+const HISTORICAL_ENTRIES = [{"date": "2026-05-10", "weight": 99.2, "waist": null, "arm": null, "thigh": null, "skinfolds": null, "bodyFatPct": null, "salud": null, "notes": "Inicio de preparación · buena base muscular, espalda ancha, cuádriceps dominantes"}, {"date": "2026-06-24", "weight": 102.7, "waist": null, "arm": null, "thigh": null, "skinfolds": null, "bodyFatPct": 11.9, "salud": null, "notes": "InBody · MME 52,6 kg · MLG 90,5 kg · grasa 12,2 kg · agua 66,3 L · proteínas 18,1 kg · minerales 6,03 kg · visceral nivel 5 · BMR 2.324 kcal · puntaje 111/100"}, {"date": "2026-07-01", "weight": 99.9, "waist": null, "arm": null, "thigh": null, "skinfolds": null, "bodyFatPct": null, "salud": null, "notes": "Mejora visual con buena condición"}, {"date": "2026-07-08", "weight": 101.0, "waist": null, "arm": null, "thigh": null, "skinfolds": null, "bodyFatPct": null, "salud": null, "notes": "Mayor volumen · condición estable · piernas muy llenas"}, {"date": "2026-07-15", "weight": 103.0, "waist": null, "arm": null, "thigh": null, "skinfolds": null, "bodyFatPct": null, "salud": null, "notes": "Peso máximo reciente manteniendo buena calidad física · ligera retención"}, {"date": "2026-07-21", "weight": 97.0, "waist": null, "arm": null, "thigh": null, "skinfolds": null, "bodyFatPct": null, "salud": null, "notes": "−6 kg desde 103 · mejor relación hombros-cintura, más separación en cuádriceps, mejor detalle dorsal, abdomen más definido"}, {"date": "2026-11-10", "weight": 101, "waist": null, "arm": null, "thigh": null, "skinfolds": null, "bodyFatPct": 11, "salud": null, "notes": "Inicio de off-season · 101 kg · 11 % grasa"}]; // se construye desde su primer chequeo
 
 /* ===== Conexión a Firebase (datos en la nube, accesibles desde cualquier dispositivo) ===== */
 const firebaseConfig = {
@@ -1635,12 +2622,12 @@ function renderViewSwitch(){
     <button class="view-btn ${activeView==='nutrition'?'active':''}" data-view="nutrition">
       <span class="vb-bg">🥗</span>
       <div class="vb-label">NUTRICIÓN</div>
-      <div class="vb-spec">Comidas · Macros · Suplementos</div>
+      <div class="vb-spec">Registro de macros · Suplementos</div>
     </button>
     <button class="view-btn ${activeView==='training'?'active':''}" data-view="training">
       <span class="vb-bg">🏋️</span>
       <div class="vb-label">ENTRENO</div>
-      <div class="vb-spec">5 días · Semanas 1-${ppcNsem()}</div>
+      <div class="vb-spec">${days.length} días · Semanas 1-${ppcNsem()}</div>
     </button>
     <button class="view-btn ${activeView==='progress'?'active':''}" data-view="progress">
       <span class="vb-bg">📈</span>
@@ -3363,6 +4350,7 @@ function celebrar(nombre, prev, nuevo){
 
 /* ───── 18 · Intercambio de alimentos (mismos macros clave) ───── */
 var FOODS = {"pechuga de pollo":[165,31,0,3.6,"prot"],"carne roja magra":[250,26,0,15,"prot"],"pescado blanco":[105,23,0,1.5,"prot"],"salmón":[208,20,0,13,"prot"],"atún en agua":[116,26,0,1,"prot"],"pavo":[135,29,0,1.7,"prot"],"lomo de cerdo":[143,26,0,4,"prot"],"camarones":[99,24,0.2,0.3,"prot"],"huevo entero":[143,12.6,0.7,9.5,"prot"],"claras de huevo":[52,11,0.7,0.2,"prot"],"tofu":[144,15,3,9,"prot"],"tempeh":[192,20,7.6,11,"prot"],"seitán":[370,75,14,1.9,"prot"],"lentejas cocidas":[116,9,20,0.4,"prot"],"garbanzos cocidos":[164,9,27,2.6,"prot"],"porotos negros cocidos":[132,8.9,24,0.5,"prot"],"edamame":[122,11,10,5,"prot"],"arroz blanco cocido":[130,2.7,28,0.3,"carbo"],"papa cocida":[87,2,20,0.1,"carbo"],"camote cocido":[86,1.6,20,0.1,"carbo"],"avena":[389,17,66,7,"carbo"],"pasta cocida":[158,6,31,0.9,"carbo"],"pasta integral cocida":[124,5,25,1.1,"carbo"],"pan":[265,9,49,3.2,"carbo"],"pan integral":[247,13,41,4.2,"carbo"],"quinoa cocida":[120,4.4,21,1.9,"carbo"],"legumbres cocidas":[116,8,20,0.5,"carbo"],"zapallo":[34,1,8,0.1,"carbo"],"choclo":[96,3.4,21,1.5,"carbo"],"arroz integral cocido":[112,2.3,24,0.9,"carbo"],"galletas de arroz":[387,8,81,3,"carbo"],"cuscús cocido":[112,3.8,23,0.2,"carbo"],"polenta cocida":[70,1.6,15,0.3,"carbo"],"aceite de oliva":[884,0,0,100,"grasa"],"palta":[160,2,9,15,"grasa"],"frutos secos":[607,20,21,54,"grasa"],"mantequilla de maní":[588,25,20,50,"grasa"],"almendras":[579,21,22,50,"grasa"],"nueces":[654,15,14,65,"grasa"],"chía":[486,17,42,31,"grasa"],"linaza":[534,18,29,42,"grasa"],"maní":[567,26,16,49,"grasa"],"aceite de coco":[862,0,0,99,"grasa"],"aceitunas":[115,0.8,6,11,"grasa"],"yogurt griego":[59,10,3.6,0.4,"lacteos"],"queso":[320,25,2,24,"lacteos"],"kefir":[41,3.3,4.5,1,"lacteos"],"leche descremada":[35,3.4,5,0.2,"lacteos"],"yogurt natural":[61,3.5,4.7,3.3,"lacteos"],"queso cottage":[98,11,3.4,4.3,"lacteos"],"leche de almendras":[17,0.6,0.6,1.5,"lacteos"],"leche de soya":[33,3.3,1.8,1.8,"lacteos"],"plátano":[89,1.1,23,0.3,"frutas"],"frutos rojos":[52,0.7,12,0.3,"frutas"],"manzana":[52,0.3,14,0.2,"frutas"],"naranja":[47,0.9,12,0.1,"frutas"],"kiwi":[61,1.1,15,0.5,"frutas"],"piña":[50,0.5,13,0.1,"frutas"],"pera":[57,0.4,15,0.1,"frutas"],"sandía":[30,0.6,8,0.2,"frutas"],"uvas":[69,0.7,18,0.2,"frutas"],"mango":[60,0.8,15,0.4,"frutas"],"whey":[400,80,8,6,"polvo"],"proteína aislada":[370,90,1,1,"polvo"],"caseína":[360,80,6,2,"polvo"],"proteína vegetal":[380,75,8,6,"polvo"],"proteína":[395,78,8,6,"polvo"],"brócoli":[34,2.8,7,0.4,"verd"],"espinaca":[23,2.9,3.6,0.4,"verd"],"tomate":[18,0.9,3.9,0.2,"verd"],"pepino":[15,0.7,3.6,0.1,"verd"],"zanahoria":[41,0.9,10,0.2,"verd"],"champiñón":[22,3.1,3.3,0.3,"verd"],"pimiento":[31,1,6,0.3,"verd"],"coliflor":[25,1.9,5,0.3,"verd"],"lechuga":[15,1.4,2.9,0.2,"verd"],"acelga":[19,1.8,3.7,0.2,"verd"],"ensalada verde":[22,1.1,3.5,0.25,"verd"],"verduras":[35,2,6,0.4,"verd"],"arroz basmati cocido":[121,3.5,25,0.4,"carbo"],"arroz cocido":[130,2.7,28,0.3,"carbo"],"corn flakes":[357,7,84,0.4,"carbo"],"harina de arroz":[366,6,80,1.4,"carbo"],"arándanos":[57,0.7,14,0.3,"frutas"],"frutillas":[32,0.7,7.7,0.3,"frutas"]};
+window.PPC_FOODS = FOODS; window.ppcAplicarFoods = ppcAplicarFoods;
 var BASE = {prot:1, lacteos:1, carbo:2, frutas:2, grasa:3, verd:2, polvo:1}; // índice del macro que se iguala: 1=P 2=C 3=G
 var BASE_TXT = {1:"proteína",2:"carbohidratos",3:"grasas"};
 // Categorías que también se ofrecen como alternativa (además de la propia)
@@ -3628,7 +4616,7 @@ wrap("loadPhotoGallery", function(){
 var PASOS = [
   {i:"🏋️", t:"Tu entrenamiento", d:"En Entrenamiento ves el día que te toca. Marca cada serie al terminarla: la app arranca sola el descanso y te avisa al terminar. Anota los kg que usaste."},
   {i:"📈", t:"Tus cargas y récords", d:"En Progreso → Cargas ves la evolución de cada ejercicio con su gráfico. Cuando superas tu mejor marca, la app lo celebra."},
-  {i:"🍽️", t:"Tu alimentación", d:"Marca cada comida cuando la cumplas. Con el botón ↔ puedes cambiar un alimento por otro equivalente. Si comes fuera o viajas, usa «Registrar día libre»."},
+  {i:"🍽️", t:"Tu alimentación", d:"Registra lo que comes comida a comida: busca el alimento, ingresa los gramos y la calculadora suma tus macros contra tu requerimiento del día. Si comes fuera de plan, usa «Solo macros»."},
   {i:"🙂", t:"Cómo te sientes", d:"Responde el check diario (energía, sueño, dolor, ánimo). Si algo no anda bien, tu coach lo ve y ajusta tu plan a tiempo."},
   {i:"🔔", t:"Notificaciones y acceso rápido", d:"Agrega la app a tu pantalla de inicio y activa las notificaciones para recibir tus recordatorios de entreno, comidas y chequeo."}
 ];
@@ -3767,6 +4755,252 @@ css.textContent = [
 ].join("\n");
 document.head.appendChild(css);
 })();
+</script>
+<script id="ppcRegistroMacros">
+/* PPC · Registro de macros (calculadora de alimentos comida a comida) */
+(function(){
+ var foodLog = {}, propios = {}, viewDate = null, manualWin = false, sheetEl = null, ST = null;
+ var TRAIN = [1,2,4,5,6];
+ var COL = {k:'#E0C23D', p:'#5B8DEF', c:'#4FD1A5', f:'#FF7FAE'};
+ function esc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+ function num(v){ var n = parseFloat(String(v).replace(',','.')); return isFinite(n) && n>=0 ? n : 0; }
+ function r0(x){ return Math.round(x); }
+ function r1(x){ return Math.round(x*10)/10; }
+ function fmt(x){ return String(r1(x)).replace('.',','); }
+ function vd(){ return viewDate || todayStr(); }
+ function addDays(s,n){ var d = new Date(s+'T12:00:00'); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+ function ventanaDe(date){
+  var wd = new Date(date+'T12:00:00').getDay();
+  var id = TRAIN.indexOf(wd)>=0 ? 'entreno' : 'descanso';
+  return mealWindows.find(function(w){ return w.id===id; }) || mealWindows[0];
+ }
+ function macrosDe(e){
+  if(e.t) return {k:e.t[0], p:e.t[1], c:e.t[2], f:e.t[3]};
+  var b = e.b || [0,0,0,0], q = (e.g||0)/100;
+  return {k:b[0]*q, p:b[1]*q, c:b[2]*q, f:b[3]*q};
+ }
+ function sumar(arr){
+  var t = {k:0,p:0,c:0,f:0};
+  (arr||[]).forEach(function(e){ var m = macrosDe(e); t.k+=m.k; t.p+=m.p; t.c+=m.c; t.f+=m.f; });
+  return t;
+ }
+ function baseDe(nombre){
+  try{ if(window.ppcAplicarFoods) window.ppcAplicarFoods(); }catch(e){}
+  var key = String(nombre).toLowerCase();
+  if(propios[key]) return propios[key];
+  var f = (window.PPC_FOODS) ? window.PPC_FOODS[key] : null;
+  return f ? [f[0],f[1],f[2],f[3]] : null;
+ }
+ function todosNombres(){
+  var out = {}, k;
+  try{ if(window.ppcAplicarFoods) window.ppcAplicarFoods(); }catch(e){}
+  if(window.PPC_FOODS) for(k in window.PPC_FOODS) out[k]=1;
+  for(k in propios) out[k]=1;
+  return Object.keys(out);
+ }
+ function sa(t){ return String(t).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(); }
+ function guardar(){
+  var keys = Object.keys(foodLog).sort().slice(-60), out = {};
+  keys.forEach(function(k){ out[k] = foodLog[k]; });
+  foodLog = out;
+  saveField('foodLog', foodLog);
+ }
+ function guardarPropios(){ saveField('foodsPropios', propios); }
+ function sincronizarCheck(date){
+  var mw = ventanaDe(date), arr = foodLog[date] || [], cambio = false;
+  mw.meals.forEach(function(_,i){
+   var k = date+'-'+mw.id+'-'+i, hay = arr.some(function(e){ return e.m===i; });
+   if(!!mealChecks[k] !== hay){ mealChecks[k] = hay; cambio = true; }
+  });
+  if(cambio){ saveField('mealChecks', mealChecks); try{ updateMesocicloSummary(); }catch(e){} }
+ }
+ function setDate(d){
+  viewDate = d; manualWin = false;
+  var w = ventanaDe(d); if(w) activeMealWindow = w.id;
+  renderMacroCard(); renderMealWindowRow(); renderMealCard(); renderMealHistory();
+ }
+ function barra(lbl, val, meta, color, unit){
+  var pct = meta>0 ? Math.min(100, val/meta*100) : 0, over = meta>0 && val>meta*1.05;
+  var resta = meta-val;
+  return '<div style="margin:9px 0"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span style="color:var(--text-muted,#9aa0a6);font-weight:600">'+lbl+'</span><span style="font-family:var(--font-mono);font-weight:700">'+r0(val)+' / '+r0(meta)+unit+'</span></div>'+
+  '<div style="height:8px;border-radius:6px;background:var(--surface-2,#1c1f24);overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+(over?'#E05B5B':color)+'"></div></div>'+
+  '<div style="font-size:11px;margin-top:3px;color:'+(over?'#E05B5B':'var(--text-muted,#9aa0a6)')+'">'+(resta>=0?'Faltan '+r0(resta)+unit:'Te pasaste por '+r0(-resta)+unit)+'</div></div>';
+ }
+ function renderRegistro(){
+  var card = document.getElementById('mealCard'); if(!card) return;
+  var date = vd(), hoyS = todayStr(), mwReq = mealWindows.find(function(w){ return w.id===activeMealWindow; }) || mealWindows[0];
+  var mwPlan = ventanaDe(date), arr = foodLog[date] || [], tot = sumar(arr);
+  var T = mwReq.macros || {kcal:0,proteinG:0,carbG:0,fatG:0};
+  var esHoy = date===hoyS;
+  var h = '<div class="card-top"><div class="card-title"><span class="day-tag">Registro de macros</span>'+esc(mwReq.label)+'</div></div>';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 6px">'+
+   '<button class="week-btn" id="rgPrev" style="min-width:42px">◀</button>'+
+   '<div style="font-family:var(--font-mono);font-weight:700;font-size:13px">'+(esHoy?'HOY · ':'')+date+'</div>'+
+   '<button class="week-btn" id="rgNext" style="min-width:42px" '+(esHoy?'disabled style="opacity:.35;min-width:42px"':'')+'>▶</button></div>';
+  h += '<div style="background:var(--surface-2,#1c1f24);border-radius:12px;padding:6px 12px 2px">'+
+   barra('CALORÍAS', tot.k, T.kcal, COL.k, ' kcal')+barra('PROTEÍNA', tot.p, T.proteinG, COL.p, ' g')+barra('CARBOHIDRATOS', tot.c, T.carbG, COL.c, ' g')+barra('GRASAS', tot.f, T.fatG, COL.f, ' g')+'</div>';
+  mwPlan.meals.forEach(function(meal,mi){
+   var es = arr.filter(function(e){ return e.m===mi; }), st = sumar(es);
+   h += '<div class="section-label" style="margin-top:16px;display:flex;justify-content:space-between"><span>'+esc(meal.name)+(meal.sub?' · '+esc(meal.sub):'')+'</span>'+
+    '<span style="font-family:var(--font-mono);font-weight:700;color:var(--text-muted,#9aa0a6)">'+(es.length? r0(st.k)+' kcal · '+fmt(st.p)+'P':'')+'</span></div>';
+   es.forEach(function(e){
+    var m = macrosDe(e);
+    h += '<div class="row" style="align-items:center"><div class="ex-info" data-edit="'+e.id+'" style="cursor:pointer"><div class="ex-name">'+esc(e.n)+(e.g?' · '+fmt(e.g)+' g':'')+'</div>'+
+     '<div class="ex-tip">'+r0(m.k)+' kcal · P '+fmt(m.p)+' · C '+fmt(m.c)+' · G '+fmt(m.f)+'</div></div>'+
+     '<button data-del="'+e.id+'" aria-label="Eliminar" style="background:none;border:0;color:#E05B5B;font-size:20px;padding:6px 10px;cursor:pointer">×</button></div>';
+   });
+   h += '<button class="week-btn" data-add="'+mi+'" style="width:100%;margin-top:6px">+ Agregar alimento</button>';
+   if(meal.items && meal.items.length) h += '<details style="margin-top:6px"><summary style="font-size:11.5px;color:var(--text-muted,#9aa0a6);cursor:pointer">Sugerido por tu coach</summary>'+meal.items.map(function(x){ return '<div class="ex-tip">· '+esc(x)+'</div>'; }).join('')+'</details>';
+  });
+  var ag = !!mealChecks[date+'-agua'];
+  h += '<div class="section-label" style="margin-top:16px">Hidratación</div><div class="row"><div class="chk agua-chk '+(ag?'checked':'')+'">'+ICON_CHECK+'</div><div class="ex-info agua-info"><div class="ex-name '+(ag?'done':'')+'">💧 Agua del día completa</div><div class="ex-tip">Meta: 4 a 5 litros</div></div></div>';
+  card.innerHTML = h;
+  card.querySelector('#rgPrev').onclick = function(){ setDate(addDays(date,-1)); };
+  var nx = card.querySelector('#rgNext'); if(nx && !esHoy) nx.onclick = function(){ setDate(addDays(date,1)); };
+  Array.prototype.forEach.call(card.querySelectorAll('[data-add]'), function(b){ b.onclick = function(){ abrirHoja(date, +b.dataset.add, null); }; });
+  Array.prototype.forEach.call(card.querySelectorAll('[data-del]'), function(b){ b.onclick = function(ev){ ev.stopPropagation(); eliminar(date,b.dataset.del); }; });
+  Array.prototype.forEach.call(card.querySelectorAll('[data-edit]'), function(b){ b.onclick = function(){ var e = (foodLog[date]||[]).find(function(x){ return x.id===b.dataset.edit; }); if(e) abrirHoja(date, e.m, e); }; });
+  Array.prototype.forEach.call(card.querySelectorAll('.agua-chk, .agua-info'), function(el){ el.onclick = function(){ var k = date+'-agua'; mealChecks[k] = !mealChecks[k]; saveField('mealChecks', mealChecks); try{ updateMesocicloSummary(); }catch(e){} renderRegistro(); }; });
+ }
+ function eliminar(date,id){
+  foodLog[date] = (foodLog[date]||[]).filter(function(e){ return e.id!==id; });
+  guardar(); sincronizarCheck(date); renderRegistro(); renderMealHistory();
+ }
+ function renderHistorial(){
+  var el = document.getElementById('mealHistoryCard'); if(!el) return;
+  var dias = Object.keys(foodLog).filter(function(d){ return (foodLog[d]||[]).length; }).sort().reverse().slice(0,14);
+  if(!dias.length){ el.innerHTML = ''; return; }
+  el.innerHTML = '<summary class="section-label" style="margin:0 0 4px">Historial de macros</summary><div style="margin-top:12px">'+dias.map(function(d){
+   var t = sumar(foodLog[d]), w = ventanaDe(d), meta = (w.macros||{}).kcal||0, pct = meta? r0(t.k/meta*100) : 0;
+   var color = (pct>=90 && pct<=105) ? '#4CAF7D' : (pct>=75 && pct<=115 ? '#E0C23D' : '#E05B5B');
+   return '<div class="param-row"><span class="param-label">'+d+'</span><span class="param-value" style="font-family:var(--font-mono);font-weight:700;color:'+color+'">'+r0(t.k)+' kcal ('+pct+'%) · P '+r0(t.p)+' · C '+r0(t.c)+' · G '+r0(t.f)+'</span></div>';
+  }).join('')+'</div>';
+ }
+ /* ── Hoja de la calculadora ── */
+ function cerrarHoja(){ if(sheetEl){ sheetEl.remove(); sheetEl = null; } }
+ function recientes(){
+  var vistos = {}, out = [];
+  Object.keys(foodLog).sort().reverse().forEach(function(d){
+   (foodLog[d]||[]).slice().reverse().forEach(function(e){ if(e.b && !vistos[e.n] && out.length<8){ vistos[e.n]=1; out.push(e); } });
+  });
+  return out;
+ }
+ function abrirHoja(date, mi, edit){
+  cerrarHoja();
+  var meal = ventanaDe(date).meals[mi] || {name:'Comida'};
+  ST = {tab: 'buscar', food: null, base: null, g: 100};
+  if(edit && edit.b){ ST.food = edit.n; ST.base = edit.b; ST.g = edit.g; }
+  else if(edit && edit.t){ ST.tab = 'macros'; }
+  sheetEl = document.createElement('div');
+  sheetEl.style.cssText = 'position:fixed;inset:0;z-index:99990;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center';
+  sheetEl.innerHTML = '<div id="rgSheet" style="width:100%;max-width:520px;max-height:88vh;overflow:auto;background:var(--surface,#14171B);border:1px solid var(--border,#2a2f36);border-radius:18px 18px 0 0;padding:16px 16px 28px"></div>';
+  document.body.appendChild(sheetEl);
+  sheetEl.addEventListener('click', function(ev){ if(ev.target===sheetEl) cerrarHoja(); });
+  function pintar(){
+   var S = sheetEl.querySelector('#rgSheet');
+   var inp = 'width:100%;box-sizing:border-box;background:var(--surface-2,#1c1f24);color:var(--text,#e8eaed);border:1px solid var(--border,#2a2f36);border-radius:10px;padding:10px;font-size:15px';
+   var h = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-weight:700">'+(edit?'Editar':'Agregar')+' · '+esc(meal.name)+'</div><button id="rgX" style="background:none;border:0;color:var(--text-muted,#9aa0a6);font-size:22px;cursor:pointer">×</button></div>';
+   h += '<div style="display:flex;gap:6px;margin-bottom:12px">'+[['buscar','Buscar'],['propio','Alimento propio'],['macros','Solo macros']].map(function(t){ return '<button class="week-btn '+(ST.tab===t[0]?'active':'')+'" data-tab="'+t[0]+'" style="flex:1">'+t[1]+'</button>'; }).join('')+'</div>';
+   if(ST.tab==='buscar'){
+    if(!ST.food){
+     h += '<input id="rgQ" placeholder="Buscar alimento (ej: arroz, pollo, avena)" style="'+inp+'" autocomplete="off"><div id="rgRes" style="margin-top:8px"></div>';
+     var rec = recientes();
+     if(rec.length) h += '<div style="font-size:11px;color:var(--text-muted,#9aa0a6);margin:12px 0 6px;font-weight:600">RECIENTES</div><div style="display:flex;flex-wrap:wrap;gap:6px">'+rec.map(function(e,i){ return '<button class="week-btn" data-rec="'+i+'">'+esc(e.n)+'</button>'; }).join('')+'</div>';
+    } else {
+     h += '<div style="font-weight:700;font-size:15px;margin-bottom:2px">'+esc(ST.food)+'</div><div style="font-size:11.5px;color:var(--text-muted,#9aa0a6);margin-bottom:10px">Por 100 g: '+fmt(ST.base[0])+' kcal · P '+fmt(ST.base[1])+' · C '+fmt(ST.base[2])+' · G '+fmt(ST.base[3])+'</div>'+
+      '<label style="font-size:11px;font-weight:600;color:var(--text-muted,#9aa0a6)">CANTIDAD (GRAMOS)</label><input id="rgG" inputmode="decimal" value="'+fmt(ST.g)+'" style="'+inp+';margin-top:4px;font-family:var(--font-mono);font-size:20px;font-weight:700">'+
+      '<div style="display:flex;gap:6px;margin:8px 0 12px;flex-wrap:wrap">'+[50,100,150,200,250,300].map(function(g){ return '<button class="week-btn" data-qg="'+g+'">'+g+'</button>'; }).join('')+'</div><div id="rgPrev2"></div>'+
+      '<button id="rgOk" class="sv" style="width:100%;margin-top:12px">'+(edit?'Guardar cambios':'Agregar a '+esc(meal.name))+'</button><button id="rgBack" class="week-btn" style="width:100%;margin-top:8px">Elegir otro alimento</button>';
+    }
+   } else if(ST.tab==='propio'){
+    h += '<div style="font-size:12px;color:var(--text-muted,#9aa0a6);margin-bottom:8px">Ingresa los valores por 100 g de la etiqueta. Se guarda para reutilizarlo.</div>'+
+     '<input id="pN" placeholder="Nombre del alimento" style="'+inp+';margin-bottom:8px">'+
+     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input id="pK" inputmode="decimal" placeholder="kcal /100 g (opcional)" style="'+inp+'"><input id="pP" inputmode="decimal" placeholder="Proteína /100 g" style="'+inp+'"><input id="pC" inputmode="decimal" placeholder="Carbos /100 g" style="'+inp+'"><input id="pF" inputmode="decimal" placeholder="Grasas /100 g" style="'+inp+'"></div>'+
+     '<input id="pG" inputmode="decimal" placeholder="Cantidad que comiste (g)" style="'+inp+';margin-top:8px"><div id="rgPrev2" style="margin-top:10px"></div><button id="rgOk" class="sv" style="width:100%;margin-top:12px">Agregar a '+esc(meal.name)+'</button>';
+   } else {
+    h += '<div style="font-size:12px;color:var(--text-muted,#9aa0a6);margin-bottom:8px">Para comidas fuera de plan: ingresa los macros totales de lo que comiste.</div>'+
+     '<input id="mN" placeholder="Descripción (ej: Almuerzo restaurante)" style="'+inp+';margin-bottom:8px" value="'+(edit&&edit.t?esc(edit.n):'')+'">'+
+     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><input id="mK" inputmode="decimal" placeholder="kcal (opcional)" style="'+inp+'" value="'+(edit&&edit.t?edit.t[0]:'')+'"><input id="mP" inputmode="decimal" placeholder="Proteína g" style="'+inp+'" value="'+(edit&&edit.t?edit.t[1]:'')+'"><input id="mC" inputmode="decimal" placeholder="Carbos g" style="'+inp+'" value="'+(edit&&edit.t?edit.t[2]:'')+'"><input id="mF" inputmode="decimal" placeholder="Grasas g" style="'+inp+'" value="'+(edit&&edit.t?edit.t[3]:'')+'"></div><div id="rgPrev2" style="margin-top:10px"></div>'+
+     '<button id="rgOk" class="sv" style="width:100%;margin-top:12px">'+(edit?'Guardar cambios':'Agregar a '+esc(meal.name))+'</button>';
+   }
+   S.innerHTML = h;
+   S.querySelector('#rgX').onclick = cerrarHoja;
+   Array.prototype.forEach.call(S.querySelectorAll('[data-tab]'), function(b){ b.onclick = function(){ ST.tab = b.dataset.tab; ST.food = null; pintar(); }; });
+   var q = S.querySelector('#rgQ');
+   if(q){
+    var res = S.querySelector('#rgRes');
+    var buscar = function(){
+     var t = sa(q.value), nombres = todosNombres(), lst = t ? nombres.filter(function(n){ return sa(n).indexOf(t)>=0; }) : [];
+     lst.sort(function(a,b){ return (sa(a).indexOf(t)===0?0:1)-(sa(b).indexOf(t)===0?0:1) || a.length-b.length; });
+     res.innerHTML = lst.slice(0,8).map(function(n,i){ var b = baseDe(n); return '<button class="week-btn" data-pick="'+esc(n)+'" style="width:100%;text-align:left;margin-bottom:4px;display:flex;justify-content:space-between"><span>'+esc(n)+'</span><span style="opacity:.6">'+r0(b[0])+' kcal/100 g</span></button>'; }).join('') || (t? '<div style="font-size:12px;color:var(--text-muted,#9aa0a6)">Sin resultados. Prueba «Alimento propio» o «Solo macros».</div>' : '');
+     Array.prototype.forEach.call(res.querySelectorAll('[data-pick]'), function(b){ b.onclick = function(){ ST.food = b.dataset.pick; ST.base = baseDe(ST.food); ST.g = 100; pintar(); }; });
+    };
+    q.oninput = buscar;
+   }
+   Array.prototype.forEach.call(S.querySelectorAll('[data-rec]'), function(b){ b.onclick = function(){ var e = recientes()[+b.dataset.rec]; ST.food = e.n; ST.base = e.b; ST.g = e.g||100; pintar(); }; });
+   var back = S.querySelector('#rgBack'); if(back) back.onclick = function(){ ST.food = null; pintar(); };
+   var prev = S.querySelector('#rgPrev2');
+   function chip(t){ var tot = sumar([{b:null,t:t}]); return '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center">'+[['KCAL',t[0],COL.k],['PROT',t[1],COL.p],['CARB',t[2],COL.c],['GRASA',t[3],COL.f]].map(function(x){ return '<div style="background:var(--surface-2,#1c1f24);border-radius:10px;padding:8px 2px"><div style="font-family:var(--font-mono);font-weight:700;font-size:16px;color:'+x[2]+'">'+(x[0]==='KCAL'?r0(x[1]):fmt(x[1]))+'</div><div style="font-size:9.5px;color:var(--text-muted,#9aa0a6)">'+x[0]+'</div></div>'; }).join('')+'</div>'; }
+   if(ST.tab==='buscar' && ST.food){
+    var gi = S.querySelector('#rgG');
+    var upd = function(){ ST.g = num(gi.value); var q2 = ST.g/100; prev.innerHTML = chip([ST.base[0]*q2,ST.base[1]*q2,ST.base[2]*q2,ST.base[3]*q2]); };
+    gi.oninput = upd; upd();
+    Array.prototype.forEach.call(S.querySelectorAll('[data-qg]'), function(b){ b.onclick = function(){ gi.value = b.dataset.qg; upd(); }; });
+    S.querySelector('#rgOk').onclick = function(){
+     if(!(ST.g>0)){ toast2('Ingresa la cantidad en gramos'); return; }
+     guardarEntrada(date, mi, edit, {n:ST.food, g:ST.g, b:ST.base});
+    };
+   } else if(ST.tab==='propio'){
+    var ids = ['pK','pP','pC','pF','pG'];
+    var upd2 = function(){
+     var p = num(S.querySelector('#pP').value), c = num(S.querySelector('#pC').value), f = num(S.querySelector('#pF').value), k = num(S.querySelector('#pK').value) || (4*p+4*c+9*f), g = num(S.querySelector('#pG').value), q3 = g/100;
+     prev.innerHTML = chip([k*q3,p*q3,c*q3,f*q3]);
+    };
+    ids.forEach(function(i){ S.querySelector('#'+i).oninput = upd2; }); upd2();
+    S.querySelector('#rgOk').onclick = function(){
+     var n = S.querySelector('#pN').value.trim(), p = num(S.querySelector('#pP').value), c = num(S.querySelector('#pC').value), f = num(S.querySelector('#pF').value), k = num(S.querySelector('#pK').value) || (4*p+4*c+9*f), g = num(S.querySelector('#pG').value);
+     if(!n){ toast2('Escribe el nombre del alimento'); return; }
+     if(!(g>0) || !(k>0)){ toast2('Completa los valores y la cantidad'); return; }
+     propios[n.toLowerCase()] = [r1(k),r1(p),r1(c),r1(f)]; guardarPropios();
+     guardarEntrada(date, mi, null, {n:n, g:g, b:propios[n.toLowerCase()]});
+    };
+   } else if(ST.tab==='macros'){
+    var upd3 = function(){
+     var p = num(S.querySelector('#mP').value), c = num(S.querySelector('#mC').value), f = num(S.querySelector('#mF').value), k = num(S.querySelector('#mK').value) || (4*p+4*c+9*f);
+     prev.innerHTML = chip([k,p,c,f]);
+    };
+    ['mK','mP','mC','mF'].forEach(function(i){ S.querySelector('#'+i).oninput = upd3; }); upd3();
+    S.querySelector('#rgOk').onclick = function(){
+     var p = num(S.querySelector('#mP').value), c = num(S.querySelector('#mC').value), f = num(S.querySelector('#mF').value), k = num(S.querySelector('#mK').value) || (4*p+4*c+9*f);
+     if(!(k>0)){ toast2('Ingresa al menos un macro'); return; }
+     guardarEntrada(date, mi, edit, {n:S.querySelector('#mN').value.trim() || 'Comida fuera de plan', t:[r1(k),r1(p),r1(c),r1(f)]});
+    };
+   }
+  }
+  pintar();
+ }
+ function toast2(t){ try{ showToast(t, true); }catch(e){ alert(t); } }
+ function guardarEntrada(date, mi, edit, datos){
+  var arr = foodLog[date] = foodLog[date] || [];
+  if(edit){ var i = arr.findIndex(function(e){ return e.id===edit.id; }); if(i>=0) arr[i] = Object.assign({id:edit.id, m:mi}, datos); else arr.push(Object.assign({id:Date.now().toString(36), m:mi}, datos)); }
+  else arr.push(Object.assign({id:Date.now().toString(36)+Math.floor(Math.random()*99), m:mi}, datos));
+  guardar(); sincronizarCheck(date); cerrarHoja(); renderRegistro(); renderMealHistory();
+ }
+ /* ── Enganche con la app ── */
+ window.renderMealCard = function(){ renderRegistro(); };
+ window.renderMealHistory = function(){ renderHistorial(); };
+ try{ if(typeof COLA!=='undefined' && COLA.indexOf('foodLog')<0) COLA.push('foodLog','foodsPropios'); }catch(e){}
+ var primera = true;
+ athleteRef.onSnapshot(function(doc){
+  if(!doc.exists) return;
+  var d = doc.data();
+  foodLog = d.foodLog || {}; propios = d.foodsPropios || {};
+  if(primera){ primera = false; var w = ventanaDe(vd()); if(w) activeMealWindow = w.id; }
+  if(!sheetEl){ try{ renderMacroCard(); renderMealWindowRow(); renderRegistro(); renderHistorial(); }catch(e){} }
+ });
+ window.ppcRegistroMacros = {render: renderRegistro, get log(){ return foodLog; }};
+})();
+
 </script>
 </body>
 </html>
