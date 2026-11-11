@@ -4759,8 +4759,8 @@ document.head.appendChild(css);
 <script id="ppcRegistroMacros">
 /* PPC · Registro de macros estilo diario (búsqueda, porciones, recientes, copiar de ayer) */
 (function(){
- var foodLog = {}, propios = {}, aguaLog = {}, viewDate = null, sheetEl = null, ST = null, semOff = 0;
- var AGUA_META = 4500;
+ var foodLog = {}, propios = {}, aguaLog = {}, actLog = {}, viewDate = null, sheetEl = null, ST = null, semOff = 0;
+ var AGUA_META = 4500, CARDIO_MIN = 30, CARDIO_MAX = 40;
  var TRAIN = [1,2,4,5,6];
  var COL = {k:'#E0C23D', p:'#5B8DEF', c:'#4FD1A5', f:'#FF7FAE'};
  /* Alimentos extra (por 100 g: kcal, P, C, G) — valores referenciales */
@@ -4844,7 +4844,7 @@ document.head.appendChild(css);
    '<div style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;text-align:center;gap:2px"><div><div style="font-family:var(--font-mono);font-weight:700;font-size:18px">'+r0(T.kcal)+'</div><div style="font-size:10px;color:var(--text-muted,#9aa0a6)">META</div></div><div style="opacity:.5">−</div><div><div style="font-family:var(--font-mono);font-weight:700;font-size:18px">'+r0(tot.k)+'</div><div style="font-size:10px;color:var(--text-muted,#9aa0a6)">ALIMENTOS</div></div><div style="opacity:.5">=</div><div><div style="font-family:var(--font-mono);font-weight:800;font-size:22px;color:'+(T.kcal-tot.k<0?'#E05B5B':COL.k)+'">'+r0(T.kcal-tot.k)+'</div><div style="font-size:10px;color:var(--text-muted,#9aa0a6)">RESTANTES</div></div></div>'+
    '<div style="display:flex;height:6px;border-radius:6px;overflow:hidden;margin:12px 0 4px;background:var(--surface,#14171B)"><div style="width:'+(kcalP/ks*100)+'%;background:'+COL.p+'"></div><div style="width:'+(kcalC/ks*100)+'%;background:'+COL.c+'"></div><div style="width:'+(kcalF/ks*100)+'%;background:'+COL.f+'"></div></div>'+
    '<div style="font-size:10.5px;color:var(--text-muted,#9aa0a6);margin-bottom:6px">'+(tot.k>0?'Reparto de calorías · P '+r0(kcalP/ks*100)+'% · C '+r0(kcalC/ks*100)+'% · G '+r0(kcalF/ks*100)+'%':'Aún no registras alimentos hoy')+'</div>'+
-   barra('PROTEÍNA', tot.p, T.proteinG, COL.p, ' g')+barra('CARBOHIDRATOS', tot.c, T.carbG, COL.c, ' g')+barra('GRASAS', tot.f, T.fatG, COL.f, ' g')+'</div>';
+   barra('PROTEÍNA', tot.p, T.proteinG, COL.p, ' g')+barra('CARBOHIDRATOS', tot.c, T.carbG, COL.c, ' g')+barra('GRASAS', tot.f, T.fatG, COL.f, ' g')+resumenAct(date, tot)+'</div>';
   mwPlan.meals.forEach(function(meal,mi){
    var es = arr.filter(function(e){ return e.m===mi; }), st = sumar(es);
    var _p = String(meal.name).split(' · '), _num = _p[0], _rest = _p.slice(1).join(' · ') || meal.sub || '';
@@ -4862,6 +4862,7 @@ document.head.appendChild(css);
    '<div style="font-size:11.5px;color:var(--text-muted,#9aa0a6);margin-bottom:8px">'+(okAg?'Meta cumplida ✓ · '+r0(ml/AGUA_META*100)+'%':'Faltan '+fmt((AGUA_META-ml)/1000)+' L · '+r0(ml/AGUA_META*100)+'% de tu meta')+'</div>'+
    '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="week-btn" data-ag="250">+250 ml</button><button class="week-btn" data-ag="500">+500 ml</button><button class="week-btn" data-ag="750">+750 ml</button><button class="week-btn" data-ag="1000">+1 L</button><button class="week-btn" data-ag="-250" style="color:#E05B5B">−250</button></div>'+
    '<div style="display:flex;gap:6px;margin-top:8px"><input id="agCustom" inputmode="numeric" placeholder="Otra cantidad (ml)" style="flex:1;min-width:0;box-sizing:border-box;background:var(--surface,#14171B);color:var(--text,#e8eaed);border:1px solid var(--border,#2a2f36);border-radius:10px;padding:9px;font-size:14px"><button class="week-btn" id="agCustomBtn">Agregar</button></div></div>';
+  h += actividadHtml(date);
   card.innerHTML = h;
   card.querySelector('#rgPrev').onclick = function(){ setDate(addDays(date,-1)); };
   if(!esHoy) card.querySelector('#rgNext').onclick = function(){ setDate(addDays(date,1)); };
@@ -4872,6 +4873,9 @@ document.head.appendChild(css);
   var cb = card.querySelector('#agCustomBtn'), ci = card.querySelector('#agCustom');
   function custom(){ var v = Math.round(num(ci.value)); if(v>0 && v<=5000) sumarAgua(date, v); else toast2('Ingresa los ml (1 a 5000)'); }
   cb.onclick = custom; ci.onkeydown = function(ev){ if(ev.key==='Enter'){ ev.preventDefault(); custom(); } };
+  Array.prototype.forEach.call(card.querySelectorAll('[data-act-del]'), function(b){ b.onclick = function(){ actLog[date] = (actLog[date]||[]).filter(function(x){ return x.id!==b.dataset.actDel; }); guardarAct(); renderRegistro(); renderSemana(); }; });
+  Array.prototype.forEach.call(card.querySelectorAll('[data-act-add]'), function(b){ b.onclick = function(){ abrirActividad(date, b.dataset.actAdd); }; });
+  Array.prototype.forEach.call(card.querySelectorAll('[data-act-plan]'), function(b){ b.onclick = function(){ var p = planDe(date); if(!p) return; var tipo = b.dataset.actPlan; if(tipo==='cardio' && p.cardio) agregarAct(date, {t:'cardio', n:p.cardio.nombre, min:p.cardio.min, kcal:estimarKcal(metDe(p.cardio.nombre,'cardio'), p.cardio.min), est:true, plan:true}); else if(tipo==='fuerza') agregarAct(date, {t:'fuerza', n:p.dayName||'Entrenamiento de fuerza', min:60, kcal:estimarKcal(MET_FUERZA, 60), est:true, plan:true}); }; });
  }
  function eliminar(date,id){ foodLog[date] = (foodLog[date]||[]).filter(function(e){ return e.id!==id; }); guardar(); sincronizarCheck(date); renderRegistro(); renderHistorial(); }
  function renderHistorial(){
@@ -5092,6 +5096,19 @@ document.head.appendChild(css);
  }
  var DIAS3 = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
  function lunesDe(date){ var d = new Date(date+'T12:00:00'); return addDays(date, -((d.getDay()+6)%7)); }
+ function actSemana(filas, n, reg, pk){
+  var tot = {cm:0, fm:0, k:0, dc:0}, rows = filas.map(function(f){
+   var a = totAct(f.d); tot.cm += a.cardioMin; tot.fm += a.fuerzaMin; tot.k += a.kcal; if(a.cardioMin>=CARDIO_MIN) tot.dc++;
+   var neto = f.reg ? r0(f.t.k - a.kcal) : null;
+   return '<div style="display:grid;grid-template-columns:54px 1fr 1fr 1fr 1fr;gap:4px;font-size:12px;padding:7px 0;border-bottom:1px solid var(--border,#2a2f36);opacity:'+(f.fut?'.4':'1')+'"><span style="font-weight:700;color:'+(f.d===todayStr()?'#FFE27A':'inherit')+'">'+f.lbl+'</span><span style="text-align:right;font-family:var(--font-mono);color:'+(a.cardioMin>=CARDIO_MIN?'#4CAF7D':(a.cardioMin>0?'#FF9F5B':'var(--text-muted,#9aa0a6)'))+'">'+(a.cardioMin?a.cardioMin:'—')+'</span><span style="text-align:right;font-family:var(--font-mono)">'+(a.fuerzaMin?a.fuerzaMin:'—')+'</span><span style="text-align:right;font-family:var(--font-mono)">'+(a.kcal?r0(a.kcal):'—')+'</span><span style="text-align:right;font-family:var(--font-mono)">'+(neto!==null?neto:'—')+'</span></div>';
+  }).join('');
+  var dias = filas.filter(function(f){ return !f.fut; }).length;
+  return '<div style="font-size:15px;font-weight:800;color:#FF9F5B;margin:18px 0 6px">🔥 ACTIVIDAD DE LA SEMANA</div>'+
+   '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px"><div style="background:var(--surface-2,#1c1f24);border-radius:10px;padding:8px 4px;text-align:center"><div style="font-family:var(--font-mono);font-weight:800;font-size:15px">'+tot.cm+'</div><div style="font-size:9.5px;color:var(--text-muted,#9aa0a6)">MIN CARDIO</div></div><div style="background:var(--surface-2,#1c1f24);border-radius:10px;padding:8px 4px;text-align:center"><div style="font-family:var(--font-mono);font-weight:800;font-size:15px;color:'+(tot.dc>=dias&&dias>0?'#4CAF7D':'inherit')+'">'+tot.dc+'/'+dias+'</div><div style="font-size:9.5px;color:var(--text-muted,#9aa0a6)">DÍAS CON '+CARDIO_MIN+'+ MIN</div></div><div style="background:var(--surface-2,#1c1f24);border-radius:10px;padding:8px 4px;text-align:center"><div style="font-family:var(--font-mono);font-weight:800;font-size:15px">'+r0(tot.k)+'</div><div style="font-size:9.5px;color:var(--text-muted,#9aa0a6)">KCAL GASTO ACTIVO</div></div></div>'+
+   '<div style="display:grid;grid-template-columns:54px 1fr 1fr 1fr 1fr;gap:4px;font-size:10px;color:var(--text-muted,#9aa0a6);padding:6px 0;border-bottom:1px solid var(--border,#2a2f36);font-weight:700"><span>DÍA</span><span style="text-align:right">CARDIO MIN</span><span style="text-align:right">FUERZA MIN</span><span style="text-align:right">GASTO KCAL</span><span style="text-align:right">NETO KCAL</span></div>'+rows+
+   '<div style="font-size:10.5px;color:var(--text-muted,#9aa0a6);margin-top:6px">Neto = alimentos − gasto activo del día. Tu meta calórica ya considera el cardio y el entrenamiento planificados.</div>';
+ }
+
  function renderSemana(){
   var ref = document.getElementById('mealCard'); if(!ref) return;
   var el = document.getElementById('rgWeek');
@@ -5129,25 +5146,113 @@ document.head.appendChild(css);
    '<div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 8px"><button class="week-btn" id="swPrev" style="min-width:42px">◀</button><div style="font-family:var(--font-mono);font-weight:700;font-size:12px;text-align:center">'+(semOff===0?'ESTA SEMANA · ':'')+ini.slice(5)+' → '+dias[6].slice(5)+'</div><button class="week-btn" id="swNext" style="min-width:42px;'+(semOff>=0?'opacity:.35':'')+'">▶</button></div>'+
    (n? '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">'+pr('KCAL PROM.',pk,mk,COL.k)+pr('PROT PROM.',pp,mp,COL.p)+pr('CARB PROM.',pc,mc,COL.c)+pr('GRASA PROM.',pf,mf,COL.f)+'</div>' : '<div style="font-size:12.5px;color:var(--text-muted,#9aa0a6);padding:6px 0">Aún no hay registros en esta semana.</div>')+
    '<div style="font-size:11.5px;color:var(--text-muted,#9aa0a6);margin:10px 0 2px">Registro: <b style="color:var(--text,#e8eaed)">'+n+'/'+filas.filter(function(f){ return !f.fut; }).length+' días</b> · Agua: <b style="color:#7FD1FF">'+diasAgua+' día'+(diasAgua===1?'':'s')+' con meta</b> · promedio '+fmt(pa/1000)+' L/día</div>'+
-   '<div style="margin:8px 0 4px">'+svg+'</div><div style="font-size:10px;color:var(--text-muted,#9aa0a6);margin-bottom:6px">Barras: calorías del día · línea punteada: tu meta · verde 90–105%, amarillo 75–115%, rojo fuera de rango</div>'+cab+rows;
+   '<div style="margin:8px 0 4px">'+svg+'</div><div style="font-size:10px;color:var(--text-muted,#9aa0a6);margin-bottom:6px">Barras: calorías del día · línea punteada: tu meta · verde 90–105%, amarillo 75–115%, rojo fuera de rango</div>'+cab+rows+actSemana(filas, n, reg, pk);
   el.innerHTML = h;
   el.querySelector('#swPrev').onclick = function(){ semOff--; renderSemana(); };
   if(semOff<0) el.querySelector('#swNext').onclick = function(){ semOff++; renderSemana(); };
  }
 
+ /* ── Actividad: cardio y entrenamiento ── */
+ var MET_FUERZA = 5.0;
+ var METS = [["Caminata inclinada",6.0],["Caminata",4.0],["Trote suave",8.0],["Carrera",10.0],["Bicicleta suave",5.5],["Bicicleta moderada",7.0],["Elíptico",5.0],["Remo",7.0],["Escaladora",8.0],["Natación",6.0],["HIIT",9.0],["Otro cardio",5.0]];
+ function metDe(nombre, tipo){
+  var n = sa(nombre||'');
+  if(tipo==='fuerza') return MET_FUERZA;
+  if(/inclinad/.test(n)) return 6.0; if(/camin/.test(n)) return 4.0; if(/trote/.test(n)) return 8.0; if(/carrera|correr/.test(n)) return 10.0;
+  if(/bici|ciclo/.test(n)) return /suave|liss/.test(n)||!/modera|hiit/.test(n) ? 5.5 : 7.0; if(/eliptic/.test(n)) return 5.0; if(/remo/.test(n)) return 7.0; if(/escalad|stair/.test(n)) return 8.0; if(/nata/.test(n)) return 6.0; if(/hiit|interval/.test(n)) return 9.0;
+  return 5.0;
+ }
+ function pesoKg(){
+  try{ var l = progressLog.filter(function(e){ return e && typeof e.weight==='number'; }).sort(function(a,b){ return a.date<b.date?1:-1; })[0]; if(l) return l.weight; }catch(e){}
+  return 101;
+ }
+ function estimarKcal(met, min){ return r0(Math.max(0, met-1) * pesoKg() * (min/60)); }
+ function planDe(date){
+  try{
+   var idx = (new Date(date+'T12:00:00').getDay()+6)%7, id = weeklyOrder && weeklyOrder[idx];
+   var d = id && days.find(function(x){ return x.id===id; }); if(!d) return null;
+   var cs = (d.sections||[]).find(function(s){ return /cardio/i.test(s.name); }), it = cs && cs.items && cs.items[0], min = 0;
+   if(it){ var m = String(it.reps||'').match(/(\d+)(?:\s*(?:a|-)\s*(\d+))?\s*min/i); if(m) min = r0(m[2] ? (+m[1]+ +m[2])/2 : +m[1]); }
+   var hecho = Object.keys(checks||{}).filter(function(k){ return checks[k] && k.indexOf(date+'-w')===0; }).length;
+   var total = 0; (d.sections||[]).forEach(function(s){ if(/entrenamiento/i.test(s.name)) total += (s.items||[]).length; });
+   return {dayName:(d.dayTag?d.dayTag+' · ':'')+d.name, cardio: it && min ? {nombre:it.name, min:min} : null, hecho:hecho, total:total};
+  }catch(e){ return null; }
+ }
+ function totAct(date){
+  var a = actLog[date]||[], t = {cardioMin:0, fuerzaMin:0, kcal:0};
+  a.forEach(function(x){ if(x.t==='cardio') t.cardioMin += x.min||0; else t.fuerzaMin += x.min||0; t.kcal += x.kcal||0; });
+  return t;
+ }
+ function guardarAct(){
+  var keys = Object.keys(actLog).sort().slice(-90), out = {}; keys.forEach(function(k){ out[k] = actLog[k]; }); actLog = out;
+  saveField('actividadLog', actLog);
+  try{ renderSemana(); }catch(e){}
+ }
+ function agregarAct(date, o){
+  var arr = actLog[date] = actLog[date] || [];
+  arr.push(Object.assign({id:Date.now().toString(36)+Math.floor(Math.random()*99)}, o));
+  guardarAct(); renderRegistro();
+ }
+ function resumenAct(date, tot){
+  var a = totAct(date), ok = a.cardioMin>=CARDIO_MIN;
+  return '<div style="border-top:1px solid var(--border,#2a2f36);margin-top:8px;padding:9px 0 8px;font-size:12px;line-height:1.7"><span>🏃 Cardio: <b style="color:'+(ok?'#4CAF7D':'var(--text,#e8eaed)')+'">'+a.cardioMin+'</b> / '+CARDIO_MIN+'–'+CARDIO_MAX+' min'+(ok?' ✓':'')+'</span> · <span>🔥 Gasto activo: <b>'+r0(a.kcal)+'</b> kcal</span><br><span style="color:var(--text-muted,#9aa0a6)">Neto (alimentos − actividad): <b style="color:var(--text,#e8eaed)">'+r0(tot.k-a.kcal)+'</b> kcal</span></div>';
+ }
+ function actividadHtml(date){
+  var arr = actLog[date]||[], a = totAct(date), p = planDe(date), cm = Math.min(100, a.cardioMin/CARDIO_MIN*100);
+  var h = '<div style="margin-top:20px;padding:12px;background:var(--surface-2,#1c1f24);border-radius:12px"><div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-size:17px;font-weight:800;color:#FF9F5B">🔥 ACTIVIDAD Y GASTO</div><div style="font-family:var(--font-mono);font-weight:800;font-size:15px">'+r0(a.kcal)+' kcal</div></div>';
+  if(p){
+   h += '<div style="font-size:12px;margin:8px 0 6px;color:var(--text-muted,#9aa0a6)">Rutina de hoy: <b style="color:var(--text,#e8eaed)">'+esc(p.dayName)+'</b>'+(p.total? ' · '+p.hecho+'/'+p.total+' ejercicios marcados'+(p.hecho>=p.total&&p.total>0?' ✓':'') : '')+'</div>';
+  }
+  h += '<div style="height:8px;border-radius:8px;background:var(--surface,#14171B);overflow:hidden;margin:6px 0 3px"><div style="height:100%;width:'+cm+'%;background:'+(a.cardioMin>=CARDIO_MIN?'#4CAF7D':'#FF9F5B')+'"></div></div><div style="font-size:11.5px;color:var(--text-muted,#9aa0a6);margin-bottom:8px">Cardio '+a.cardioMin+' min · meta diaria '+CARDIO_MIN+'–'+CARDIO_MAX+' min'+(p&&p.cardio?' · plan de hoy: '+p.cardio.min+' min':'')+'</div>';
+  arr.forEach(function(x){
+   h += '<div class="row" style="align-items:center"><div class="ex-info"><div class="ex-name">'+(x.t==='cardio'?'🏃 ':'🏋️ ')+esc(x.n)+'</div><div class="ex-tip">'+x.min+' min · '+r0(x.kcal)+' kcal'+(x.fc?' · FC '+x.fc+' lpm':'')+(x.est?' · estimado':'')+'</div></div><button data-act-del="'+x.id+'" aria-label="Eliminar" style="background:none;border:0;color:#E05B5B;font-size:20px;padding:6px 10px;cursor:pointer">×</button></div>';
+  });
+  h += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">'+(p&&p.cardio?'<button class="week-btn" data-act-plan="cardio" style="color:#FF9F5B;font-weight:700">✓ Cardio del plan · '+p.cardio.min+' min</button>':'')+(p&&p.total?'<button class="week-btn" data-act-plan="fuerza" style="color:#FF9F5B;font-weight:700">✓ Fuerza · 60 min</button>':'')+'<button class="week-btn" data-act-add="cardio">+ Cardio</button><button class="week-btn" data-act-add="fuerza">+ Entrenamiento</button></div>';
+  h += '<div style="font-size:10.5px;color:var(--text-muted,#9aa0a6);margin-top:8px">Las calorías son una estimación (MET × tu peso ('+fmt(pesoKg())+' kg) × tiempo, solo gasto adicional al reposo). Si tu máquina o reloj marca otro valor, edítalo al agregar.</div></div>';
+  return h;
+ }
+ function abrirActividad(date, tipo){
+  var ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99990;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center';
+  var inp = 'width:100%;box-sizing:border-box;background:var(--surface-2,#1c1f24);color:var(--text,#e8eaed);border:1px solid var(--border,#2a2f36);border-radius:10px;padding:11px;font-size:15px';
+  var esC = tipo==='cardio', p = planDe(date);
+  var opts = esC ? METS.map(function(m){ return '<option value="'+m[0]+'">'+m[0]+'</option>'; }).join('') : '';
+  ov.innerHTML = '<div style="width:100%;max-width:520px;max-height:90vh;overflow:auto;background:var(--surface,#14171B);border:1px solid var(--border,#2a2f36);border-radius:18px 18px 0 0;padding:16px 16px 22px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-weight:700">'+(esC?'🏃 Agregar cardio':'🏋️ Agregar entrenamiento')+'</div><button id="aX" style="background:none;border:0;color:var(--text-muted,#9aa0a6);font-size:24px;cursor:pointer">×</button></div>'+
+   (esC ? '<label style="font-size:11px;font-weight:600;color:var(--text-muted,#9aa0a6)">TIPO DE CARDIO</label><select id="aN" style="'+inp+';margin:4px 0 10px">'+opts+'</select>' : '<label style="font-size:11px;font-weight:600;color:var(--text-muted,#9aa0a6)">ENTRENAMIENTO</label><input id="aN" style="'+inp+';margin:4px 0 10px" value="'+esc(p?p.dayName:'Entrenamiento de fuerza')+'">')+
+   '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label style="font-size:11px;font-weight:600;color:var(--text-muted,#9aa0a6)">DURACIÓN (MIN)</label><input id="aM" inputmode="numeric" value="'+(esC&&p&&p.cardio?p.cardio.min:(esC?35:60))+'" style="'+inp+';margin-top:4px;font-family:var(--font-mono);font-weight:700"></div><div><label style="font-size:11px;font-weight:600;color:var(--text-muted,#9aa0a6)">KCAL GASTADAS</label><input id="aK" inputmode="numeric" style="'+inp+';margin-top:4px;font-family:var(--font-mono);font-weight:700"></div></div>'+
+   '<div style="display:flex;gap:6px;margin:8px 0;flex-wrap:wrap">'+[20,30,35,40,45,60,75].map(function(v){ return '<button class="week-btn" data-m="'+v+'">'+v+'</button>'; }).join('')+'</div>'+
+   '<label style="font-size:11px;font-weight:600;color:var(--text-muted,#9aa0a6)">FC PROMEDIO (OPCIONAL)</label><input id="aF" inputmode="numeric" placeholder="lpm" style="'+inp+';margin:4px 0 10px"><div id="aHint" style="font-size:11px;color:var(--text-muted,#9aa0a6);margin-bottom:10px"></div><button id="aOk" class="sv" style="width:100%">Agregar</button></div>';
+  document.body.appendChild(ov);
+  var N = ov.querySelector('#aN'), M = ov.querySelector('#aM'), K = ov.querySelector('#aK'), tocado = false;
+  function cerrar(){ ov.remove(); }
+  ov.addEventListener('click', function(e){ if(e.target===ov) cerrar(); }); ov.querySelector('#aX').onclick = cerrar;
+  if(esC && p && p.cardio){ var g = sa(p.cardio.nombre); Array.prototype.forEach.call(N.options, function(o){ if(sa(o.value)===sa(metNombre(p.cardio.nombre))) N.value = o.value; }); }
+  function metNombre(n){ var m = metDe(n,'cardio'), f = METS.find(function(x){ return x[1]===m; }); return f ? f[0] : 'Otro cardio'; }
+  function recalc(){ var mt = esC ? (METS.find(function(x){ return x[0]===N.value; })||[0,5])[1] : MET_FUERZA; if(!tocado) K.value = estimarKcal(mt, num(M.value)); ov.querySelector('#aHint').textContent = 'Estimación con MET '+mt+' y '+fmt(pesoKg())+' kg. Puedes cambiar las kcal si tienes el dato real.'; }
+  N.onchange = recalc; M.oninput = recalc; K.oninput = function(){ tocado = true; };
+  Array.prototype.forEach.call(ov.querySelectorAll('[data-m]'), function(b){ b.onclick = function(){ M.value = b.dataset.m; recalc(); }; });
+  recalc();
+  ov.querySelector('#aOk').onclick = function(){
+   var min = r0(num(M.value)), kc = r0(num(K.value)); if(!(min>0)){ toast2('Ingresa la duración en minutos'); return; }
+   var o = {t:esC?'cardio':'fuerza', n:N.value.trim()||(esC?'Cardio':'Entrenamiento'), min:min, kcal:kc, est:!tocado}; var fc = r0(num(ov.querySelector('#aF').value)); if(fc>0) o.fc = fc;
+   cerrar(); agregarAct(date, o);
+  };
+ }
+
  /* ── Enganche con la app ── */
  window.renderMealCard = function(){ renderRegistro(); };
  window.renderMealHistory = function(){ renderHistorial(); renderSemana(); };
- try{ if(typeof COLA!=='undefined' && COLA.indexOf('foodLog')<0) COLA.push('foodLog','foodsPropios','aguaLog'); }catch(e){}
+ try{ if(typeof COLA!=='undefined' && COLA.indexOf('foodLog')<0) COLA.push('foodLog','foodsPropios','aguaLog','actividadLog'); }catch(e){}
  var primera = true;
  athleteRef.onSnapshot(function(doc){
   if(!doc.exists) return;
   var d = doc.data();
-  foodLog = d.foodLog || {}; propios = d.foodsPropios || {}; aguaLog = d.aguaLog || {};
+  foodLog = d.foodLog || {}; propios = d.foodsPropios || {}; aguaLog = d.aguaLog || {}; actLog = d.actividadLog || {};
+  var mr = d.plan && d.plan.metasRegistro; if(mr){ if(mr.agua>0) AGUA_META = mr.agua; if(mr.cardioMin>0) CARDIO_MIN = mr.cardioMin; if(mr.cardioMax>0) CARDIO_MAX = mr.cardioMax; if(mr.diasEntreno && mr.diasEntreno.length) TRAIN = mr.diasEntreno; }
   if(primera){ primera = false; var w = ventanaDe(vd()); if(w) activeMealWindow = w.id; }
   if(!sheetEl){ try{ renderMacroCard(); renderMealWindowRow(); renderRegistro(); renderHistorial(); renderSemana(); }catch(e){} }
  });
- window.ppcRegistroMacros = {render: renderRegistro, get log(){ return foodLog; }, get agua(){ return aguaLog; }};
+ window.ppcRegistroMacros = {render: renderRegistro, get log(){ return foodLog; }, get agua(){ return aguaLog; }, get act(){ return actLog; }};
 })();
 
 </script>
