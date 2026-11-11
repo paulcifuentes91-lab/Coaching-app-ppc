@@ -4759,7 +4759,8 @@ document.head.appendChild(css);
 <script id="ppcRegistroMacros">
 /* PPC · Registro de macros estilo diario (búsqueda, porciones, recientes, copiar de ayer) */
 (function(){
- var foodLog = {}, propios = {}, viewDate = null, sheetEl = null, ST = null;
+ var foodLog = {}, propios = {}, aguaLog = {}, viewDate = null, sheetEl = null, ST = null, semOff = 0;
+ var AGUA_META = 4500;
  var TRAIN = [1,2,4,5,6];
  var COL = {k:'#E0C23D', p:'#5B8DEF', c:'#4FD1A5', f:'#FF7FAE'};
  /* Alimentos extra (por 100 g: kcal, P, C, G) — valores referenciales */
@@ -4808,6 +4809,7 @@ document.head.appendChild(css);
   var keys = Object.keys(foodLog).sort().slice(-60), out = {};
   keys.forEach(function(k){ out[k] = foodLog[k]; }); foodLog = out;
   saveField('foodLog', foodLog);
+  try{ renderSemana(); }catch(e){}
  }
  function guardarPropios(){ saveField('foodsPropios', propios); }
  function sincronizarCheck(date){
@@ -4854,15 +4856,22 @@ document.head.appendChild(css);
    h += '<button class="week-btn" data-add="'+mi+'" style="width:100%;margin-top:6px;color:var(--accent,#E0C23D);font-weight:700">+ AGREGAR ALIMENTO</button>';
    if(meal.items && meal.items.length) h += '<details style="margin-top:6px"><summary style="font-size:11.5px;color:var(--text-muted,#9aa0a6);cursor:pointer">Sugerido por tu coach</summary>'+meal.items.map(function(x){ return '<div class="ex-tip">· '+esc(x)+'</div>'; }).join('')+'</details>';
   });
-  var ag = !!mealChecks[date+'-agua'];
-  h += '<div class="section-label" style="margin-top:16px">Hidratación</div><div class="row"><div class="chk agua-chk '+(ag?'checked':'')+'">'+ICON_CHECK+'</div><div class="ex-info agua-info"><div class="ex-name '+(ag?'done':'')+'">💧 Agua del día completa</div><div class="ex-tip">Meta: 4 a 5 litros</div></div></div>';
+  var ml = aguaLog[date] || 0, apct = Math.min(100, ml/AGUA_META*100), okAg = ml>=AGUA_META;
+  h += '<div style="margin-top:20px;padding:12px;background:var(--surface-2,#1c1f24);border-radius:12px"><div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-size:17px;font-weight:800;color:#7FD1FF">💧 AGUA</div><div style="font-family:var(--font-mono);font-weight:800;font-size:15px;color:'+(okAg?'#4CAF7D':'var(--text,#e8eaed)')+'">'+fmt(ml/1000)+' / '+fmt(AGUA_META/1000)+' L</div></div>'+
+   '<div style="height:10px;border-radius:8px;background:var(--surface,#14171B);overflow:hidden;margin:8px 0 4px"><div style="height:100%;width:'+apct+'%;background:'+(okAg?'#4CAF7D':'#7FD1FF')+'"></div></div>'+
+   '<div style="font-size:11.5px;color:var(--text-muted,#9aa0a6);margin-bottom:8px">'+(okAg?'Meta cumplida ✓ · '+r0(ml/AGUA_META*100)+'%':'Faltan '+fmt((AGUA_META-ml)/1000)+' L · '+r0(ml/AGUA_META*100)+'% de tu meta')+'</div>'+
+   '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="week-btn" data-ag="250">+250 ml</button><button class="week-btn" data-ag="500">+500 ml</button><button class="week-btn" data-ag="750">+750 ml</button><button class="week-btn" data-ag="1000">+1 L</button><button class="week-btn" data-ag="-250" style="color:#E05B5B">−250</button></div>'+
+   '<div style="display:flex;gap:6px;margin-top:8px"><input id="agCustom" inputmode="numeric" placeholder="Otra cantidad (ml)" style="flex:1;min-width:0;box-sizing:border-box;background:var(--surface,#14171B);color:var(--text,#e8eaed);border:1px solid var(--border,#2a2f36);border-radius:10px;padding:9px;font-size:14px"><button class="week-btn" id="agCustomBtn">Agregar</button></div></div>';
   card.innerHTML = h;
   card.querySelector('#rgPrev').onclick = function(){ setDate(addDays(date,-1)); };
   if(!esHoy) card.querySelector('#rgNext').onclick = function(){ setDate(addDays(date,1)); };
   Array.prototype.forEach.call(card.querySelectorAll('[data-add]'), function(b){ b.onclick = function(){ abrirHoja(date, +b.dataset.add, null); }; });
   Array.prototype.forEach.call(card.querySelectorAll('[data-del]'), function(b){ b.onclick = function(ev){ ev.stopPropagation(); eliminar(date,b.dataset.del); }; });
   Array.prototype.forEach.call(card.querySelectorAll('[data-edit]'), function(b){ b.onclick = function(){ var e = (foodLog[date]||[]).find(function(x){ return x.id===b.dataset.edit; }); if(e) abrirHoja(date, e.m, e); }; });
-  Array.prototype.forEach.call(card.querySelectorAll('.agua-chk, .agua-info'), function(el){ el.onclick = function(){ var k = date+'-agua'; mealChecks[k] = !mealChecks[k]; saveField('mealChecks', mealChecks); try{ updateMesocicloSummary(); }catch(e){} renderRegistro(); }; });
+  Array.prototype.forEach.call(card.querySelectorAll('[data-ag]'), function(bt){ bt.onclick = function(){ sumarAgua(date, +bt.dataset.ag); }; });
+  var cb = card.querySelector('#agCustomBtn'), ci = card.querySelector('#agCustom');
+  function custom(){ var v = Math.round(num(ci.value)); if(v>0 && v<=5000) sumarAgua(date, v); else toast2('Ingresa los ml (1 a 5000)'); }
+  cb.onclick = custom; ci.onkeydown = function(ev){ if(ev.key==='Enter'){ ev.preventDefault(); custom(); } };
  }
  function eliminar(date,id){ foodLog[date] = (foodLog[date]||[]).filter(function(e){ return e.id!==id; }); guardar(); sincronizarCheck(date); renderRegistro(); renderHistorial(); }
  function renderHistorial(){
@@ -5072,19 +5081,73 @@ document.head.appendChild(css);
   }
   pintar();
  }
+ function sumarAgua(date, ml){
+  var v = Math.max(0, Math.min(15000, (aguaLog[date]||0) + ml));
+  aguaLog[date] = v;
+  var keys = Object.keys(aguaLog).sort().slice(-90), out = {}; keys.forEach(function(k){ out[k] = aguaLog[k]; }); aguaLog = out;
+  saveField('aguaLog', aguaLog);
+  var cumple = v>=AGUA_META;
+  if(!!mealChecks[date+'-agua'] !== cumple){ mealChecks[date+'-agua'] = cumple; saveField('mealChecks', mealChecks); try{ updateMesocicloSummary(); }catch(e){} }
+  renderRegistro(); renderSemana();
+ }
+ var DIAS3 = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+ function lunesDe(date){ var d = new Date(date+'T12:00:00'); return addDays(date, -((d.getDay()+6)%7)); }
+ function renderSemana(){
+  var ref = document.getElementById('mealCard'); if(!ref) return;
+  var el = document.getElementById('rgWeek');
+  if(!el){ el = document.createElement('section'); el.id = 'rgWeek'; el.className = ref.className; el.style.marginTop = '12px'; var hc = document.getElementById('mealHistoryCard'); hc.parentNode.insertBefore(el, hc); }
+  var hoyS = todayStr(), ini = addDays(lunesDe(hoyS), semOff*7), dias = []; for(var i=0;i<7;i++) dias.push(addDays(ini,i));
+  var filas = dias.map(function(d,i){
+   var arr = foodLog[d]||[], t = sumar(arr), w = (ventanaDe(d).macros||{}), ml = aguaLog[d]||0, fut = d>hoyS;
+   return {d:d, lbl:DIAS3[i]+' '+d.slice(8), t:t, meta:w, ml:ml, reg:arr.length>0, fut:fut};
+  });
+  var reg = filas.filter(function(f){ return f.reg; }), n = reg.length;
+  function prom(fn){ return n ? reg.reduce(function(s,f){ return s+fn(f); },0)/n : 0; }
+  var pk = prom(function(f){return f.t.k;}), pp = prom(function(f){return f.t.p;}), pc = prom(function(f){return f.t.c;}), pf = prom(function(f){return f.t.f;});
+  var mk = prom(function(f){return f.meta.kcal||0;}), mp = prom(function(f){return f.meta.proteinG||0;}), mc = prom(function(f){return f.meta.carbG||0;}), mf = prom(function(f){return f.meta.fatG||0;});
+  var diasAgua = filas.filter(function(f){ return f.ml>=AGUA_META; }).length, pa = filas.filter(function(f){ return f.ml>0; }).length ? filas.reduce(function(s,f){ return s+f.ml; },0)/filas.filter(function(f){ return f.ml>0; }).length : 0;
+  function col(p){ return (p>=90&&p<=105)?'#4CAF7D':(p>=75&&p<=115?'#E0C23D':'#E05B5B'); }
+  /* gráfico */
+  var W=340,H=130,bw=30,gap=(W-7*bw)/8,maxV=Math.max.apply(null, filas.map(function(f){ return Math.max(f.t.k, f.meta.kcal||0); }).concat([1000]))*1.12;
+  var svg = '<svg viewBox="0 0 '+W+' '+(H+22)+'" width="100%" role="img" aria-label="Calorías por día contra la meta">';
+  filas.forEach(function(f,i){
+   var x = gap+i*(bw+gap), h = f.t.k/maxV*H, y = H-h, gy = H-(f.meta.kcal||0)/maxV*H, p = f.meta.kcal? f.t.k/f.meta.kcal*100 : 0;
+   svg += '<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+h+'" rx="4" fill="'+(f.reg?col(p):'transparent')+'" opacity=".9"/>';
+   svg += '<line x1="'+(x-3)+'" x2="'+(x+bw+3)+'" y1="'+gy+'" y2="'+gy+'" stroke="#fff" stroke-width="1.5" stroke-dasharray="3 2" opacity="'+(f.fut?'.2':'.75')+'"/>';
+   svg += '<text x="'+(x+bw/2)+'" y="'+(H+14)+'" text-anchor="middle" font-size="10" fill="'+(f.d===hoyS?'#FFE27A':'#9aa0a6')+'">'+DIAS3[i]+'</text>';
+  });
+  svg += '</svg>';
+  var cab = '<div style="display:grid;grid-template-columns:54px 1fr 40px 40px 40px 44px;gap:4px;font-size:10px;color:var(--text-muted,#9aa0a6);padding:6px 0;border-bottom:1px solid var(--border,#2a2f36);font-weight:700"><span>DÍA</span><span style="text-align:right">KCAL</span><span style="text-align:right">P</span><span style="text-align:right">C</span><span style="text-align:right">G</span><span style="text-align:right">💧 L</span></div>';
+  var rows = filas.map(function(f){
+   var p = f.meta.kcal ? r0(f.t.k/f.meta.kcal*100) : 0;
+   return '<div style="display:grid;grid-template-columns:54px 1fr 40px 40px 40px 44px;gap:4px;font-size:12px;padding:7px 0;border-bottom:1px solid var(--border,#2a2f36);opacity:'+(f.fut?'.4':'1')+';align-items:center"><span style="font-weight:700;color:'+(f.d===hoyS?'#FFE27A':'inherit')+'">'+f.lbl+'</span>'+
+    (f.reg ? '<span style="text-align:right;font-family:var(--font-mono);font-weight:700;color:'+col(p)+'">'+r0(f.t.k)+' <small style="opacity:.8">'+p+'%</small></span><span style="text-align:right;font-family:var(--font-mono)">'+r0(f.t.p)+'</span><span style="text-align:right;font-family:var(--font-mono)">'+r0(f.t.c)+'</span><span style="text-align:right;font-family:var(--font-mono)">'+r0(f.t.f)+'</span>' : '<span style="grid-column:2/6;text-align:right;color:var(--text-muted,#9aa0a6)">'+(f.fut?'—':'sin registro')+'</span>')+
+    '<span style="text-align:right;font-family:var(--font-mono);color:'+(f.ml>=AGUA_META?'#4CAF7D':(f.ml>0?'#7FD1FF':'var(--text-muted,#9aa0a6)'))+'">'+(f.ml>0?fmt(f.ml/1000):'—')+'</span></div>';
+  }).join('');
+  function pr(l, v, m, c){ var p = m? r0(v/m*100) : 0; return '<div style="background:var(--surface-2,#1c1f24);border-radius:10px;padding:8px 4px;text-align:center"><div style="font-family:var(--font-mono);font-weight:800;font-size:15px;color:'+c+'">'+r0(v)+'</div><div style="font-size:9.5px;color:var(--text-muted,#9aa0a6)">'+l+'</div><div style="font-size:10px;font-weight:700;color:'+col(p)+'">'+p+'% de '+r0(m)+'</div></div>'; }
+  var h = '<div class="card-top"><div class="card-title"><span class="day-tag">Historial</span>Resumen semanal de macros</div></div>'+
+   '<div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 8px"><button class="week-btn" id="swPrev" style="min-width:42px">◀</button><div style="font-family:var(--font-mono);font-weight:700;font-size:12px;text-align:center">'+(semOff===0?'ESTA SEMANA · ':'')+ini.slice(5)+' → '+dias[6].slice(5)+'</div><button class="week-btn" id="swNext" style="min-width:42px;'+(semOff>=0?'opacity:.35':'')+'">▶</button></div>'+
+   (n? '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">'+pr('KCAL PROM.',pk,mk,COL.k)+pr('PROT PROM.',pp,mp,COL.p)+pr('CARB PROM.',pc,mc,COL.c)+pr('GRASA PROM.',pf,mf,COL.f)+'</div>' : '<div style="font-size:12.5px;color:var(--text-muted,#9aa0a6);padding:6px 0">Aún no hay registros en esta semana.</div>')+
+   '<div style="font-size:11.5px;color:var(--text-muted,#9aa0a6);margin:10px 0 2px">Registro: <b style="color:var(--text,#e8eaed)">'+n+'/'+filas.filter(function(f){ return !f.fut; }).length+' días</b> · Agua: <b style="color:#7FD1FF">'+diasAgua+' día'+(diasAgua===1?'':'s')+' con meta</b> · promedio '+fmt(pa/1000)+' L/día</div>'+
+   '<div style="margin:8px 0 4px">'+svg+'</div><div style="font-size:10px;color:var(--text-muted,#9aa0a6);margin-bottom:6px">Barras: calorías del día · línea punteada: tu meta · verde 90–105%, amarillo 75–115%, rojo fuera de rango</div>'+cab+rows;
+  el.innerHTML = h;
+  el.querySelector('#swPrev').onclick = function(){ semOff--; renderSemana(); };
+  if(semOff<0) el.querySelector('#swNext').onclick = function(){ semOff++; renderSemana(); };
+ }
+
  /* ── Enganche con la app ── */
  window.renderMealCard = function(){ renderRegistro(); };
- window.renderMealHistory = function(){ renderHistorial(); };
- try{ if(typeof COLA!=='undefined' && COLA.indexOf('foodLog')<0) COLA.push('foodLog','foodsPropios'); }catch(e){}
+ window.renderMealHistory = function(){ renderHistorial(); renderSemana(); };
+ try{ if(typeof COLA!=='undefined' && COLA.indexOf('foodLog')<0) COLA.push('foodLog','foodsPropios','aguaLog'); }catch(e){}
  var primera = true;
  athleteRef.onSnapshot(function(doc){
   if(!doc.exists) return;
   var d = doc.data();
-  foodLog = d.foodLog || {}; propios = d.foodsPropios || {};
+  foodLog = d.foodLog || {}; propios = d.foodsPropios || {}; aguaLog = d.aguaLog || {};
   if(primera){ primera = false; var w = ventanaDe(vd()); if(w) activeMealWindow = w.id; }
-  if(!sheetEl){ try{ renderMacroCard(); renderMealWindowRow(); renderRegistro(); renderHistorial(); }catch(e){} }
+  if(!sheetEl){ try{ renderMacroCard(); renderMealWindowRow(); renderRegistro(); renderHistorial(); renderSemana(); }catch(e){} }
  });
- window.ppcRegistroMacros = {render: renderRegistro, get log(){ return foodLog; }};
+ window.ppcRegistroMacros = {render: renderRegistro, get log(){ return foodLog; }, get agua(){ return aguaLog; }};
 })();
 
 </script>
