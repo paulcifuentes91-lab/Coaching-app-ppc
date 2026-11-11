@@ -4825,6 +4825,27 @@ document.head.appendChild(css);
   var w = ventanaDe(d); if(w) activeMealWindow = w.id;
   renderMacroCard(); renderMealWindowRow(); renderMealCard(); renderMealHistory();
  }
+ /* ── Pestañas de Nutrición ── */
+ var TAB = 'diario';
+ try{ var gt = localStorage.getItem('ppc_nut_tab'); if(gt) TAB = gt; }catch(e){}
+ var TABS = [['diario','🍽 Diario'],['agua','💧 Agua'],['semana','📊 Semana'],['metas','🎯 Metas']];
+ function ocultar(el, si){ if(el) el.classList.toggle('rg-oculto', !!si); }
+ function aplicarTab(){
+  var nv = document.getElementById('nutritionView'); if(!nv) return;
+  if(!document.getElementById('rgStyle')){ var st = document.createElement('style'); st.id = 'rgStyle'; st.textContent = '.rg-oculto{display:none!important}#rgTabs{display:flex;gap:6px;margin:12px 0 0}#rgTabs button{flex:1 1 0;min-width:0;white-space:nowrap;padding:10px 4px;font-size:12.5px}'; document.head.appendChild(st); }
+  var bar = document.getElementById('rgTabs');
+  if(!bar){ bar = document.createElement('div'); bar.id = 'rgTabs'; nv.insertBefore(bar, nv.firstChild); }
+  bar.innerHTML = TABS.map(function(t){ return '<button class="week-btn '+(TAB===t[0]?'active':'')+'" data-rgt="'+t[0]+'">'+t[1]+'</button>'; }).join('');
+  Array.prototype.forEach.call(bar.querySelectorAll('[data-rgt]'), function(b){ b.onclick = function(){ TAB = b.dataset.rgt; try{ localStorage.setItem('ppc_nut_tab', TAB); }catch(e){} aplicarTab(); try{ window.scrollTo({top: Math.max(0, bar.getBoundingClientRect().top + window.pageYOffset - 8), behavior:'smooth'}); }catch(e){} }; });
+  var metas = TAB==='metas', reg = (TAB==='diario' || TAB==='agua'), sem = TAB==='semana';
+  ['nutritionNotesBanner','macroCard','mealWindowRow','btnDiaLibre'].forEach(function(id){ ocultar(document.getElementById(id), !metas); });
+  ocultar(nv.querySelector('details.accordion'), !metas);
+  ocultar(document.getElementById('mealCard'), !reg);
+  ocultar(document.getElementById('rgWeek'), !sem);
+  ocultar(document.getElementById('mealHistoryCard'), !sem);
+  Array.prototype.forEach.call(document.querySelectorAll('#mealCard [data-nsec]'), function(s){ var k = s.dataset.nsec; ocultar(s, !(k==='nav' || k===TAB)); });
+ }
+
  /* ── Diario ── */
  function barra(lbl, val, meta, color, unit){
   var pct = meta>0 ? Math.min(100, val/meta*100) : 0, over = meta>0 && val>meta*1.05, resta = meta-val;
@@ -4838,8 +4859,9 @@ document.head.appendChild(css);
   var mwPlan = ventanaDe(date), arr = foodLog[date] || [], tot = sumar(arr);
   var T = mwReq.macros || {kcal:0,proteinG:0,carbG:0,fatG:0}, esHoy = date===hoyS;
   var kcalP = tot.p*4, kcalC = tot.c*4, kcalF = tot.f*9, ks = (kcalP+kcalC+kcalF) || 1;
-  var h = '<div class="card-top"><div class="card-title"><span class="day-tag">Diario de alimentos</span>'+esc(mwReq.label)+'</div></div>';
+  var h = '<div data-nsec="nav">'+'<div class="card-top"><div class="card-title"><span class="day-tag">Diario de alimentos</span>'+esc(mwReq.label)+'</div></div>';
   h += '<div style="display:flex;align-items:center;justify-content:space-between;margin:2px 0 8px"><button class="week-btn" id="rgPrev" style="min-width:42px">◀</button><div style="font-family:var(--font-mono);font-weight:700;font-size:13px">'+(esHoy?'HOY · ':'')+date+'</div><button class="week-btn" id="rgNext" style="min-width:42px;'+(esHoy?'opacity:.35':'')+'">▶</button></div>';
+  h += '</div><div data-nsec="diario">';
   h += '<div style="background:var(--surface-2,#1c1f24);border-radius:12px;padding:12px 12px 4px">'+
    '<div style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;text-align:center;gap:2px"><div><div style="font-family:var(--font-mono);font-weight:700;font-size:18px">'+r0(T.kcal)+'</div><div style="font-size:10px;color:var(--text-muted,#9aa0a6)">META</div></div><div style="opacity:.5">−</div><div><div style="font-family:var(--font-mono);font-weight:700;font-size:18px">'+r0(tot.k)+'</div><div style="font-size:10px;color:var(--text-muted,#9aa0a6)">ALIMENTOS</div></div><div style="opacity:.5">=</div><div><div style="font-family:var(--font-mono);font-weight:800;font-size:22px;color:'+(T.kcal-tot.k<0?'#E05B5B':COL.k)+'">'+r0(T.kcal-tot.k)+'</div><div style="font-size:10px;color:var(--text-muted,#9aa0a6)">RESTANTES</div></div></div>'+
    '<div style="display:flex;height:6px;border-radius:6px;overflow:hidden;margin:12px 0 4px;background:var(--surface,#14171B)"><div style="width:'+(kcalP/ks*100)+'%;background:'+COL.p+'"></div><div style="width:'+(kcalC/ks*100)+'%;background:'+COL.c+'"></div><div style="width:'+(kcalF/ks*100)+'%;background:'+COL.f+'"></div></div>'+
@@ -4856,14 +4878,16 @@ document.head.appendChild(css);
    h += '<button class="week-btn" data-add="'+mi+'" style="width:100%;margin-top:6px;color:var(--accent,#E0C23D);font-weight:700">+ AGREGAR ALIMENTO</button>';
    if(meal.items && meal.items.length) h += '<details style="margin-top:6px"><summary style="font-size:11.5px;color:var(--text-muted,#9aa0a6);cursor:pointer">Sugerido por tu coach</summary>'+meal.items.map(function(x){ return '<div class="ex-tip">· '+esc(x)+'</div>'; }).join('')+'</details>';
   });
+  h += '</div><div data-nsec="agua"><div style="margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--surface-2,#1c1f24);font-size:12.5px;display:flex;justify-content:space-between;gap:8px"><span>Restantes <b style="font-family:var(--font-mono);color:'+(T.kcal-tot.k<0?'#E05B5B':COL.k)+'">'+r0(T.kcal-tot.k)+' kcal</b></span><span style="color:var(--text-muted,#9aa0a6)">Proteína faltan '+r0(Math.max(0,T.proteinG-tot.p))+' g</span></div>';
   var ml = aguaLog[date] || 0, apct = Math.min(100, ml/AGUA_META*100), okAg = ml>=AGUA_META;
   h += '<div style="margin-top:20px;padding:12px;background:var(--surface-2,#1c1f24);border-radius:12px"><div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-size:17px;font-weight:800;color:#7FD1FF">💧 AGUA</div><div style="font-family:var(--font-mono);font-weight:800;font-size:15px;color:'+(okAg?'#4CAF7D':'var(--text,#e8eaed)')+'">'+fmt(ml/1000)+' / '+fmt(AGUA_META/1000)+' L</div></div>'+
    '<div style="height:10px;border-radius:8px;background:var(--surface,#14171B);overflow:hidden;margin:8px 0 4px"><div style="height:100%;width:'+apct+'%;background:'+(okAg?'#4CAF7D':'#7FD1FF')+'"></div></div>'+
    '<div style="font-size:11.5px;color:var(--text-muted,#9aa0a6);margin-bottom:8px">'+(okAg?'Meta cumplida ✓ · '+r0(ml/AGUA_META*100)+'%':'Faltan '+fmt((AGUA_META-ml)/1000)+' L · '+r0(ml/AGUA_META*100)+'% de tu meta')+'</div>'+
    '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="week-btn" data-ag="250">+250 ml</button><button class="week-btn" data-ag="500">+500 ml</button><button class="week-btn" data-ag="750">+750 ml</button><button class="week-btn" data-ag="1000">+1 L</button><button class="week-btn" data-ag="-250" style="color:#E05B5B">−250</button></div>'+
    '<div style="display:flex;gap:6px;margin-top:8px"><input id="agCustom" inputmode="numeric" placeholder="Otra cantidad (ml)" style="flex:1;min-width:0;box-sizing:border-box;background:var(--surface,#14171B);color:var(--text,#e8eaed);border:1px solid var(--border,#2a2f36);border-radius:10px;padding:9px;font-size:14px"><button class="week-btn" id="agCustomBtn">Agregar</button></div></div>';
-  h += actividadHtml(date);
+  h += actividadHtml(date) + '</div>';
   card.innerHTML = h;
+  aplicarTab();
   card.querySelector('#rgPrev').onclick = function(){ setDate(addDays(date,-1)); };
   if(!esHoy) card.querySelector('#rgNext').onclick = function(){ setDate(addDays(date,1)); };
   Array.prototype.forEach.call(card.querySelectorAll('[data-add]'), function(b){ b.onclick = function(){ abrirHoja(date, +b.dataset.add, null); }; });
@@ -4881,12 +4905,13 @@ document.head.appendChild(css);
  function renderHistorial(){
   var el = document.getElementById('mealHistoryCard'); if(!el) return;
   var dias = Object.keys(foodLog).filter(function(d){ return (foodLog[d]||[]).length; }).sort().reverse().slice(0,14);
-  if(!dias.length){ el.innerHTML = ''; return; }
+  if(!dias.length){ el.innerHTML = ''; aplicarTab(); return; }
   el.innerHTML = '<summary class="section-label" style="margin:0 0 4px">Historial de macros</summary><div style="margin-top:12px">'+dias.map(function(d){
    var t = sumar(foodLog[d]), w = ventanaDe(d), meta = (w.macros||{}).kcal||0, pct = meta? r0(t.k/meta*100) : 0;
    var color = (pct>=90 && pct<=105) ? '#4CAF7D' : (pct>=75 && pct<=115 ? '#E0C23D' : '#E05B5B');
    return '<div class="param-row"><span class="param-label">'+d+'</span><span class="param-value" style="font-family:var(--font-mono);font-weight:700;color:'+color+'">'+r0(t.k)+' kcal ('+pct+'%) · P '+r0(t.p)+' · C '+r0(t.c)+' · G '+r0(t.f)+'</span></div>';
   }).join('')+'</div>';
+  aplicarTab();
  }
  /* ── Datos para listas ── */
  function usoAlimentos(){
@@ -5150,6 +5175,7 @@ document.head.appendChild(css);
   el.innerHTML = h;
   el.querySelector('#swPrev').onclick = function(){ semOff--; renderSemana(); };
   if(semOff<0) el.querySelector('#swNext').onclick = function(){ semOff++; renderSemana(); };
+  aplicarTab();
  }
 
  /* ── Actividad: cardio y entrenamiento ── */
