@@ -1130,6 +1130,7 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
         <label><span class="lb">Nombre completo</span><input class="in" id="wNombre" placeholder="Ej. Camila Rojas"></label>
         <label><span class="lb">Categoría</span><input class="in" id="wCat" placeholder="Ej. Wellness"></label>
         <label><span class="lb">Federación</span><select class="in" id="wFed"><option>NPC</option><option>IFBB</option><option selected>Sin federación</option></select></label>
+        <label><span class="lb">Nutrición</span><select class="in" id="wNutModo"><option value="menu">Menú armado por el coach (pestaña Nutrición)</option><option value="registro">Registro manual: el atleta anota sus alimentos contra tus macros</option></select></label>
         <label><span class="lb">Zona horaria</span><select class="in" id="wTz"><option value="America/Santiago">Chile · Santiago</option>
         <option value="Pacific/Easter">Chile · Isla de Pascua</option>
         <option value="America/Argentina/Buenos_Aires">Argentina</option>
@@ -3099,12 +3100,14 @@ function crear(){
   nuevo.nut = {agua:"",sal:"",libre:"",vig:"",bloques:[{n:"Pauta inicial",kcal:prop.kcal,
    p:prop.protG,c:prop.carbG,g:prop.grasaG,comidas:[{n:"Comida 1",items:[""]}]}]};
  }
+ nuevo.nutModo = (document.getElementById('wNutModo')||{}).value==='registro' ? 'registro' : 'menu';
  ATLETAS.push(nuevo);
  window._asisAplicada = null;
  $("#modal").classList.remove("on");
  ["wNombre","wCat"].forEach(id=>$("#"+id).value="");
+ if(document.getElementById("wNutModo")) document.getElementById("wNutModo").value="menu";
  cargar(nuevo);
- toast(base? `${n} creado desde la base ${PLANTILLAS[plantillaSel].t}` : `${n} creado en blanco`);
+ toast((base? `${n} creado desde la base ${PLANTILLAS[plantillaSel].t}` : `${n} creado en blanco`) + (nuevo.nutModo==="registro" ? " · nutrición en registro manual: define sus metas en la pestaña Nutrición" : ""));
 }
 
 /* ═══════════ EXPORTAR ═══════════ */
@@ -3999,7 +4002,8 @@ async function fbGuardarNutricion(a){
    {l:"Fechas", v:_fechasTxt || "Sin fechas definidas todavía"}
   ];
   const planFinal = Object.assign({}, planActual, { mealWindows: bloques, nutritionInfo, supplementation, foodsCustom: (window.ppcAlimentosCustom ? window.ppcAlimentosCustom() : (planActual.foodsCustom||{})), actualizado: new Date().toISOString() });
-  if(a && a.nutModo==='registro'){ planFinal.mealWindows = planActual.mealWindows || planFinal.mealWindows; planFinal.nutritionInfo = planActual.nutritionInfo || planFinal.nutritionInfo; }
+  if(a && a.nutModo==='registro'){ const _d = window.ppcNutManualDefaults ? window.ppcNutManualDefaults(a) : null; planFinal.mealWindows = (planActual.mealWindows && planActual.mealWindows.length) ? planActual.mealWindows : (_d ? _d.mealWindows : planFinal.mealWindows); planFinal.nutritionInfo = planActual.nutritionInfo || planFinal.nutritionInfo; planFinal.nutModo = 'registro'; if(!planActual.metasRegistro && _d) planFinal.metasRegistro = _d.metasRegistro; } else { planFinal.nutModo = 'menu'; }
+  if(a) a._nmCambio = false;
   const hist = Array.isArray(planActual.historial) ? planActual.historial.slice() : [];
   // (fix: antes leia b.p/b.c/b.g, que no existen en el bloque - los macros
   // estan en b.macros.{proteinG,carbG,fatG} - siempre daba 0 kcal/0P/0C/0G
@@ -7412,18 +7416,27 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
  function valoresIniciales(plan){
   var out = {};
   VENT.forEach(function(v,i){
-   var mw = plan && (plan.mealWindows||[]).find(function(w){ return w.id===v.id; }), b = act.nut && act.nut.bloques && act.nut.bloques[i];
+   var mw = plan && (plan.mealWindows||[]).find(function(w){ return w.id===v.id; }), b = act.nut && act.nut.bloques && (act.nut.bloques[i] || act.nut.bloques[0]);
    if(mw && mw.macros) out[v.id] = {k:mw.macros.kcal, p:mw.macros.proteinG, c:mw.macros.carbG, g:mw.macros.fatG};
    else if(b) out[v.id] = {k:b.kcal, p:b.p, c:b.c, g:b.g};
    else out[v.id] = {k:0,p:0,c:0,g:0};
   });
   return out;
  }
+ function aguaDefecto(){ var p = pesoAct(); return p>0 ? Math.max(2000, Math.round(p*35/250)*250) : 3000; }
  function metas(plan){
-  var m = (plan && plan.metasRegistro) || {};
-  var comidas = m.comidas && m.comidas.length ? m.comidas : ((plan && plan.mealWindows && plan.mealWindows[0] && plan.mealWindows[0].meals.map(function(x){ return x.name; })) || (act.nut && act.nut.bloques && act.nut.bloques[0] && act.nut.bloques[0].comidas.map(function(c){ return c.n; })) || []);
-  return {agua:m.agua||4500, cardioMin:m.cardioMin||30, cardioMax:m.cardioMax||40, diasEntreno:m.diasEntreno||[1,2,4,5,6], comidas:comidas};
+  var m = (plan && plan.metasRegistro) || null;
+  var comidas = (m && m.comidas && m.comidas.length) ? m.comidas : ((plan && plan.mealWindows && plan.mealWindows[0] && plan.mealWindows[0].meals && plan.mealWindows[0].meals.length && plan.mealWindows[0].meals.map(function(x){ return x.name; })) || (act.nut && act.nut.bloques && act.nut.bloques[0] && act.nut.bloques[0].comidas && act.nut.bloques[0].comidas.length && act.nut.bloques[0].comidas.map(function(c){ return c.n; })) || ['Comida 1','Comida 2','Comida 3','Comida 4','Comida 5']);
+  return {agua:(m&&m.agua)||aguaDefecto(), cardioMin:m?(m.cardioMin||0):0, cardioMax:m?(m.cardioMax||0):0, diasEntreno:(m&&m.diasEntreno)||[1,2,3,4,5,6,0], comidas:comidas};
  }
+ window.ppcNutManualDefaults = function(a){
+  var prev = act; act = a;
+  try{
+   var v = valoresIniciales(null), m = metas(null), E = v.entreno;
+   var mw = [{id:'entreno', label:'Metas diarias', accent:'#5B8DEF', macros:{kcal:r0(E.k||0), proteinG:r0(E.p||0), carbG:r0(E.c||0), fatG:r0(E.g||0)}, meals:m.comidas.map(function(n){ return {name:n, sub:null, items:[]}; })}];
+   return {mealWindows:mw, metasRegistro:{agua:m.agua, cardioMin:m.cardioMin, cardioMax:m.cardioMax, diasEntreno:m.diasEntreno, comidas:m.comidas}};
+  } finally { act = prev; }
+ };
  function bloqueHtml(v, val){
   return '<div class="bloque" style="border-left:4px solid '+v.color+'"><div class="st" style="margin-bottom:8px">'+v.t+'</div>'+
    '<div class="campos"><label><span class="lb">Calorías objetivo</span><input class="in mono" id="nmK_'+v.id+'" type="number" value="'+(val.k||'')+'"></label>'+
@@ -7435,10 +7448,27 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
    '<button class="add g" data-nmcalc="'+v.id+'">Calcular proteína, grasa y carbos desde las calorías</button>'+
    '<div style="margin-top:6px" class="hintx">Atajo desde mantenimiento: '+[-10,-5,0,5,10].map(function(x){ return '<button class="add" data-nmadj="'+v.id+'|'+x+'" style="display:inline-block;width:auto;padding:5px 12px;margin:3px">'+(x>0?'+':'')+x+'%</button>'; }).join('')+'</div></div>';
  }
+ function barraModo(p3){
+  var el = document.getElementById('nutModoBar');
+  if(!el){ el = document.createElement('div'); el.id = 'nutModoBar'; el.className = 'sec'; p3.insertBefore(el, p3.firstChild); }
+  var reg = esManual(act);
+  el.innerHTML = '<div class="st">Modo de nutrición <span class="aux">cómo registra su alimentación '+esc(act.n)+'</span></div>'+
+   '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="add '+(reg?'':'g')+'" data-nmmodo="menu" style="flex:1;min-width:200px;'+(reg?'':'outline:2px solid #E8C15C')+'">📋 Menú del coach<br><span style="font-size:11px;opacity:.75;font-weight:400">Tú armas la dieta comida por comida en esta pestaña</span></button>'+
+   '<button class="add '+(reg?'g':'')+'" data-nmmodo="registro" style="flex:1;min-width:200px;'+(reg?'outline:2px solid #E8C15C':'')+'">✍️ Registro manual (macros)<br><span style="font-size:11px;opacity:.75;font-weight:400">Tú fijas calorías y macros; el atleta registra lo que come</span></button></div>'+
+   '<div class="hintx" style="margin-top:6px">'+(act._nmCambio?'<b style="color:#E0A03D">Cambio sin guardar:</b> se aplica en la app del atleta cuando guardes '+(reg?'los objetivos':'el menú')+'. ':'')+'Modo actual: <b>'+(reg?'registro manual':'menú del coach')+'</b>. La app del atleta debe incluir el módulo de registro (archivo ppc-registro.js).</div>';
+ }
  function render(){
   var p3 = document.getElementById('p3'); if(!p3) return;
-  var manual = esManual(act), ocultar = [p3.querySelector(':scope > .sec'), p3.querySelector('.gensec'), document.getElementById('bloques'), document.getElementById('addBloque'), p3.querySelector(':scope > .guardar')];
+  barraModo(p3);
+  var manual = esManual(act), ocultar = [p3.querySelector(':scope > .sec:not(#nutModoBar)'), p3.querySelector('.gensec'), document.getElementById('bloques'), document.getElementById('addBloque'), p3.querySelector(':scope > .guardar')];
   ocultar.forEach(function(e){ if(e && e.id!=='nutManual') e.style.display = manual ? 'none' : ''; });
+  if(!act._nmCloud && FB && FB.on && FB_ID[act.id]){
+   act._nmCloud = true; var a0 = act;
+   FB.db.collection('athletes').doc(FB_ID[a0.id]).get().then(function(sn){
+    var pl = sn.exists ? (sn.data().plan||{}) : {};
+    if(pl.nutModo && !a0._nmCambio && a0.nutModo!==pl.nutModo){ a0.nutModo = pl.nutModo; if(act===a0) render(); }
+   }).catch(function(){ a0._nmCloud = false; });
+  }
   var ex = document.getElementById('nutManual'); if(ex) ex.remove();
   if(!manual) return;
   var box = document.createElement('div'); box.id = 'nutManual'; box.className = 'sec';
@@ -7451,7 +7481,7 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
     '<div class="hintx" style="margin-bottom:10px">No hay menú: '+esc(act.n)+' agrega sus alimentos en la app y se compara contra estas metas. '+(peso?'Peso actual: <b>'+peso+' kg</b>':'')+(ref?' · Mantenimiento estimado (actividad intensa): <b>'+ref+' kcal</b>':'')+'</div>'+
     VENT.map(function(v){ return bloqueHtml(v, vals[v.id]); }).join('')+
     '<div class="bloque"><div class="st" style="margin-bottom:8px">Días de entreno (usan la meta de entreno)</div><div id="nmDias" style="display:flex;gap:8px;flex-wrap:wrap">'+DIAS.map(function(d,i){ var wd = (i+1)%7; return '<label style="display:flex;align-items:center;gap:4px"><input type="checkbox" data-nmd="'+wd+'" '+(m.diasEntreno.indexOf(wd)>=0?'checked':'')+'> '+d+'</label>'; }).join('')+'</div></div>'+
-    '<div class="bloque"><div class="st" style="margin-bottom:8px">Metas diarias</div><div class="campos"><label><span class="lb">Agua (ml)</span><input class="in mono" id="nmAgua" type="number" value="'+m.agua+'"></label><label><span class="lb">Cardio mínimo (min)</span><input class="in mono" id="nmCMin" type="number" value="'+m.cardioMin+'"></label><label><span class="lb">Cardio máximo (min)</span><input class="in mono" id="nmCMax" type="number" value="'+m.cardioMax+'"></label></div>'+
+    '<div class="bloque"><div class="st" style="margin-bottom:8px">Metas diarias</div><div class="campos"><label><span class="lb">Agua (ml)</span><input class="in mono" id="nmAgua" type="number" value="'+m.agua+'"></label><label><span class="lb">Cardio mínimo (min · 0 = sin meta)</span><input class="in mono" id="nmCMin" type="number" value="'+m.cardioMin+'"></label><label><span class="lb">Cardio máximo (min)</span><input class="in mono" id="nmCMax" type="number" value="'+m.cardioMax+'"></label></div>'+
     '<label><span class="lb">Comidas del día (una por línea)</span><textarea class="in" id="nmComidas" rows="6" style="width:100%">'+esc(m.comidas.join('\n'))+'</textarea></label></div>'+
     '<div class="guardar"><button class="sv" id="nmGuardar">Guardar objetivos en la nube</button><span class="ok">Guardado ✓</span><span class="hintx">La app lo toma al abrirse</span></div>'+
     '<div class="st" style="margin-top:18px">Seguimiento de los últimos 7 días <button class="add" id="nmSeg" style="display:inline-block;width:auto;padding:5px 12px;margin-left:8px">Actualizar</button></div><div id="nmSegTabla"><div class="v7vacio">Pulsa «Actualizar» para leer los registros de '+esc(act.n)+'</div></div>';
@@ -7474,7 +7504,7 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
  function leer(){
   var o = {w:{}}; VENT.forEach(function(v){ var k = num(document.getElementById('nmK_'+v.id).value), p = r0(num(document.getElementById('nmP_'+v.id).value)), c = r0(num(document.getElementById('nmC_'+v.id).value)), g = r0(num(document.getElementById('nmG_'+v.id).value)); o.w[v.id] = {k: r0(k || (p*4+c*4+g*9)), p:p, c:c, g:g}; });
   o.diasEntreno = [].slice.call(document.querySelectorAll('[data-nmd]')).filter(function(x){ return x.checked; }).map(function(x){ return +x.dataset.nmd; });
-  o.agua = r0(num(document.getElementById('nmAgua').value)) || 4500; o.cardioMin = r0(num(document.getElementById('nmCMin').value)) || 30; o.cardioMax = r0(num(document.getElementById('nmCMax').value)) || 40;
+  o.agua = r0(num(document.getElementById('nmAgua').value)) || 3000; o.cardioMin = r0(num(document.getElementById('nmCMin').value)); o.cardioMax = r0(num(document.getElementById('nmCMax').value)); if(o.cardioMax<o.cardioMin) o.cardioMax = o.cardioMin;
   o.comidas = document.getElementById('nmComidas').value.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
   return o;
  }
@@ -7483,13 +7513,15 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
   if(!FB.on || !FB_ID[act.id]){ toast('Sin conexión a Firebase'); return; }
   var o = leer();
   if(!o.comidas.length){ toast('Define al menos una comida'); return; }
-  if(!o.w.entreno.k || !o.w.descanso.k){ toast('Completa las calorías o los macros de ambas metas'); return; }
+  var todos = o.diasEntreno.length>=7, sinEntreno = o.diasEntreno.length===0;
+  if(!o.w.entreno.k && !sinEntreno){ toast('Completa las calorías o los macros de la meta de entreno'); return; }
+  if(!todos && !o.w.descanso.k){ toast('Completa las calorías o los macros de la meta de recuperación'); return; }
   btn.disabled = true; var txt = btn.textContent; btn.textContent = 'Guardando...';
   try{
    var ref = FB.db.collection('athletes').doc(FB_ID[act.id]), snap = await ref.get(), plan = (snap.exists && snap.data().plan) || {};
-   var mealWindows = VENT.map(function(v, i){ var w = o.w[v.id]; return {id:v.id, label:v.t+' · '+(v.id==='entreno' ? o.diasEntreno.map(function(d){ return DIAS[(d+6)%7]; }).join(', ') : DIAS.filter(function(_,ix){ return o.diasEntreno.indexOf((ix+1)%7)<0; }).join(', ')), accent:v.color, macros:{kcal:w.k, proteinG:w.p, carbG:w.c, fatG:w.g}, meals:o.comidas.map(function(n){ return {name:n, sub:null, items:[]}; })}; });
-   var E = o.w.entreno, D = o.w.descanso;
-   var info = [{l:'Modo', v:'Registro manual · agrega lo que comes y compáralo con tu meta'},{l:'Entreno', v:E.k+' kcal · '+E.p+'P / '+E.c+'C / '+E.g+'G'},{l:'Recuperación', v:D.k+' kcal · '+D.p+'P / '+D.c+'C / '+D.g+'G'},{l:'Agua', v:(o.agua/1000).toString().replace('.',',')+' L al día'},{l:'Cardio', v:o.cardioMin+' a '+o.cardioMax+' min al día'}];
+   var mealWindows = VENT.filter(function(v){ return v.id==='entreno' ? o.diasEntreno.length>0 : o.diasEntreno.length<7; }).map(function(v, i){ var w = o.w[v.id]; return {id:v.id, label:(o.diasEntreno.length>=7 ? 'Metas diarias' : v.t+' · '+(v.id==='entreno' ? o.diasEntreno.map(function(d){ return DIAS[(d+6)%7]; }).join(', ') : DIAS.filter(function(_,ix){ return o.diasEntreno.indexOf((ix+1)%7)<0; }).join(', '))), accent:v.color, macros:{kcal:w.k, proteinG:w.p, carbG:w.c, fatG:w.g}, meals:o.comidas.map(function(n){ return {name:n, sub:null, items:[]}; })}; });
+   var E = o.diasEntreno.length ? o.w.entreno : o.w.descanso, D = o.diasEntreno.length>=7 ? E : o.w.descanso;
+   var info = [{l:'Modo', v:'Registro manual · agrega lo que comes y compáralo con tu meta'},].concat(o.diasEntreno.length>=7 ? [{l:'Meta diaria', v:E.k+' kcal · '+E.p+'P / '+E.c+'C / '+E.g+'G'}] : [{l:'Entreno', v:E.k+' kcal · '+E.p+'P / '+E.c+'C / '+E.g+'G'},{l:'Recuperación', v:D.k+' kcal · '+D.p+'P / '+D.c+'C / '+D.g+'G'}]).concat([{l:'Agua', v:(o.agua/1000).toString().replace('.',',')+' L al día'}]).concat(o.cardioMin>0 ? [{l:'Cardio', v:o.cardioMin+' a '+o.cardioMax+' min al día'}] : []);
    var hist = Array.isArray(plan.historial) ? plan.historial.slice() : [];
    hist.push({fecha:new Date().toISOString(), tipo:'nutricion', resumen:'Objetivos manuales · entreno '+E.k+' kcal ('+E.p+'P/'+E.c+'C/'+E.g+'G) · recuperación '+D.k+' kcal ('+D.p+'P/'+D.c+'C/'+D.g+'G) · agua '+o.agua+' ml', snapshotMealWindows:mealWindows});
    var antes = (plan.mealWindows||[]).map(function(w){ return (w.macros||{}).kcal; }).join('/');
@@ -7498,6 +7530,7 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
    fbAuditoria(FB_ID[act.id], 'nutricionManual', [{campo:'metas (kcal entreno/recuperación)', valorAnterior:antes||'—', valorNuevo:E.k+'/'+D.k}]);
    act.nut = act.nut || {agua:'',sal:'',libre:'',vig:'',bloques:[]};
    act.nut.bloques = [{n:mealWindows[0].label, kcal:E.k, p:E.p, c:E.c, g:E.g, comidas:o.comidas.map(function(n){ return {n:n, items:[]}; })},{n:mealWindows[1].label, kcal:D.k, p:D.p, c:D.c, g:D.g, comidas:o.comidas.map(function(n){ return {n:n, items:[]}; })}];
+   act.nutModo = 'registro'; act._nmCambio = false; barraModo(document.getElementById('p3'));
    okAviso(btn); toast('Objetivos guardados en la nube · '+act.n+' los verá al abrir su app');
   }catch(e){ toast('No se pudo guardar: '+e.message); }
   btn.disabled = false; btn.textContent = txt;
@@ -7524,6 +7557,8 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
   var t = e.target;
   if(t.closest && t.closest('.tab[data-p="p3"]')) setTimeout(render, 30);
   else if(t.closest && t.closest('#lista')) setTimeout(function(){ var pn = document.getElementById('p3'); if(pn && pn.classList.contains('on')) render(); }, 400);
+  var mb = t.closest && t.closest('[data-nmmodo]');
+  if(mb){ var nm = mb.dataset.nmmodo; if((esManual(act)?'registro':'menu')!==nm){ act.nutModo = nm; act._nmCambio = true; render(); } return; }
   var c = t.closest && t.closest('[data-nmcalc]');
   if(c){ var id = c.dataset.nmcalc, k = num(document.getElementById('nmK_'+id).value), peso = pesoAct() || 100; if(!k){ toast('Define primero las calorías objetivo'); return; }
    var p = r0(peso*num(document.getElementById('nmGP_'+id).value)), g = r0(peso*num(document.getElementById('nmGG_'+id).value)), ch = Math.max(0, r0((k-p*4-g*9)/4));
