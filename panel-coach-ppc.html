@@ -771,7 +771,7 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
         <option value="Pacific/Auckland">Nueva Zelanda</option></select></label>
         <label><span class="lb">Estatura</span><input class="in" id="fEst" placeholder="1,50 m"></label>
         <label><span class="lb">Edad</span><input class="in mono" id="fEdad" type="number" placeholder="34"></label>
-        <label><span class="lb">Sexo</span><select class="in" id="fSexo"><option value="m">Hombre</option><option value="f">Mujer</option></select></label>
+        <label><span class="lb">Sexo</span><select class="in" id="fSexo"><option value="">— definir —</option><option value="m">Hombre</option><option value="f">Mujer</option></select></label>
         <label><span class="lb">Nivel</span><select class="in" id="fNivel"><option value="principiante">Principiante</option><option value="intermedio">Intermedio</option><option value="avanzado">Avanzado</option></select></label>
         <label><span class="lb">Objetivo de dieta</span><select class="in" id="fObjetivo">
          <option value="">Automático (según categoría)</option>
@@ -879,9 +879,10 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
         </div>
       <div class="campos">
         <label><span class="lb">Peso del atleta kg</span><input class="in mono" id="gnPeso" type="number" step="0.1"></label>
+        <label><span class="lb">% grasa (opcional · usa Katch-McArdle)</span><input class="in mono" id="gnGrasa" type="number" step="0.1" placeholder="Ej. 11"></label>
         <label><span class="lb">Calorías de mantenimiento</span><input class="in mono" id="gnTdee" type="number" placeholder="2400" readonly style="opacity:.75"></label>
         <label><span class="lb">Edad</span><input class="in mono" id="gnEdad" type="number"></label>
-        <label><span class="lb">Sexo</span><select class="in" id="gnSexo"><option value="m">Hombre</option><option value="f">Mujer</option></select></label>
+        <label><span class="lb">Sexo</span><select class="in" id="gnSexo"><option value="">— definir —</option><option value="m">Hombre</option><option value="f">Mujer</option></select></label>
         <label><span class="lb">Altura cm</span><input class="in mono" id="gnAltura" type="number"></label>
         <label><span class="lb">Actividad</span><select class="in" id="gnActividad">
          <option value="sed">Sedentario</option><option value="ligero">Ligero</option>
@@ -1173,7 +1174,7 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
         <div class="wsect">Datos para la propuesta <span class="waux">opcional · si los completas te sugiero volumen, macros y reparto</span></div>
         <div class="campos">
           <label><span class="lb">Edad</span><input class="in mono" id="asEdad" type="number" placeholder="34"></label>
-          <label><span class="lb">Sexo</span><select class="in" id="asSexo"><option value="m">Hombre</option><option value="f">Mujer</option></select></label>
+          <label><span class="lb">Sexo</span><select class="in" id="asSexo"><option value="">— definir —</option><option value="m">Hombre</option><option value="f">Mujer</option></select></label>
           <label><span class="lb">Peso kg</span><input class="in mono" id="asPeso" type="number" step="0.1" placeholder="70"></label>
           <label><span class="lb">Estatura cm</span><input class="in mono" id="asAltura" type="number" placeholder="170"></label>
           <label><span class="lb">Nivel</span><select class="in" id="asNivel">
@@ -2061,8 +2062,50 @@ function pintarLista(filtro=""){
 }
 
 /* ═══════════ CARGAR FICHA ═══════════ */
+
+/* Peso y % de grasa vigentes de un atleta: lo más reciente entre sus chequeos (hist,
+   sincronizado con la nube) y su pesaje diario. Nunca el peso de inscripción si hay algo más nuevo. */
+function ppcUltimoPeso(a){
+ a = a || act; if(!a) return null;
+ let best = null, grasa = null, gf = "";
+ (a.hist||[]).forEach(h=>{
+  const w = parseFloat(String(h[1]).replace(",",".")); if(!(w>0) || !h[0]) return;
+  if(!best || h[0]>best.fecha) best = {fecha:h[0], kg:w};
+  const g = parseFloat(String(h[2]==null?"":h[2]).replace(",","."));
+  if(g>0 && h[0]>=gf){ gf = h[0]; grasa = g; }
+ });
+ const pl = a.__pesoLog || {};
+ Object.keys(pl).forEach(f=>{ const w = +pl[f]; if(w>0 && (!best || f>best.fecha)) best = {fecha:f, kg:w}; });
+ if(!best) return null;
+ best.grasa = grasa; return best;
+}
+function ppcRellenarCalc(a){
+ const set = (id,v)=>{ const e=document.getElementById(id); if(e) e.value = (v==null?"":v); };
+ const u = ppcUltimoPeso(a);
+ const alt = parseFloat(String(a.est||"").replace(/[^0-9,.]/g,"").replace(",","."));
+ const altCm = alt ? (alt<3 ? Math.round(alt*100) : alt) : "";
+ set("asPeso", u ? u.kg : ""); set("gnPeso", u ? u.kg : "");
+ set("asEdad", a.edad||""); set("gnEdad", a.edad||"");
+ set("asSexo", a.sexo||""); set("gnSexo", a.sexo||"");
+ set("asAltura", altCm); set("gnAltura", altCm);
+ set("gnGrasa", u && u.grasa ? u.grasa : "");
+ try{ recalcularTdeeNutricion(); }catch(e){}
+}
+/* Campos del asistente y del generador de dieta: se restauran a su valor de fábrica
+   cada vez que se abre una ficha, para que nunca arrastren lo digitado en el atleta anterior */
+let _ppcGenDef = null;
+function ppcResetGen(a){
+ const els = [].slice.call(document.querySelectorAll("input[id], select[id], textarea[id]")).filter(e=>/^(as|gn)[A-Z]/.test(e.id));
+ if(!_ppcGenDef){ _ppcGenDef = {}; els.forEach(e=>{ _ppcGenDef[e.id] = e.type==="checkbox" ? e.checked : e.value; }); }
+ els.forEach(e=>{ if(!(e.id in _ppcGenDef)) return; if(e.type==="checkbox") e.checked = _ppcGenDef[e.id]; else e.value = _ppcGenDef[e.id]; });
+ const set = (id,v)=>{ const e=document.getElementById(id); if(e && v!==undefined && v!==null && v!=="") e.value=v; };
+ set("asEdad", a.edad); set("asSexo", a.sexo); set("asNivel", a.nivel);
+ const alt = parseFloat(String(a.est||"").replace(/[^0-9,.]/g,"").replace(",","."));
+ if(alt){ set("asAltura", alt<3 ? Math.round(alt*100) : alt); }
+}
 function cargar(a){
  act=a; pintarLista($("#buscar").value);
+ try{ ppcResetGen(a); ppcRellenarCalc(a); }catch(e){}
  /* Limpiar propuestas pendientes del atleta anterior para que nunca se crucen */
  window._asis = null; window._asisAplicada = null;
  window._genDieta = null; window._genDietaOpciones = null;
@@ -2080,7 +2123,7 @@ function cargar(a){
  $("#fTipoPlan").value = a.tipoPlan || "basico";
  try{ if(typeof ppcExtrasFicha==="function") ppcExtrasFicha(a); }catch(e){}
  $("#fEdad").value = a.edad || "";
- $("#fSexo").value = a.sexo || "m";
+ $("#fSexo").value = a.sexo || "";
  $("#fNivel").value = a.nivel || "intermedio";
  $("#fObjetivo").value = a.objetivoManual || "";
  $("#fSupRevision").value = a.supRevision || "";
@@ -2120,6 +2163,14 @@ function cargar(a){
    if(p.accessExpiresAt && p.accessExpiresAt!==a.vence){ a.vence=p.accessExpiresAt; cambio=true; }
    }
    const c = snap.data().contacto || {};
+   /* Chequeos reales de la nube (peso, % grasa) -> a.hist; la ficha deja de depender del peso de inscripción */
+   try{
+    const _pl = snap.data().progressLog || [], _fechas = new Set((a.hist||[]).map(h=>h[0]));
+    a.hist = a.hist || [];
+    _pl.forEach(e=>{ if(e && /^\d{4}-\d{2}-\d{2}$/.test(e.date||"") && typeof e.weight==="number" && !_fechas.has(e.date)){ a.hist.push([e.date, e.weight, e.bodyFatPct!=null?e.bodyFatPct:"", e.skinfolds?"sí":"", e.notes||""]); _fechas.add(e.date); } });
+    a.hist.sort((x,y)=>String(y[0]).localeCompare(String(x[0])));
+    a.__pesoLog = snap.data().pesoLog || {};
+   }catch(e){}
    if(c.estado && c.estado!==a.estado){ a.estado=c.estado; cambio=true; }
    if(c.estatura && c.estatura!==a.est){ a.est=c.estatura; cambio=true; }
    // c.whatsapp nunca se leia de vuelta desde la nube aca - fbGuardarPlan
@@ -2215,6 +2266,7 @@ function cargar(a){
     pintarLista($("#buscar").value);
     toast("Datos actualizados desde la nube");
    }
+   try{ pintarHist(); ppcRellenarCalc(a); }catch(e){}
    if(_localMasNuevo) toast("Mesociclo nuevo de "+a.n+" (inicio "+a.ini_f+") aún no está en la nube · pulsa Guardar en la nube");
    _btnsGuardar.forEach(b=>{ b.disabled = false; b.textContent = b.dataset.txtOriginal || "Guardar cambios"; });
   }).catch(()=>{ _btnsGuardar.forEach(b=>{
@@ -2462,7 +2514,7 @@ async function renovarMesociclo(){
  const _semSug = _mz ? _mz.sem : (+act.sem || 4);
  const diasActuales = (act.dias||[]).length || 4;
  const edadAct = document.getElementById("asEdad")?.value || act.edad || "";
- const sexoAct = act.sexo || document.getElementById("asSexo")?.value || "m";
+ const sexoAct = act.sexo || document.getElementById("asSexo")?.value || "m"; /* solo para sugerencias de renovación */
  const nivelAct = document.getElementById("asNivel")?.value || "intermedio";
  const objAct = document.getElementById("asObjetivo")?.value || "hipertrofia";
  document.getElementById("renovarModal")?.remove();
@@ -2558,7 +2610,7 @@ async function renovarMesociclo(){
   const nuevoChk = new Date(Date.now()+semDias*86400000).toISOString().slice(0,10);
   act.ini_f = hoy; act.chk = nuevoChk;
   const disciplina = document.getElementById("renovarDisciplina")?.value || "fisicoculturismo";
-  const r = ASIS.generar({peso:(act.hist&&act.hist[0]&&+String(act.hist[0][1]).replace(",",".")) || 75,
+  const r = ASIS.generar({peso:(ppcUltimoPeso(act)||{}).kg || 75,
    altura:+String(act.est||170).replace(/[^0-9.]/g,"")||170, edad, sexo, act:"moderado", nivel, objetivo, dias:filasDia.length});
   const capEl = document.querySelector("#kMax"); if(capEl){ capEl.value = r.cap; if(typeof recalcular==="function") recalcular(); }
   const poolDisciplina = disciplina==="crossfit" ? EJERCICIOS_CROSSFIT : disciplina==="funcional" ? EJERCICIOS_FUNCIONAL : null;
@@ -2627,7 +2679,7 @@ document.addEventListener("click", e=>{
  setTimeout(()=>{
   if(act.edad) document.getElementById("asEdad").value = act.edad;
   if(act.est) document.getElementById("asAltura").value = String(act.est).replace(/[^0-9.,]/g,"").replace(",",".");
-  const hUlt = (act.hist||[])[0]; if(hUlt) document.getElementById("asPeso").value = hUlt[1];
+  try{ ppcRellenarCalc(act); }catch(e){}
   toast("Calculadora abierta para "+act.n);
   const mt=document.getElementById("modalTitulo"), ms=document.getElementById("modalSubtitulo");
   if(mt) mt.textContent = "Calculadora de "+act.n;
@@ -2844,7 +2896,8 @@ function gnActualizarTdee(){
  if(!peso) return;
  const altura = _numChile($("#asAltura").value) || 170;
  const edad = _numChile($("#asEdad").value) || 30;
- const sexo = $("#asSexo").value || "m";
+ const sexo = $("#asSexo").value;
+ if(!sexo) return;
  const actv = $("#asAct").value || "moderado";
  const g = ASIS.gasto(peso, altura, edad, sexo, actv);
  $("#gnTdee").value = g.tdee;
@@ -3518,10 +3571,15 @@ const ASIS = {
  },
 
  /* Gasto energético · Mifflin-St Jeor */
- gasto(peso,altura,edad,sexo,act){
-  const bmr = 10*peso + 6.25*altura - 5*edad + (sexo==="m"?5:-161);
+ gasto(peso,altura,edad,sexo,act,bf){
   const f = {sed:1.2,ligero:1.375,moderado:1.55,intenso:1.725,muy:1.9}[act]||1.55;
-  return {bmr:Math.round(bmr), tdee:Math.round(bmr*f)};
+  /* Con % de grasa se usa Katch-McArdle (masa libre de grasa); sin él, Mifflin-St Jeor */
+  if(bf>=3 && bf<=50){
+   const mlg = peso*(1-bf/100), bmrK = 370 + 21.6*mlg;
+   return {bmr:Math.round(bmrK), tdee:Math.round(bmrK*f), metodo:"katch", mlg:Math.round(mlg*10)/10};
+  }
+  const bmr = 10*peso + 6.25*altura - 5*edad + (sexo==="m"?5:-161);
+  return {bmr:Math.round(bmr), tdee:Math.round(bmr*f), metodo:"mifflin"};
  },
 
  /* El RIR depende del objetivo pero también del nivel: la técnica debe sostener la intensidad */
@@ -3577,6 +3635,7 @@ function asisGenerar(){
   altura:+$("#asAltura").value||170, nivel:$("#asNivel").value, objetivo:$("#asObjetivo").value,
   dias:+$("#asDias").value, act:$("#asAct").value };
  if(!$("#asEdad").value||!$("#asPeso").value){ toast("Necesito al menos edad y peso"); return; }
+ if(!$("#asSexo").value){ toast("Define el sexo del atleta (en su ficha o aquí) antes de generar el plan"); return; }
  const r = ASIS.generar(d);
  $("#asRes").style.display="block";
  $("#asRes").innerHTML = `
@@ -3920,7 +3979,7 @@ async function fbGuardarPlan(a){
   nota: document.getElementById("fNota")?.value || a.nota,
   tipoPlan: document.getElementById("fTipoPlan")?.value || a.tipoPlan || "basico",
   edad: document.getElementById("fEdad")?.value || a.edad || "",
-  sexo: document.getElementById("fSexo")?.value || a.sexo || "m",
+  sexo: document.getElementById("fSexo")?.value || a.sexo || "",
   nivel: document.getElementById("fNivel")?.value || a.nivel || "intermedio",
   objetivoManual: document.getElementById("fObjetivo")?.value || "",
   supRevision: document.getElementById("fSupRevision")?.value || "",
@@ -4787,8 +4846,9 @@ document.addEventListener("click", e=>{
  if(e.target.id === "gnGenerar"){
   const peso = +$("#gnPeso").value, tdee = +$("#gnTdee").value;
   if(!peso || !tdee){ toast("Necesito el peso y las calorías de mantenimiento"); return; }
+  if(!$("#gnSexo").value){ toast("Define el sexo del atleta (en su ficha o aquí) antes de generar la dieta"); return; }
   const cfgBase = { peso, tdee, ajuste:+$("#gnAjuste").value, comidas:+$("#gnComidas").value,
-    protKg:+$("#gnProt").value, sexo: document.getElementById("asSexo")?.value || "m" };
+    protKg:+$("#gnProt").value, sexo: $("#gnSexo").value };
   const _excRaw = ($("#gnExcluir").value||"").split("|");
   cfgBase.excluir = _excRaw[0].split(",").filter(Boolean);
   cfgBase.dieta = _excRaw[1] || "";
@@ -4848,10 +4908,9 @@ document.addEventListener("click", e=>{
 document.addEventListener("click", e=>{
  const t = e.target.closest('.tab[data-p="p3"]');
  if(t && !$("#gnPeso").value){
-  const h = (act.hist||[])[0];
-  if(h) $("#gnPeso").value = String(h[1]).replace(",",".");
+  try{ ppcRellenarCalc(act); }catch(e){}
   $("#gnEdad").value = act.edad || "";
-  $("#gnSexo").value = act.sexo || "m";
+  $("#gnSexo").value = act.sexo || "";
   $("#gnAltura").value = String(act.est||"").replace(/[^0-9.]/g,"");
   recalcularTdeeNutricion();
  }
@@ -4860,11 +4919,12 @@ function recalcularTdeeNutricion(){
  const peso = +$("#gnPeso").value, edad = +$("#gnEdad").value, altura = +$("#gnAltura").value;
  const sexo = $("#gnSexo").value, actividad = $("#gnActividad").value;
  if(!peso || !edad || !altura) return;
- const g = ASIS.gasto(peso, altura, edad, sexo, actividad);
+ const g = ASIS.gasto(peso, altura, edad, sexo, actividad, +($("#gnGrasa")||{}).value || 0);
  $("#gnTdee").value = g.tdee;
+ $("#gnTdee").title = g.metodo==="katch" ? "Katch-McArdle · masa libre de grasa "+g.mlg+" kg" : "Mifflin-St Jeor";
 }
 document.addEventListener("input", e=>{
- if(["gnPeso","gnEdad","gnAltura"].includes(e.target.id)) recalcularTdeeNutricion();
+ if(["gnPeso","gnEdad","gnAltura","gnGrasa"].includes(e.target.id)) recalcularTdeeNutricion();
 });
 document.addEventListener("change", e=>{
  if(["gnSexo","gnActividad"].includes(e.target.id)) recalcularTdeeNutricion();
@@ -4877,9 +4937,8 @@ document.addEventListener("change", e=>{
    Opcionalmente reescala los gramos de los alimentos en la misma proporción. */
 
 function pesoActual(){
- const h = (act.hist||[])[0];
- if(h && h[1]) return parseFloat(String(h[1]).replace(",","."))||0;
- return 0;
+ const u = ppcUltimoPeso(act);
+ return u ? u.kg : 0;
 }
 
 function ajustarBloque(bloqueEl, opciones){
@@ -7411,8 +7470,40 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
  function r0(x){ return Math.round(x); }
  function num(v){ var n = parseFloat(String(v).replace(',','.')); return isFinite(n) ? n : 0; }
  function esc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+ /* ── Ajuste adaptativo: peso (tendencia) + ingesta real → gasto real y sugerencia ── */
+ function ppcAdaptivo(pesos, log, kcalMeta, ritmo, hoy){
+  function di(s){ return Math.round(Date.parse(s+'T12:00:00Z')/864e5); }
+  function ds(t){ return new Date(t*864e5).toISOString().slice(0,10); }
+  function kd(arr){ var k=0; (arr||[]).forEach(function(e){ k += e.t ? (e.t[0]||0) : (e.b ? (e.b[0]||0)*(e.g||0)/100 : 0); }); return k; }
+  var h = di(hoy), pts = [], out = {ritmo: ritmo||0};
+  Object.keys(pesos||{}).forEach(function(d){ var t = di(d), w = +pesos[d]; if(t>=h-27 && t<=h && w>0) pts.push({t:t, w:w}); });
+  pts.sort(function(a,b){ return a.t-b.t; });
+  out.nPesos = pts.length;
+  var span = pts.length ? pts[pts.length-1].t - pts[0].t : 0;
+  if(pts.length<5 || span<10){ out.estado = 'datos'; out.faltaPesos = Math.max(0, 5-pts.length); out.faltaDias = Math.max(0, 10-span); return out; }
+  var n = pts.length, sx=0, sy=0, sxx=0, sxy=0;
+  pts.forEach(function(p){ sx+=p.t; sy+=p.w; sxx+=p.t*p.t; sxy+=p.t*p.w; });
+  var den = n*sxx-sx*sx, slope = den ? (n*sxy-sx*sy)/den : 0;
+  out.kgSem = slope*7; out.span = span;
+  var v = 0, sum = 0, tot = 0;
+  for(var t=pts[0].t; t<=h-1; t++){ tot++; var f = ds(t), arr = (log||{})[f], k = kd(arr), m = kcalMeta(f); if(arr && arr.length && m && k>=0.5*m){ v++; sum += k; } }
+  out.diasValidos = v; out.diasVentana = tot;
+  if(v<7){ out.estado = 'registro'; out.faltaReg = 7-v; return out; }
+  out.ingesta = Math.round(sum/v);
+  out.tdee = Math.round(out.ingesta - slope*7700);
+  var ms = 0; for(var i=1;i<=7;i++) ms += kcalMeta(ds(h-i))||0;
+  out.metaProm = Math.round(ms/7);
+  out.deseado = Math.round(out.tdee + (ritmo||0)*1100);
+  var diff = out.deseado - out.metaProm;
+  out.diff = Math.round(diff);
+  out.sug = Math.abs(diff)<100 ? 0 : Math.max(-400, Math.min(400, Math.round(diff/50)*50));
+  out.conf = (n>=8 && span>=14 && v>=10 && v/tot>=0.7) ? 'alta' : 'media';
+  out.estado = 'ok';
+  return out;
+ }
+
  var VENT = [{id:'entreno', t:'Días de entreno', color:'#5B8DEF'},{id:'descanso', t:'Días de recuperación', color:'#4FD1A5'}];
- function pesoAct(){ var h = (act.hist||[])[0]; return h ? num(h[1]) : 0; }
+ function pesoAct(){ try{ var u = window.ppcUltimoPeso && ppcUltimoPeso(act); if(u) return u.kg; }catch(e){} var h = (act.hist||[])[0]; return h ? num(h[1]) : 0; }
  function valoresIniciales(plan){
   var out = {};
   VENT.forEach(function(v,i){
@@ -7423,18 +7514,21 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
   });
   return out;
  }
+ function bfNube(d){ var l = d && (d.progressLog||[]).filter(function(e){ return e && typeof e.bodyFatPct==='number'; }).sort(function(a,b){ return a.date<b.date?1:-1; })[0]; return l ? l.bodyFatPct : 0; }
+ function pesosNube(d){ var m = {}; ((d&&d.progressLog)||[]).forEach(function(e){ if(e && typeof e.weight==='number' && e.date) m[e.date] = e.weight; }); var pl = (d&&d.pesoLog)||{}; Object.keys(pl).forEach(function(k){ m[k] = pl[k]; }); return m; }
+ function pesoNube(d){ var m = pesosNube(d), k = Object.keys(m).sort(); return k.length ? m[k[k.length-1]] : 0; }
  function aguaDefecto(){ var p = pesoAct(); return p>0 ? Math.max(2000, Math.round(p*35/250)*250) : 3000; }
  function metas(plan){
   var m = (plan && plan.metasRegistro) || null;
   var comidas = (m && m.comidas && m.comidas.length) ? m.comidas : ((plan && plan.mealWindows && plan.mealWindows[0] && plan.mealWindows[0].meals && plan.mealWindows[0].meals.length && plan.mealWindows[0].meals.map(function(x){ return x.name; })) || (act.nut && act.nut.bloques && act.nut.bloques[0] && act.nut.bloques[0].comidas && act.nut.bloques[0].comidas.length && act.nut.bloques[0].comidas.map(function(c){ return c.n; })) || ['Comida 1','Comida 2','Comida 3','Comida 4','Comida 5']);
-  return {agua:(m&&m.agua)||aguaDefecto(), cardioMin:m?(m.cardioMin||0):0, cardioMax:m?(m.cardioMax||0):0, diasEntreno:(m&&m.diasEntreno)||[1,2,3,4,5,6,0], comidas:comidas};
+  return {ritmo:(m&&m.ritmoKg)||0, agua:(m&&m.agua)||aguaDefecto(), cardioMin:m?(m.cardioMin||0):0, cardioMax:m?(m.cardioMax||0):0, diasEntreno:(m&&m.diasEntreno)||[1,2,3,4,5,6,0], comidas:comidas};
  }
  window.ppcNutManualDefaults = function(a){
   var prev = act; act = a;
   try{
    var v = valoresIniciales(null), m = metas(null), E = v.entreno;
    var mw = [{id:'entreno', label:'Metas diarias', accent:'#5B8DEF', macros:{kcal:r0(E.k||0), proteinG:r0(E.p||0), carbG:r0(E.c||0), fatG:r0(E.g||0)}, meals:m.comidas.map(function(n){ return {name:n, sub:null, items:[]}; })}];
-   return {mealWindows:mw, metasRegistro:{agua:m.agua, cardioMin:m.cardioMin, cardioMax:m.cardioMax, diasEntreno:m.diasEntreno, comidas:m.comidas}};
+   return {mealWindows:mw, metasRegistro:{ritmoKg:m.ritmo, agua:m.agua, cardioMin:m.cardioMin, cardioMax:m.cardioMax, diasEntreno:m.diasEntreno, comidas:m.comidas}};
   } finally { act = prev; }
  };
  function bloqueHtml(v, val){
@@ -7455,7 +7549,8 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
   el.innerHTML = '<div class="st">Modo de nutrición <span class="aux">cómo registra su alimentación '+esc(act.n)+'</span></div>'+
    '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="add '+(reg?'':'g')+'" data-nmmodo="menu" style="flex:1;min-width:200px;'+(reg?'':'outline:2px solid #E8C15C')+'">📋 Menú del coach<br><span style="font-size:11px;opacity:.75;font-weight:400">Tú armas la dieta comida por comida en esta pestaña</span></button>'+
    '<button class="add '+(reg?'g':'')+'" data-nmmodo="registro" style="flex:1;min-width:200px;'+(reg?'outline:2px solid #E8C15C':'')+'">✍️ Registro manual (macros)<br><span style="font-size:11px;opacity:.75;font-weight:400">Tú fijas calorías y macros; el atleta registra lo que come</span></button></div>'+
-   '<div class="hintx" style="margin-top:6px">'+(act._nmCambio?'<b style="color:#E0A03D">Cambio sin guardar:</b> se aplica en la app del atleta cuando guardes '+(reg?'los objetivos':'el menú')+'. ':'')+'Modo actual: <b>'+(reg?'registro manual':'menú del coach')+'</b>. La app del atleta debe incluir el módulo de registro (archivo ppc-registro.js).</div>';
+   '<div class="hintx" style="margin-top:6px">'+(act._nmCambio?'<b style="color:#E0A03D">Cambio sin guardar:</b> se aplica en la app del atleta cuando guardes '+(reg?'los objetivos':'el menú')+'. ':'')+'Modo actual: <b>'+(reg?'registro manual':'menú del coach')+'</b>. La app del atleta debe incluir el módulo de registro (archivo ppc-registro.js).</div>'+
+   '<div style="margin-top:8px"><button class="add" id="nmRev" style="display:inline-block;width:auto;padding:6px 14px">🔔 Revisar registros de todos los atletas</button></div><div id="nmAlertas"></div>';
  }
  function render(){
   var p3 = document.getElementById('p3'); if(!p3) return;
@@ -7472,16 +7567,16 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
   var ex = document.getElementById('nutManual'); if(ex) ex.remove();
   if(!manual) return;
   var box = document.createElement('div'); box.id = 'nutManual'; box.className = 'sec';
-  var vals = valoresIniciales(null), m = metas(null);
+  var vals = valoresIniciales(null), m = metas(null), docCloud = null;
   function pintar(vals, m){
-   var peso = pesoAct(), ref = '';
-   try{ var alt = parseFloat(String(act.est||'1.77').replace(/[^0-9,.]/g,'').replace(',','.')) || 1.77; if(alt<3) alt*=100; var g = ASIS.gasto(peso||100, alt, act.edad||34, act.sexo||'m', 'intenso'); if(g && g.tdee) ref = r0(g.tdee); }catch(e){}
+   var peso = pesoAct(), ref = '', refTxt = '';
+   try{ var alt = parseFloat(String(act.est||'1.77').replace(/[^0-9,.]/g,'').replace(',','.')) || 1.77; if(alt<3) alt*=100; var bf = bfNube(docCloud) || (function(){ try{ var u = ppcUltimoPeso(act); return u && u.grasa || 0; }catch(e){ return 0; } })(), pk = peso || pesoNube(docCloud) || 100; var g = ASIS.gasto(pk, alt, act.edad||34, act.sexo||'m', 'intenso', bf); if(g && g.tdee) ref = r0(g.tdee); if(bf){ var g2 = ASIS.gasto(pk, alt, act.edad||34, act.sexo||'m', 'intenso'); refTxt = ' · Mantenimiento estimado (actividad intensa, Katch-McArdle con '+bf+' % de grasa): <b>'+ref+' kcal</b> <span style="opacity:.7">(Mifflin sin composición: '+r0(g2.tdee)+')</span>'; } else refTxt = ref ? ' · Mantenimiento estimado (actividad intensa, Mifflin-St Jeor): <b>'+ref+' kcal</b>' : ''; }catch(e){}
    window.__nmRef = ref;
    box.innerHTML = '<div class="st">Objetivos de registro manual · '+esc(act.n)+' <span class="aux">el atleta registra lo que come; tú defines sus metas</span></div>'+
-    '<div class="hintx" style="margin-bottom:10px">No hay menú: '+esc(act.n)+' agrega sus alimentos en la app y se compara contra estas metas. '+(peso?'Peso actual: <b>'+peso+' kg</b>':'')+(ref?' · Mantenimiento estimado (actividad intensa): <b>'+ref+' kcal</b>':'')+'</div>'+
+    '<div class="hintx" style="margin-bottom:10px">No hay menú: '+esc(act.n)+' agrega sus alimentos en la app y se compara contra estas metas. '+(peso?'Peso actual: <b>'+peso+' kg</b>':'')+refTxt+'</div>'+
     VENT.map(function(v){ return bloqueHtml(v, vals[v.id]); }).join('')+
     '<div class="bloque"><div class="st" style="margin-bottom:8px">Días de entreno (usan la meta de entreno)</div><div id="nmDias" style="display:flex;gap:8px;flex-wrap:wrap">'+DIAS.map(function(d,i){ var wd = (i+1)%7; return '<label style="display:flex;align-items:center;gap:4px"><input type="checkbox" data-nmd="'+wd+'" '+(m.diasEntreno.indexOf(wd)>=0?'checked':'')+'> '+d+'</label>'; }).join('')+'</div></div>'+
-    '<div class="bloque"><div class="st" style="margin-bottom:8px">Metas diarias</div><div class="campos"><label><span class="lb">Agua (ml)</span><input class="in mono" id="nmAgua" type="number" value="'+m.agua+'"></label><label><span class="lb">Cardio mínimo (min · 0 = sin meta)</span><input class="in mono" id="nmCMin" type="number" value="'+m.cardioMin+'"></label><label><span class="lb">Cardio máximo (min)</span><input class="in mono" id="nmCMax" type="number" value="'+m.cardioMax+'"></label></div>'+
+    '<div class="bloque"><div class="st" style="margin-bottom:8px">Metas diarias</div><div class="campos"><label><span class="lb">Ritmo de peso objetivo (kg/sem · + sube · − baja · 0 mantiene)</span><input class="in mono" id="nmRitmo" type="number" step="0.05" value="'+m.ritmo+'"></label><label><span class="lb">Agua (ml)</span><input class="in mono" id="nmAgua" type="number" value="'+m.agua+'"></label><label><span class="lb">Cardio mínimo (min · 0 = sin meta)</span><input class="in mono" id="nmCMin" type="number" value="'+m.cardioMin+'"></label><label><span class="lb">Cardio máximo (min)</span><input class="in mono" id="nmCMax" type="number" value="'+m.cardioMax+'"></label></div>'+
     '<label><span class="lb">Comidas del día (una por línea)</span><textarea class="in" id="nmComidas" rows="6" style="width:100%">'+esc(m.comidas.join('\n'))+'</textarea></label></div>'+
     '<div class="guardar"><button class="sv" id="nmGuardar">Guardar objetivos en la nube</button><span class="ok">Guardado ✓</span><span class="hintx">La app lo toma al abrirse</span></div>'+
     '<div class="st" style="margin-top:18px">Seguimiento de los últimos 7 días <button class="add" id="nmSeg" style="display:inline-block;width:auto;padding:5px 12px;margin-left:8px">Actualizar</button></div><div id="nmSegTabla"><div class="v7vacio">Pulsa «Actualizar» para leer los registros de '+esc(act.n)+'</div></div>';
@@ -7495,7 +7590,7 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
   pintar(vals, m);
   if(FB && FB.on && FB_ID[act.id]){
    FB.db.collection('athletes').doc(FB_ID[act.id]).get().then(function(s){
-    var plan = s.exists ? (s.data().plan||{}) : {};
+    var plan = s.exists ? (s.data().plan||{}) : {}; docCloud = s.exists ? s.data() : null;
     if(document.getElementById('nutManual') !== box) return;
     pintar(valoresIniciales(plan), metas(plan));
    }).catch(function(){});
@@ -7504,7 +7599,7 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
  function leer(){
   var o = {w:{}}; VENT.forEach(function(v){ var k = num(document.getElementById('nmK_'+v.id).value), p = r0(num(document.getElementById('nmP_'+v.id).value)), c = r0(num(document.getElementById('nmC_'+v.id).value)), g = r0(num(document.getElementById('nmG_'+v.id).value)); o.w[v.id] = {k: r0(k || (p*4+c*4+g*9)), p:p, c:c, g:g}; });
   o.diasEntreno = [].slice.call(document.querySelectorAll('[data-nmd]')).filter(function(x){ return x.checked; }).map(function(x){ return +x.dataset.nmd; });
-  o.agua = r0(num(document.getElementById('nmAgua').value)) || 3000; o.cardioMin = r0(num(document.getElementById('nmCMin').value)); o.cardioMax = r0(num(document.getElementById('nmCMax').value)); if(o.cardioMax<o.cardioMin) o.cardioMax = o.cardioMin;
+  o.ritmo = num(document.getElementById('nmRitmo').value); o.agua = r0(num(document.getElementById('nmAgua').value)) || 3000; o.cardioMin = r0(num(document.getElementById('nmCMin').value)); o.cardioMax = r0(num(document.getElementById('nmCMax').value)); if(o.cardioMax<o.cardioMin) o.cardioMax = o.cardioMin;
   o.comidas = document.getElementById('nmComidas').value.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
   return o;
  }
@@ -7525,7 +7620,7 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
    var hist = Array.isArray(plan.historial) ? plan.historial.slice() : [];
    hist.push({fecha:new Date().toISOString(), tipo:'nutricion', resumen:'Objetivos manuales · entreno '+E.k+' kcal ('+E.p+'P/'+E.c+'C/'+E.g+'G) · recuperación '+D.k+' kcal ('+D.p+'P/'+D.c+'C/'+D.g+'G) · agua '+o.agua+' ml', snapshotMealWindows:mealWindows});
    var antes = (plan.mealWindows||[]).map(function(w){ return (w.macros||{}).kcal; }).join('/');
-   var planFinal = Object.assign({}, plan, {mealWindows:mealWindows, nutritionInfo:info, macros:{kcal:E.k, proteinG:E.p, carbG:E.c, fatG:E.g}, metasRegistro:{agua:o.agua, cardioMin:o.cardioMin, cardioMax:o.cardioMax, diasEntreno:o.diasEntreno, comidas:o.comidas}, nutModo:'registro', historial:hist.slice(-30)});
+   var planFinal = Object.assign({}, plan, {mealWindows:mealWindows, nutritionInfo:info, macros:{kcal:E.k, proteinG:E.p, carbG:E.c, fatG:E.g}, metasRegistro:{ritmoKg:o.ritmo, agua:o.agua, cardioMin:o.cardioMin, cardioMax:o.cardioMax, diasEntreno:o.diasEntreno, comidas:o.comidas}, nutModo:'registro', historial:hist.slice(-30)});
    await ref.set({plan:planFinal, updatedAt:firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
    fbAuditoria(FB_ID[act.id], 'nutricionManual', [{campo:'metas (kcal entreno/recuperación)', valorAnterior:antes||'—', valorNuevo:E.k+'/'+D.k}]);
    act.nut = act.nut || {agua:'',sal:'',libre:'',vig:'',bloques:[]};
@@ -7534,6 +7629,36 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
    okAviso(btn); toast('Objetivos guardados en la nube · '+act.n+' los verá al abrir su app');
   }catch(e){ toast('No se pudo guardar: '+e.message); }
   btn.disabled = false; btn.textContent = txt;
+ }
+
+ async function revisar(){
+  var cont = document.getElementById('nmAlertas'); if(!cont) return;
+  if(!FB.on){ cont.innerHTML = '<div class="v7vacio">Sin conexión a Firebase</div>'; return; }
+  cont.innerHTML = '<div class="v7vacio">Revisando…</div>';
+  var hoy = new Date(), hs = hoy.getFullYear()+'-'+('0'+(hoy.getMonth()+1)).slice(-2)+'-'+('0'+hoy.getDate()).slice(-2), rows = [], n = 0;
+  function dif(f){ return Math.round((Date.parse(hs+'T12:00:00Z')-Date.parse(f+'T12:00:00Z'))/864e5); }
+  for(var i=0;i<ATLETAS.length;i++){
+   var a = ATLETAS[i]; if(!FB_ID[a.id]) continue;
+   try{
+    var sn = await FB.db.collection('athletes').doc(FB_ID[a.id]).get(); if(!sn.exists) continue;
+    var d = sn.data(), pl = d.plan||{}; if(pl.nutModo!=='registro') continue; n++;
+    var pk = Object.keys(d.pesoLog||{}).sort(), lp = pk.length ? dif(pk[pk.length-1]) : null;
+    var fl = d.foodLog||{}, fk = Object.keys(fl).filter(function(k){ return (fl[k]||[]).length; }).sort(), lf = fk.length ? dif(fk[fk.length-1]) : null;
+    var reg7 = fk.filter(function(k){ return dif(k)<7 && dif(k)>=0; }).length, av = [];
+    if(lf===null || lf>=2) av.push('sin registrar comida '+(lf===null?'nunca':'hace '+lf+' días'));
+    if(reg7<4) av.push('solo '+reg7+'/7 días con comida');
+    if(lp===null || lp>=4) av.push('sin pesarse '+(lp===null?'(nunca en la app)':'hace '+lp+' días'));
+    var msg = '';
+    if(av.length){
+     var nom = a.n.split(' ')[0], pedir = [];
+     if(lf===null || lf>=2 || reg7<4) pedir.push('registrar todo lo que comes en la app (aunque sea aproximado)');
+     if(lp===null || lp>=4) pedir.push('pesarte cada mañana en ayunas y anotarlo en la pestaña Diario');
+     msg = 'Hola '+nom+', vi que últimamente falta '+(pedir.length>1?'registro':'un poco de registro')+' en tu app. Para ajustar bien tus calorías necesito que vuelvas a '+pedir.join(' y a ')+'. Son 2 minutos al día y me permite afinar tu plan con datos reales. '+((typeof urlApp==='function' && urlApp(a)) ? 'Tu app: '+urlApp(a)+' ' : '')+'¡Vamos con todo!';
+    }
+    rows.push('<tr><td><b>'+esc(a.n)+'</b></td><td style="color:'+(av.length?'#E0A03D':'#4CAF7D')+'">'+(av.length? '⚠ '+av.join(' · ') : '✓ al día')+'</td><td style="text-align:right">'+(av.length? '<button class="b2 wa" data-nmwa="'+esc(a.id)+'" data-msg="'+esc(msg)+'" style="padding:4px 10px">WhatsApp</button>' : '')+'</td></tr>');
+   }catch(e){}
+  }
+  cont.innerHTML = n ? '<table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px">'+rows.join('')+'</table>' : '<div class="v7vacio">Ningún atleta está en modo registro manual</div>';
  }
  async function seguimiento(){
   var cont = document.getElementById('nmSegTabla');
@@ -7550,7 +7675,14 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
     var pct = M.kcal ? r0(t.k/M.kcal*100) : 0, col = !ent.length ? '#9aa0a6' : (pct>=90&&pct<=105 ? '#4CAF7D' : (pct>=75&&pct<=115 ? '#E0C23D' : '#E05B5B'));
     rows += '<tr><td>'+f.slice(5)+' '+DIAS[(wd+6)%7]+'</td><td style="color:'+col+';font-weight:700">'+(ent.length? r0(t.k)+' ('+pct+'%)' : '—')+'</td><td>'+(ent.length? r0(t.p)+' / '+(M.proteinG||'')  : '—')+'</td><td>'+(ent.length? r0(t.c)+' / '+(M.carbG||'') : '—')+'</td><td>'+(ent.length? r0(t.f)+' / '+(M.fatG||'') : '—')+'</td><td>'+(al[f]? (al[f]/1000).toFixed(1)+' L' : '—')+'</td><td>'+(cm||'—')+'</td><td>'+(kc? r0(kc) : '—')+'</td></tr>';
    }
-   cont.innerHTML = '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="text-align:left;color:var(--fa)"><th>Día</th><th>Kcal</th><th>Prot (g)</th><th>Carb (g)</th><th>Grasa (g)</th><th>Agua</th><th>Cardio min</th><th>Gasto kcal</th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="hintx" style="margin-top:6px">Cada macro se muestra como consumido / meta del día. Los colores comparan las calorías con la meta (verde 90–105%).</div>';
+   var AD = ppcAdaptivo(pesosNube(d), fl, function(f){ var wd = new Date(f+'T12:00:00').getDay(), wid = mm.diasEntreno.indexOf(wd)>=0 ? 'entreno' : 'descanso', w = wins.find(function(x){ return x.id===wid; }) || wins[0]; return (w && w.macros && w.macros.kcal) || 0; }, mm.ritmo, (function(){ var t = new Date(); return t.getFullYear()+'-'+('0'+(t.getMonth()+1)).slice(-2)+'-'+('0'+t.getDate()).slice(-2); })());
+   window.__nmSug = AD.sug || 0;
+   var f1 = function(x){ return (Math.round(x*100)/100).toString().replace('.',','); }, adH = '<div class="bloque" style="margin-top:12px;border-left:4px solid #E8C15C"><div class="st" style="margin-bottom:6px">Ajuste según datos reales (peso + ingesta)</div>';
+   if(AD.estado==='datos') adH += '<div class="hintx">Faltan datos de peso: '+AD.nPesos+' pesaje(s) en 28 días; hacen falta al menos 5 repartidos en 10+ días. El atleta registra su peso en la pestaña Diario de la app.</div>';
+   else if(AD.estado==='registro') adH += '<div class="hintx">Hay tendencia de peso ('+(AD.kgSem>0?'+':'')+f1(AD.kgSem)+' kg/sem) pero solo '+AD.diasValidos+' días con registro completo; se necesitan 7.</div>';
+   else adH += '<div style="font-size:13px;line-height:1.6">Tendencia <b>'+(AD.kgSem>0?'+':'')+f1(AD.kgSem)+' kg/sem</b> (objetivo '+(AD.ritmo>0?'+':'')+f1(AD.ritmo)+') · ingesta promedio <b>'+AD.ingesta+' kcal</b> · gasto real estimado <b>'+AD.tdee+' kcal</b> · meta promedio hoy <b>'+AD.metaProm+' kcal</b><br>Meta promedio sugerida: <b>'+AD.deseado+' kcal</b> · '+(AD.sug===0?'<span style="color:#4CAF7D">no requiere ajuste</span>':'ajuste de <b>'+(AD.sug>0?'+':'')+AD.sug+' kcal/día</b>')+' <span class="hintx">(confianza '+AD.conf+': '+AD.nPesos+' pesajes, '+AD.diasValidos+'/'+AD.diasVentana+' días completos)</span></div>'+(AD.sug? '<button class="add g" data-nmapl="'+AD.sug+'" style="margin-top:8px">Cargar ajuste de '+(AD.sug>0?'+':'')+AD.sug+' kcal en ambas metas (carbohidratos absorben)</button><div class="hintx">Solo carga los valores; revisa y pulsa «Guardar objetivos en la nube».</div>':'');
+   adH += '</div>';
+   cont.innerHTML = adH + '<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="text-align:left;color:var(--fa)"><th>Día</th><th>Kcal</th><th>Prot (g)</th><th>Carb (g)</th><th>Grasa (g)</th><th>Agua</th><th>Cardio min</th><th>Gasto kcal</th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="hintx" style="margin-top:6px">Cada macro se muestra como consumido / meta del día. Los colores comparan las calorías con la meta (verde 90–105%).</div>';
   }catch(e){ cont.innerHTML = '<div class="v7vacio">No se pudo leer: '+esc(e.message)+'</div>'; }
  }
  document.addEventListener('click', function(e){
@@ -7565,8 +7697,13 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
    document.getElementById('nmP_'+id).value = p; document.getElementById('nmG_'+id).value = g; document.getElementById('nmC_'+id).value = ch; document.getElementById('nmP_'+id).dispatchEvent(new Event('input')); }
   var a = t.closest && t.closest('[data-nmadj]');
   if(a){ var pr = a.dataset.nmadj.split('|'), ref = window.__nmRef; if(!ref){ toast('Falta peso, edad o altura para estimar el mantenimiento'); return; } document.getElementById('nmK_'+pr[0]).value = r0(ref*(1+(+pr[1])/100)); document.getElementById('nmK_'+pr[0]).dispatchEvent(new Event('input')); }
+  var ap = t.closest && t.closest('[data-nmapl]');
+  if(ap){ var sg = +ap.dataset.nmapl; VENT.forEach(function(v){ var k = document.getElementById('nmK_'+v.id), c = document.getElementById('nmC_'+v.id); if(k && c && num(k.value)){ k.value = r0(num(k.value)+sg); c.value = Math.max(0, r0(num(c.value)+sg/4)); k.dispatchEvent(new Event('input')); } }); toast('Ajuste cargado: revisa y guarda los objetivos'); }
   if(t.id==='nmGuardar') guardar(t);
   if(t.id==='nmSeg') seguimiento();
+  if(t.id==='nmRev') revisar();
+  var wb = t.closest && t.closest('[data-nmwa]');
+  if(wb){ var at = ATLETAS.find(function(x){ return x.id===wb.dataset.nmwa; }), tel = ((at && at.wa)||'').replace(/[^0-9]/g,''); if(!tel){ toast('Falta el WhatsApp de '+(at?at.n:'este atleta')+' en su ficha'); return; } window.open('https://wa.me/'+tel+'?text='+encodeURIComponent(wb.dataset.msg),'_blank','noopener'); wb.textContent = 'Abierto ✓'; }
  });
  window.ppcNutManual = {render:render, esManual:esManual};
 })();
