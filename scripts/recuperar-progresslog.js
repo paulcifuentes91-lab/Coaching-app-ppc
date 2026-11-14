@@ -62,7 +62,8 @@ const campos = e => ['weight', 'waist', 'arm', 'thigh', 'bodyFatPct', 'skinfolds
   if (MODO === 'mejorar') {
     const ultimo = {};
     dias.docs.sort((a, b) => a.id < b.id ? -1 : 1).forEach(d => {
-      (((d.data().snapshot || {}).progressLog) || []).forEach(e => { if (e && e.date && SOLO.has(e.date)) ultimo[e.date] = { e, de: d.id }; });
+      // Solo versiones originales: se ignoran entradas que ya eran restauradas/reconstruidas.
+      (((d.data().snapshot || {}).progressLog) || []).forEach(e => { if (e && e.date && SOLO.has(e.date) && !e.restaurado) ultimo[e.date] = { e, de: d.id }; });
     });
     const stamp = new Date().toISOString();
     const res = await db.runTransaction(async t => {
@@ -73,7 +74,8 @@ const campos = e => ['weight', 'waist', 'arm', 'thigh', 'bodyFatPct', 'skinfolds
       const final = pl.map(e => {
         if (!e || !SOLO.has(e.date)) return e;
         const r = ultimo[e.date];
-        if (!e.restaurado || e.restauradoDesde) { saltados.push(e.date + ' (no es reconstruido)'); return e; }
+        // Reconstruidos a mano desde auditoría/historial del panel (notas con esa marca).
+        if (!e.restaurado || !/restaurado desde (auditoría|el historial)/.test(e.notes || '')) { saltados.push(e.date + ' (no es reconstruido)'); return e; }
         if (!r) { saltados.push(e.date + ' (no está en respaldos)'); return e; }
         if (Number(r.e.weight) !== Number(e.weight)) { saltados.push(e.date + ' (peso distinto al del respaldo)'); return e; }
         hechos.push(`${e.date} [${campos(e)} → ${campos(r.e)}]`);
