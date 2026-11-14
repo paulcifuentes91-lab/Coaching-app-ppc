@@ -20,7 +20,7 @@ const { getFirestore } = require('firebase-admin/firestore');
 
 const cfg = JSON.parse(fs.readFileSync(__dirname + '/recuperar-progresslog.json', 'utf8'));
 const ATLETA = cfg.atleta, MODO = cfg.modo, SOLO = new Set(cfg.fechas || []);
-if (!ATLETA || !['listar', 'aplicar'].includes(MODO)) { console.error('Config inválida'); process.exit(1); }
+if (!ATLETA || !['listar', 'aplicar', 'mejorar'].includes(MODO)) { console.error('Config inválida'); process.exit(1); }
 
 initializeApp({ credential: cert(JSON.parse(process.env.FIREBASE_KEY)) });
 const db = getFirestore();
@@ -55,6 +55,42 @@ const campos = e => ['weight', 'waist', 'arm', 'thigh', 'bodyFatPct', 'skinfolds
   lista.forEach(f => { const x = faltan[f]; console.log(`  ${f} · en ${x.veces} respaldo(s), del ${x.primero} al ${x.ultimo} · campos: ${campos(x.entrada)}`); });
 
   if (MODO === 'listar') { console.log('\nModo listar: no se escribió nada.'); return; }
+
+  /* modo "mejorar": reemplaza registros reconstruidos a mano (restaurado:true sin
+     restauradoDesde, solo fecha+peso) por su versión completa del respaldo más
+     reciente que tenga esa fecha. Solo si el peso coincide; si no, no toca nada. */
+  if (MODO === 'mejorar') {
+    const ultimo = {};
+    dias.docs.sort((a, b) => a.id < b.id ? -1 : 1).forEach(d => {
+      (((d.data().snapshot || {}).progressLog) || []).forEach(e => { if (e && e.date && SOLO.has(e.date)) ultimo[e.date] = { e, de: d.id }; });
+    });
+    const stamp = new Date().toISOString();
+    const res = await db.runTransaction(async t => {
+      const snap = await t.get(ref);
+      const data = snap.data() || {};
+      const pl = data.progressLog || [];
+      const hechos = [], saltados = [];
+      const final = pl.map(e => {
+        if (!e || !SOLO.has(e.date)) return e;
+        const r = ultimo[e.date];
+        if (!e.restaurado || e.restauradoDesde) { saltados.push(e.date + ' (no es reconstruido)'); return e; }
+        if (!r) { saltados.push(e.date + ' (no está en respaldos)'); return e; }
+        if (Number(r.e.weight) !== Number(e.weight)) { saltados.push(e.date + ' (peso distinto al del respaldo)'); return e; }
+        hechos.push(`${e.date} [${campos(e)} → ${campos(r.e)}]`);
+        return Object.assign({}, r.e, { restaurado: true, restauradoDesde: 'respaldo ' + r.de });
+      });
+      if (!hechos.length) return { hechos, saltados };
+      t.set(db.collection('respaldos').doc(ATLETA).collection('manual').doc(stamp), { snapshot: data, timestamp: stamp, motivo: 'antes de completar registros reconstruidos desde respaldos diarios' });
+      t.set(ref, { progressLog: final }, { merge: true });
+      t.create(ref.collection('auditoria').doc(), { timestamp: stamp, origen: 'restauracion', funcion: 'completarDesdeRespaldos',
+        cambios: [{ campo: 'progressLog', valorAnterior: pl.length + ' registro(s)', valorNuevo: final.length + ' registro(s) · completados desde respaldos diarios: ' + hechos.map(h => h.slice(0, 10)).join(', ') }] });
+      return { hechos, saltados };
+    });
+    console.log(`\nModo mejorar · completados: ${res.hechos.length ? res.hechos.join('; ') : 'ninguno'}`);
+    if (res.saltados.length) console.log('Sin cambios: ' + res.saltados.join('; '));
+    if (res.hechos.length) console.log(`Copia previa en respaldos/${ATLETA}/manual/${stamp}.`);
+    return;
+  }
 
   const elegidas = lista.filter(f => !SOLO.size || SOLO.has(f));
   if (!elegidas.length) { console.log('Nada que restaurar.'); return; }
