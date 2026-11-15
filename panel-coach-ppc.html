@@ -908,10 +908,10 @@ border-radius:10px;padding:14px 16px;font-size:13.5px;color:var(--mu);line-heigh
           <option value="2.2" selected>2,2 · estándar</option><option value="2.4">2,4</option>
           <option value="2.6">2,6 · déficit marcado</option><option value="2.8">2,8 · competición</option></select></label>
         <label><span class="lb">Excluir</span><select class="in" id="gnExcluir">
-          <option value="">Nada</option><option value="carne">Sin carne roja</option>
-          <option value="carne,pescado,atún,salmón,pavo,camarones,cerdo|vegetariano">Vegetariano</option>
-          <option value="carne,pescado,atún,salmón,pavo,camarones,cerdo,huevo,claras,lácteos,yogurt,queso,leche,kefir|vegano">Vegano</option>
-          <option value="pan,pasta,avena">Sin gluten</option>
+          <option value="">Nada</option><option value="carne,vacuno,tártaro">Sin carne roja</option>
+          <option value="carne,vacuno,tártaro,pescado,atún,salmón,pavo,camarones,cerdo|vegetariano">Vegetariano</option>
+          <option value="carne,vacuno,tártaro,pescado,atún,salmón,pavo,camarones,cerdo,huevo,claras,lácteos,yogurt,queso,leche,kefir|vegano">Vegano</option>
+          <option value="pan,marraqueta,hallulla,ciabatta,pasta,avena">Sin gluten</option>
           <option value="yogurt,queso,leche,kefir,cottage">Sin lactosa</option>
           <option value="lentejas,garbanzos,porotos,edamame,legumbres,brócoli,coliflor,cebolla">Colon sensible (sin legumbres ni crucíferas)</option></select></label>
       </div>
@@ -2267,7 +2267,7 @@ function cargar(a){
     pintarLista($("#buscar").value);
     toast("Datos actualizados desde la nube");
    }
-   try{ pintarHist(); ppcRellenarCalc(a); }catch(e){}
+   try{ HOME.datos[a.id] = snap.data(); pintarHist(); ppcRellenarCalc(a); window.ppcMejorasFicha && window.ppcMejorasFicha(a); }catch(e){}
    if(_localMasNuevo) toast("Mesociclo nuevo de "+a.n+" (inicio "+a.ini_f+") aún no está en la nube · pulsa Guardar en la nube");
    _btnsGuardar.forEach(b=>{ b.disabled = false; b.textContent = b.dataset.txtOriginal || "Guardar cambios"; });
   }).catch(()=>{ _btnsGuardar.forEach(b=>{
@@ -2371,14 +2371,13 @@ async function pintarPerfil(){
  if(!el) return;
  el.innerHTML = '<div class="v7vacio">Cargando...</div>';
 
- const h = (act.hist||[])[0];
- const pesoActual = h ? h[1]+" kg" : "-";
- const pesoFecha = h ? h[0] : "";
+ const _pts = (window.pesosDe ? window.pesosDe(act) : []), _u = _pts[_pts.length-1], _pr = _pts[_pts.length-2];
+ const pesoActual = _u ? String(_u[1]).replace(".",",")+" kg" : "-";
+ const pesoFecha = _u ? _u[0] : "";
  let tendencia = "";
- if(act.hist && act.hist.length>=2){
-  const num = s=>parseFloat(String(s).replace(",",".")) || 0;
-  const dif = num(act.hist[0][1]) - num(act.hist[1][1]);
-  tendencia = (dif>0?"+":"")+dif.toFixed(1)+" kg vs. chequeo anterior";
+ if(_u && _pr){
+  const dif = _u[1] - _pr[1];
+  tendencia = (dif>0?"+":"")+dif.toFixed(1).replace(".",",")+" kg vs. registro anterior ("+_pr[0]+")";
  }
 
  let d = (HOME.datos && HOME.datos[act.id]) || null;
@@ -4265,6 +4264,9 @@ document.addEventListener("keydown", e=>{
 const TABLA100 = {
  "pollo":[165,31,0,3.6],"pechuga":[165,31,0,3.6],"pavo":[135,29,0,1.7],
  "carne roja":[250,26,0,15],"carne":[250,26,0,15],"vacuno":[250,26,0,15],"posta":[210,30,0,9],
+ "tartaro":[137,21,0,5],"tartaro de vacuno":[137,21,0,5],"carne molida":[152,21,0,7],"carne molida 5":[137,21,0,5],"carne molida 7":[152,21,0,7],"molida de vacuno":[152,21,0,7],
+ "marraqueta":[275,9,56,1],"hallulla":[300,9,52,6],"ciabatta":[272,9,52,3.2],"chavata":[272,9,52,3.2],"chabata":[272,9,52,3.2],
+ "pan de molde":[260,8.5,49,3.3],"pan molde":[260,8.5,49,3.3],"pan de molde integral":[250,10,43,4],
  "pescado":[105,23,0,1.5],"merluza":[105,23,0,1.5],"reineta":[110,23,0,2],"salmon":[208,20,0,13],
  "atun":[116,26,0,1],"lomitos":[116,26,0,1],
  "arroz":[130,2.7,28,0.3],"pastas":[158,6,31,0.9],"fideos":[158,6,31,0.9],"quinoa":[120,4.4,21,1.9],
@@ -4289,7 +4291,7 @@ const TABLA100 = {
 /* Por unidad */
 const TABLAUD = {
  "huevo":[72,6.3,0.4,5],"clara":[17,3.6,0.2,0.1],"fruta":[72,0.9,19,0.2],"platano":[107,1.3,27,0.4],
- "tostada":[58,2,11,0.9],"galleta de arroz":[35,0.7,7.3,0.3],"rebanada de pan":[80,3,15,1],
+ "tostada":[58,2,11,0.9],"galleta de arroz":[35,0.7,7.3,0.3],"rebanada de pan":[80,3,15,1],"rebanada de pan de molde":[73,2.4,13.7,0.9],"rebanadas de pan de molde":[73,2.4,13.7,0.9],"rebanadas de pan":[80,3,15,1],"marraquetas":[275,9,56,1],"hallullas":[240,7.2,41.6,4.8],"marraqueta":[275,9,56,1],"hallulla":[240,7.2,41.6,4.8],
  "yogurt griego":[100,9,4,5],"yogur griego":[100,9,4,5],"yogurt":[100,5,12,3],"yogur":[100,5,12,3],
  "tomate":[22,1,4.8,0.2],"lata de atun":[92,21,0,0.8],"lata atun":[92,21,0,0.8],"lata":[92,21,0,0.8],
  "manzana":[72,0.4,19,0.2],"naranja":[62,1.2,15,0.2],"scoop":[120,24,2,2],"rebanada de queso":[80,5,1,6]
@@ -4410,6 +4412,7 @@ const GEN_ALIM = {
  /* proteínas: [kcal,P,C,G,dieta] por 100 g. dieta: omnivoro | vegetariano | vegano */
  prot:{
   "pechuga de pollo":[165,31,0,3.6,"omnivoro"], "carne roja magra":[250,26,0,15,"omnivoro"],
+  "tártaro de vacuno 5 % grasa (crudo)":[137,21,0,5,"omnivoro"], "carne molida de vacuno 7 % grasa (cruda)":[152,21,0,7,"omnivoro"],
   "pescado blanco":[105,23,0,1.5,"omnivoro"], "salmón":[208,20,0,13,"omnivoro"],
   "atún en agua":[116,26,0,1,"omnivoro"], "pavo":[135,29,0,1.7,"omnivoro"],
   "lomo de cerdo":[143,26,0,4,"omnivoro"], "camarones":[99,24,0.2,0.3,"omnivoro"],
@@ -4432,6 +4435,8 @@ const GEN_ALIM = {
   "camote cocido":[86,1.6,20,0.1,"vegano"], "avena":[389,17,66,7,"vegano"],
   "pasta cocida":[158,6,31,0.9,"vegano"], "pasta integral cocida":[124,5,25,1.1,"vegano"],
   "pan":[265,9,49,3.2,"vegetariano"], "pan integral":[247,13,41,4.2,"vegano"],
+  "marraqueta":[275,9,56,1,"vegano"], "hallulla":[300,9,52,6,"vegetariano"], "ciabatta (chavata)":[272,9,52,3.2,"vegano"],
+  "pan de molde blanco":[260,8.5,49,3.3,"vegetariano"], "pan de molde integral":[250,10,43,4,"vegano"],
   "quinoa cocida":[120,4.4,21,1.9,"vegano"], "legumbres cocidas":[116,8,20,0.5,"vegano"],
   "zapallo":[34,1,8,0.1,"vegano"], "choclo":[96,3.4,21,1.5,"vegano"],
   "arroz integral cocido":[112,2.3,24,0.9,"vegano"], "galletas de arroz":[387,8,81,3,"vegano"],
@@ -4583,7 +4588,7 @@ function comidaDesayunoHuevos(macros, opciones, G){
   items.push(`${gcl} g claras de huevo`);
   usado[0] += gcl*0.11; usado[2] += gcl*0.002;
  }
- const kc = opciones.excluir.includes("avena") ? "pan" : "avena";
+ const kc = (opciones.excluir.includes("avena") || opciones.sem >= 4) ? panVariado(opciones) : "avena";
  const gc = gramosPara(GEN_ALIM.carbo[kc], "c", macros.c - usado[1]);
  if(gc > 0){
   items.push(`${gc} g ${kc}`);
@@ -4627,7 +4632,7 @@ function comidaDesayunoYogurt(macros, opciones, G){
    usado[0] += gf*datosFr[1]/100; usado[1] += gf*datosFr[2]/100; usado[2] += gf*datosFr[3]/100;
   }
  }
- const kc = opciones.excluir.includes("avena") ? "pan" : "avena";
+ const kc = (opciones.excluir.includes("avena") || opciones.sem >= 4) ? panVariado(opciones) : "avena";
  const gc = gramosPara(GEN_ALIM.carbo[kc], "c", macros.c - usado[1]);
  if(gc > 0){
   items.push(`${gc} g ${kc}`);
@@ -4674,6 +4679,20 @@ function comidaDesayunoTofu(macros, opciones, G){
  return {items, usado};
 }
 
+/* Panes disponibles para desayunos: respeta exclusiones y tipo de dieta; rota según la variante */
+function panVariado(opciones){
+ const lista = ["marraqueta","hallulla","ciabatta (chavata)","pan de molde blanco","pan de molde integral"].filter(k=>{
+  if(!GEN_ALIM.carbo[k] || (opciones.excluir||[]).some(x=>x && k.includes(x))) return false;
+  const tag = GEN_ALIM.carbo[k][4];
+  if(opciones.dieta==="vegano") return tag==="vegano";
+  if(opciones.dieta==="vegetariano") return tag==="vegano" || tag==="vegetariano";
+  return true;
+ });
+ if(lista.length) return lista[Math.floor((opciones.sem||0)/4) % lista.length];
+ /* sin panes disponibles (p. ej. sin gluten): alternativa permitida */
+ const alt = ["galletas de arroz","arroz blanco cocido","papa cocida"].find(k=>!(opciones.excluir||[]).some(x=>x && k.includes(x)));
+ return alt || "arroz blanco cocido";
+}
 function armarComida(plan, macros, opciones){
  const items = [];
  const usado = [0,0,0];   // P, C, G acumulados
@@ -4793,10 +4812,10 @@ function generarDieta(cfg){
  const sobraP = tot[0] - protG, sobraC = tot[1] - carbG, sobraG = tot[2] - grasaG;
  const ult = comidas[comidas.length-1];
  if(Math.abs(sobraP) > 6){
-  const i = ult.items.findIndex(x=>/^\d+ g (pechuga|carne|pescado|salmón|atún|pavo)/.test(x));
+  const i = ult.items.findIndex(x=>/^\d+ g (pechuga|carne|tártaro|pescado|salmón|atún|pavo)/.test(x));
   if(i>=0){
    const m = ult.items[i].match(/^(\d+) g (.+)$/);
-   const alim = Object.entries(GEN_ALIM.prot).find(([k])=>m[2].includes(k.split(" ")[0]));
+   const alim = Object.entries(GEN_ALIM.prot).find(([k])=>m[2]===k) || Object.entries(GEN_ALIM.prot).find(([k])=>m[2].includes(k.split(" ")[0]));
    if(alim){
     const nuevo = Math.max(60, Math.round((+m[1] - sobraP/alim[1][1]*100)/5)*5);
     tot[0] += (nuevo-+m[1])*alim[1][1]/100; tot[2] += (nuevo-+m[1])*alim[1][3]/100;
@@ -4986,7 +5005,7 @@ function ajustarBloque(bloqueEl, opciones){
 /* Reescala los gramos escritos en los alimentos según el factor.
    No toca proteínas magras ni verduras: el ajuste recae en los carbohidratos y grasas. */
 const NO_ESCALAR = ["pollo","pechuga","pavo","clara","huevo","atun","lomitos","pescado","merluza",
- "carne","vacuno","posta","whey","proteina","verduras","ensalada","brocoli","acelga","espinaca",
+ "carne","vacuno","tartaro","posta","whey","proteina","verduras","ensalada","brocoli","acelga","espinaca",
  "lechuga","tomate","pepino","esparragos","creatina","agua","sal","te ","cafe","infusion"];
 
 function escalarAlimentos(bloqueEl, factor){
@@ -6175,7 +6194,9 @@ async function confirmarRenovar(a, m){
 function pesosDe(a){
   const out = [], vistos = new Set();
   const d = HOME.datos && HOME.datos[a.id];
-  ((d && d.progressLog)||[]).forEach(e=>{ if(e && esFecha(e.date) && typeof e.weight==="number"){ out.push([e.date, e.weight]); vistos.add(e.date); } });
+  ((d && d.progressLog)||[]).forEach(e=>{ const w = e ? parseFloat(String(e.weight).replace(",",".")) : NaN; if(e && esFecha(e.date) && w>0){ out.push([e.date, w]); vistos.add(e.date); } });
+  const pl = (d && d.pesoLog) || {};
+  Object.keys(pl).forEach(f=>{ const w = parseFloat(String(pl[f]).replace(",",".")); if(esFecha(f) && w>0 && !vistos.has(f)){ out.push([f, w]); vistos.add(f); } });
   (a.hist||[]).forEach(h=>{ if(h && esFecha(h[0]) && !vistos.has(h[0])){ const w = parseFloat(String(h[1]).replace(",",".")); if(w>0) out.push([h[0], w]); } });
   return out.sort((x,y)=>x[0]<y[0]?-1:1);
 }
@@ -6249,6 +6270,7 @@ window.ppcMejorasHome = function(){
   const n = $id("cntProspectos"); if(n && $id("secProspectos").style.display!=="none"){ const k=q("#homeProspectos .hrowa").length; n.textContent = k?String(k):""; }
 };
 window.ppcMejorasFicha = function(a){ pintarFichaExtra(a); };
+window.pesosDe = pesosDe;
 
 /* Eventos */
 document.addEventListener("click", ev=>{
@@ -7739,11 +7761,13 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
   snap.forEach(function(doc){
    if(doc.id.charAt(0)==='_') return;
    var a = porFb(doc.id); if(!a) return;
-   var d = doc.data(), e = ult(d), av = d.avisoChequeo; if(!e) return;
+   var d = doc.data(), e = ult(d), av = d.avisoChequeo;
+   try{ if(typeof HOME!=='undefined' && HOME.datos){ HOME.datos[a.id] = d; if(typeof ppcMergeContacto==='function') ppcMergeContacto(a, d); } }catch(x){} if(!e) return;
    if(!av){ inits.push({ref:doc.ref, e:e}); return; }          /* primera vez: se marca como visto, sin avisar de lo antiguo */
    if(e.date > (av.ultimaFecha||'') || av.visto===false) pend.push({a:a, fid:doc.id, e:e, ref:doc.ref});
   });
   PEND = pend; pintar();
+  try{ if(typeof act!=='undefined' && act && window.ppcMejorasFicha) window.ppcMejorasFicha(act); }catch(x){}
   inits.forEach(function(i){ try{ i.ref.set({avisoChequeo:{ultimaFecha:i.e.date, fecha:i.e.date, visto:true}}, {merge:true}); }catch(x){} });
  }
  function iniciar(){
