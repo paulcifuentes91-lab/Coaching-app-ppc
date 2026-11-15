@@ -4,7 +4,7 @@
    notificaciones push).
 
    UN SOLO fetch de todos los atletas por corrida (db.collection('athletes')
-   .get() una vez); para cada uno se evaluan las 7 reglas de REGLAS sobre
+   .get() una vez); para cada uno se evaluan las reglas de REGLAS sobre
    los mismos datos ya traidos - ninguna regla hace lecturas adicionales a
    Firestore, así que agregar reglas no multiplica las consultas.
 
@@ -234,6 +234,28 @@ function armarSaludoAM(data, tz, ahora, id) {
   return false;
 }
 
+
+/* ── Registro de macros (solo atletas con plan.nutModo = 'registro') ──
+   Sin comida registrada hoy NI ayer ni antevisperas -> aviso a las 20:30.
+   Sin peso (pesoLog o chequeos) en 4+ dias -> aviso a las 08:30.
+   Se salta a quien nunca uso el registro (evita avisar a quien aun no empieza). */
+function esRegistro(data) { return !!(data.plan && data.plan.nutModo === 'registro'); }
+function diasSinComida(data, tz, ahora) {
+  const fl = data.foodLog || {};
+  for (let i = 0; i < 14; i++) {
+    const f = localDateStr(tz, new Date(ahora.getTime() - i * 86400000));
+    if ((fl[f] || []).length) return i;
+  }
+  return null;
+}
+function diasSinPeso(data, tz, ahora) {
+  const fechas = Object.keys(data.pesoLog || {});
+  (data.progressLog || []).forEach(e => { if (e && e.date && typeof e.weight === 'number') fechas.push(e.date); });
+  if (!fechas.length) return null;
+  const ult = fechas.sort().pop();
+  return Math.round((Date.parse(localDateStr(tz, ahora) + 'T12:00:00Z') - Date.parse(ult + 'T12:00:00Z')) / 86400000);
+}
+
 const REGLAS = [
   {
     id: 'saludo_am',
@@ -287,6 +309,32 @@ const REGLAS = [
     })
   },
   {
+    id: 'registro_comida',
+    horas: ['20:30'],
+    condicion: (data, tz, ahora) => {
+      if (!esRegistro(data)) return false;
+      const d = diasSinComida(data, tz, ahora);
+      return d !== null && d >= 2 ? { dias: d } : false;
+    },
+    armar: (c) => ({
+      title: '🍽 Registra tus comidas',
+      body: `Llevas ${c.dias} días sin registrar lo que comes. Anótalo hoy (aunque sea aproximado) para que tu coach pueda ajustar tus calorías`
+    })
+  },
+  {
+    id: 'registro_peso',
+    horas: ['08:30'],
+    condicion: (data, tz, ahora) => {
+      if (!esRegistro(data)) return false;
+      const d = diasSinPeso(data, tz, ahora);
+      return d !== null && d >= 4 ? { dias: d } : false;
+    },
+    armar: (c) => ({
+      title: '⚖ Pésate hoy',
+      body: `Hace ${c.dias} días que no registras tu peso. Pésate en ayunas y anótalo en Nutrición > Diario`
+    })
+  },
+  {
     id: 'chequeo_proximo',
     horas: ['18:00'],
     condicion: (data, tz, ahora) => {
@@ -307,7 +355,47 @@ const REGLAS = [
   const snap = await db.collection('athletes').get(); // UNICA lectura de Firestore de toda la corrida
   let conToken = 0, enviados = 0;
 
+  /* ── Aviso al coach: chequeos ingresados por los atletas ──
+     Estado en cada documento: avisoChequeo {ultimaFecha, visto}. La primera vez solo se inicializa
+     (sin avisar de lo antiguo). Si hay un chequeo mas nuevo que ultimaFecha -> push al/los telefonos
+     del coach (athletes/_coach.fcmTokens, los registra el panel) y visto:false para la campana. */
+  if (!TEST_ATHLETE) {
+    const nuevos = [];
+    for (const doc of snap.docs) {
+      if (doc.id.startsWith('_')) continue;
+      const d = doc.data();
+      const log = (d.progressLog || []).filter(e => e && /^\d{4}-\d{2}-\d{2}$/.test(e.date || '')).sort((a, b) => a.date < b.date ? -1 : 1);
+      if (!log.length) continue;
+      const e = log[log.length - 1], av = d.avisoChequeo;
+      const nombre = (d.contacto && d.contacto.nombre) || doc.id;
+      if (!av) { if (!DRY_RUN) await doc.ref.set({ avisoChequeo: { ultimaFecha: e.date, fecha: e.date, visto: true } }, { merge: true }); continue; }
+      if (e.date > (av.ultimaFecha || '')) {
+        nuevos.push({ ref: doc.ref, nombre, e });
+      }
+    }
+    if (nuevos.length) {
+      const coachDoc = snap.docs.find(x => x.id === '_coach');
+      const coachTokens = (coachDoc && coachDoc.data().fcmTokens) || [];
+      const resumen = nuevos.map(n => `${n.nombre.split(' ')[0]}${typeof n.e.weight === 'number' ? ' ' + String(n.e.weight).replace('.', ',') + ' kg' : ''}`);
+      const title = nuevos.length === 1 ? '✅ Chequeo ingresado' : `✅ ${nuevos.length} chequeos ingresados`;
+      const body = nuevos.length === 1 ? `${nuevos[0].nombre} ingresó su chequeo (${resumen[0].split(' ').slice(1).join(' ') || 'sin peso'}). Revísalo en el panel` : `${resumen.join(' · ')}. Revísalos en el panel`;
+      if (DRY_RUN) console.log(`[DRY RUN] COACH: "${title}" / "${body}" a ${coachTokens.length} token(s)`);
+      else {
+        if (coachTokens.length) {
+          try {
+            const resp = await messaging.sendEachForMulticast({ tokens: coachTokens, data: { title, body, icon: `${BASE_URL}/icons/icon-192.png`, url: `${BASE_URL}/panel-coach-ppc.html` } });
+            const malos = []; resp.responses.forEach((r, i) => { if (!r.success) malos.push(coachTokens[i]); });
+            if (malos.length) await coachDoc.ref.set({ fcmTokens: FieldValue.arrayRemove(...malos) }, { merge: true });
+            console.log(`COACH: ${nuevos.length} chequeo(s) nuevo(s) - push a ${resp.successCount}/${coachTokens.length} dispositivo(s)`);
+          } catch (err) { console.error('COACH: ERROR al enviar -', err.message); }
+        } else console.log(`COACH: ${nuevos.length} chequeo(s) nuevo(s) - sin telefono registrado (activalo en la campana del panel)`);
+        for (const n of nuevos) await n.ref.set({ avisoChequeo: { ultimaFecha: n.e.date, fecha: n.e.date, peso: typeof n.e.weight === 'number' ? n.e.weight : null, grasa: typeof n.e.bodyFatPct === 'number' ? n.e.bodyFatPct : null, visto: false } }, { merge: true });
+      }
+    }
+  }
+
   for (const doc of snap.docs) {
+    if (doc.id.startsWith('_')) continue;
     if (TEST_ATHLETE && doc.id !== TEST_ATHLETE) continue;
     const data = doc.data();
     const tokens = data.fcmTokens;
