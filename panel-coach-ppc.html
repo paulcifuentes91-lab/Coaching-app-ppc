@@ -7933,4 +7933,222 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
 })();
 
 </script>
+<script id="ppcInicio">
+/* ── Inicio del panel: frase del día (desarrollo personal del coach) + lista lateral ordenada por tipo ── */
+(function(){
+ var FRASES = {
+  'Finanzas': [
+   'Lo que no mides en tu negocio, lo pagas en tu tranquilidad.',
+   'Cobrar lo justo es parte de servir bien: un coach agotado no transforma a nadie.',
+   'El ingreso constante nace de procesos simples repetidos, no de meses heroicos.',
+   'Págate primero: ahorra antes de gastar, también como coach.',
+   'Un precio claro evita conversaciones incómodas y clientes confundidos.',
+   'Reinvierte en tu formación: es el activo que nadie puede quitarte.',
+   'Un negocio ordenado en números te deja ser creativo en lo importante.',
+   'Un atleta que renueva vale más que diez prospectos que dudan: cuida la relación.',
+   'Separa el dinero personal del de tu negocio y duerme mejor.',
+   'Tu fondo de emergencia es el primer entrenamiento de tu libertad.',
+   'Revisa tus números cada semana: lo que revisas, mejora.',
+   'No vendas horas: vende resultados medibles y un proceso claro.',
+   'La deuda mal usada pesa; bien usada, es una herramienta. Conoce la diferencia.',
+   'Crecer no es trabajar más: es sistematizar lo que ya haces bien.',
+   'Pon un precio que te permita seguir entrenando, estudiando y descansando.'
+  ],
+  'Emocional': [
+   'Sentir no te debilita; ignorar lo que sientes sí te desordena.',
+   'Ponle nombre a la emoción y perderá la mitad de su fuerza.',
+   'Tus atletas copian tu calma antes que tus consejos.',
+   'Descansar también es avanzar, aunque no se vea.',
+   'No necesitas tener todo resuelto para ser un buen coach hoy.',
+   'Pedir ayuda es una habilidad, no una derrota.',
+   'Los límites sanos protegen tu energía y tus relaciones.',
+   'Háblate como le hablarías a un atleta al que estimas.',
+   'Un mal día no define tu proceso: reanuda en la próxima decisión.',
+   'La paciencia es amor en cámara lenta.',
+   'Cuida tus vínculos como cuidas tus entrenamientos: con constancia.',
+   'No cargues con los resultados de otros: acompaña, no rescates.',
+   'La gratitud ordena la mente: nombra tres cosas buenas de hoy.',
+   'Se puede ser firme y amable al mismo tiempo.',
+   'Tu bienestar no es un lujo: es la base de todo lo que ofreces.'
+  ],
+  'Espiritual': [
+   'Haz tu trabajo como un servicio: el sentido pesa más que el resultado.',
+   'En el silencio de la mañana se ordena el resto del día.',
+   'Confía en el proceso: no todo lo que crece se ve.',
+   'Agradece lo que ya tienes antes de pedir más.',
+   'Tu propósito es ayudar a otros a ser mejores versiones de sí mismos.',
+   'Ora, medita o respira: elige el modo, pero detente un momento hoy.',
+   'La humildad abre puertas que el orgullo cierra.',
+   'Lo que das con buena intención vuelve de formas que no esperas.',
+   'No eres lo que logras: eres lo que decides ser cuando nadie mira.',
+   'Cada atleta es una persona con una historia, no un número en tu panel.',
+   'Suelta lo que no controlas y entrega lo mejor de lo que sí.',
+   'Camina con fe, pero con los pies en la acción.',
+   'La paz interior también se entrena todos los días.',
+   'Que tu éxito deje mejores a otros, no solo a ti.',
+   'Hoy es una oportunidad nueva: recíbela con gratitud.'
+  ],
+  'Deportiva': [
+   'La constancia le gana al talento cuando el talento no se entrena.',
+   'Una técnica limpia repetida mil veces es la fuerza más silenciosa.',
+   'El progreso real es lento, medible y aburrido: sigue el proceso.',
+   'Recuperarse bien es entrenar bien.',
+   'Entrena la semana pensando en la temporada, no en la sesión.',
+   'Registra, ajusta, repite: el cuaderno le gana al instinto.',
+   'La carga correcta, en el momento correcto, con el descanso correcto.',
+   'No hay atajos: hay planes bien ejecutados.',
+   'El día de competencia se prepara desde el primer día de la temporada.',
+   'Cada repetición limpia invierte en el físico y en la cabeza.',
+   'El mejor programa es el que tu atleta puede cumplir.',
+   'Mide la adherencia: sin cumplimiento, ningún método funciona.',
+   'Mejorar un 1 % cada semana cambia un físico en un año.',
+   'Escucha al cuerpo antes de que grite: el dolor tardío cuesta semanas.',
+   'El volumen construye, la intensidad refina, el descanso revela.'
+  ],
+  'Psicológica': [
+   'No eres tus pensamientos: puedes observarlos antes de creerles.',
+   'Lo que repites en tu mente, tu cuerpo termina creyéndolo.',
+   'La disciplina es motivación convertida en rutina.',
+   'Cambia «¿por qué me pasa?» por «¿qué hago ahora?».',
+   'El miedo al error cuesta más que el error mismo.',
+   'Enfócate en lo que controlas: tu esfuerzo, tu actitud, tu preparación.',
+   'La confianza se construye cumpliéndote pequeñas promesas.',
+   'Visualiza el proceso, no solo el resultado.',
+   'Un hábito nuevo debe ser fácil de empezar antes de ser perfecto.',
+   'La autocrítica útil es específica; la que destruye es global.',
+   'Cada sesgo que reconoces en ti te hace mejor coach.',
+   'Cuando algo te incomoda, mira qué valor tuyo está en juego.',
+   'Escucha más de lo que hablas: tus atletas saben mucho de sí mismos.',
+   'La mente se entrena como el músculo: con progresión y descanso.',
+   'Sé tan paciente con tus procesos como lo eres con los de tus atletas.'
+  ]
+ };
+ var CATS = Object.keys(FRASES), KP = 'ppc_frases_propias', KI = 'ppc_hero_img', offset = 0, catFija = '';
+ var COL = {'Finanzas':'#E0C23D','Emocional':'#E58FB0','Espiritual':'#9B8CE0','Deportiva':'#4CAF7D','Psicológica':'#5BB5E0','Mía':'#E0A03D'};
+ function ls(k, v){ try{ if(v===undefined) return localStorage.getItem(k); if(v===null) localStorage.removeItem(k); else localStorage.setItem(k, v); }catch(e){ return null; } }
+ function propias(){ try{ return JSON.parse(ls(KP)||'[]').filter(Boolean); }catch(e){ return []; } }
+ function dia(){ var d = new Date(); return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))/864e5); }
+ function elegir(){
+  var d = dia() + offset, cat = catFija || CATS[((d % CATS.length)+CATS.length) % CATS.length];
+  var lista = FRASES[cat].slice();
+  if(!catFija){ var pr = propias(); if(pr.length && ((d % 6)+6)%6 === 5) return {cat:'Mía', txt: pr[Math.floor(d/6) % pr.length]}; }
+  return {cat:cat, txt: lista[Math.floor(Math.abs(d)/CATS.length) % lista.length]};
+ }
+ function saludo(){ var h = new Date().getHours(); return h<6 ? 'Buenas noches' : h<12 ? 'Buenos días' : h<20 ? 'Buenas tardes' : 'Buenas noches'; }
+ function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+ var css = [
+  '#ppcHero{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:16px;margin:0 0 16px;padding:26px 28px 20px;min-height:200px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(135deg,#1c1a10 0%,#0f1013 70%);background-size:cover;background-position:center}',
+  '#ppcHero.conImg{background-blend-mode:normal}',
+  '#ppcHero .hlogo{position:absolute;right:-20px;bottom:-30px;height:240px;opacity:.10;pointer-events:none;filter:saturate(1.2)}',
+  '#ppcHero .hcat{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;padding:3px 10px;border-radius:20px;border:1px solid currentColor;margin-bottom:14px}',
+  '#ppcHero .hfrase{position:relative;font-size:24px;line-height:1.35;font-weight:600;letter-spacing:-.3px;max-width:760px;color:#f2ede0;text-shadow:0 2px 12px rgba(0,0,0,.6)}',
+  '#ppcHero .hpie{position:relative;display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;align-items:center}',
+  '#ppcHero .hpie button, #ppcHero .hpie label{background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.14);color:#cfc9b8;border-radius:20px;padding:5px 12px;font-size:11.5px;cursor:pointer;font-family:var(--mono)}',
+  '#ppcHero .hpie button:hover,#ppcHero .hpie label:hover{border-color:var(--gold);color:var(--gold)}',
+  '#ppcHero .hpie .sp{margin-left:auto;font-size:11px;opacity:.55}',
+  '#ppcLateral{display:none}',
+  '#ppcLateral .ppcGrupo{font-family:var(--mono);font-size:10.5px;letter-spacing:1.6px;text-transform:uppercase;color:var(--gold);margin:16px 2px 8px;padding-bottom:6px;border-bottom:1px solid var(--line)}',
+  '#ppcLateral .ppcGrupo:first-child{margin-top:0}',
+  '@media(min-width:1180px){',
+  ' #vistaInicio.ppcDesk:not([style*="display: none"]):not([style*="display:none"]){display:grid!important;grid-template-columns:minmax(0,1fr) 430px;column-gap:22px;align-items:start}',
+  ' #vistaInicio.ppcDesk > :not(#ppcLateral){grid-column:1}',
+    ' #vistaInicio.ppcDesk > #ppcLateral{grid-column:2;grid-row:1 / span 8;display:block;position:sticky;top:0;max-height:calc(100vh - 28px);overflow-y:auto;padding-right:4px}',
+  ' body #vistaInicio #ppcLateral details.sec:not(#secProspectos){display:block!important}',
+  ' body #vistaInicio #ppcLateral details#secProspectos:not([style*="display:none"]):not([style*="display: none"]){display:block!important}',
+  ' #ppcTabs button[data-tab="hoy"], #ppcTabs button[data-tab="negocio"], #ppcTabs button[data-tab="mas"]{display:none}',
+  ' #ppcTabs{display:none!important}',
+  '}',
+  '@media(max-width:1179px){ #ppcLateral{display:none!important} }'
+ ].join('\n');
+ var st = document.createElement('style'); st.id = 'ppcInicioCss'; st.textContent = css; document.head.appendChild(st);
+
+ var SECCIONES = null, GRUPOS = [
+  ['Urgente', ['acAtencion','acPagos','acVencimientos']],
+  ['Atletas', ['acAdherencia','acAnamnesis','acSeguimiento']],
+  ['Negocio', ['secProspectos','acIngresos']]
+ ];
+ function pintarHero(){
+  var hero = document.getElementById('ppcHero'); if(!hero) return;
+  var f = elegir(), c = COL[f.cat] || '#E0C23D', img = ls(KI);
+  hero.className = img ? 'conImg' : '';
+  hero.style.backgroundImage = img ? 'linear-gradient(rgba(8,8,10,.55),rgba(8,8,10,.82)),url('+img+')' : '';
+  var logo = document.querySelector('aside .sbpie img'); 
+  hero.querySelector('.hcat').style.color = c; hero.querySelector('.hcat').textContent = f.cat;
+  hero.querySelector('.hfrase').textContent = '“' + f.txt + '”';
+  var hl = hero.querySelector('.hlogo'); if(hl){ if(logo && !img){ hl.src = logo.src; hl.style.display = ''; } else hl.style.display = 'none'; }
+ }
+ function montar(){
+  var v = document.getElementById('vistaInicio'); if(!v || document.getElementById('ppcHero')) return !!document.getElementById('ppcHero');
+  var hh = v.querySelector(':scope > .hhead'); if(!hh) return false;
+  var hero = document.createElement('div'); hero.id = 'ppcHero';
+  hero.innerHTML = '<img class="hlogo" alt=""><div><span class="hcat"></span><div class="hfrase"></div></div>'+
+   '<div class="hpie"><button id="ppcFrOtra" type="button">↻ Otra frase</button>'+
+   CATS.map(function(k){ return '<button type="button" data-fcat="'+k+'">'+k+'</button>'; }).join('')+
+   '<button id="ppcFrMia" type="button">＋ Mi frase</button><label>🖼 Imagen<input type="file" id="ppcHeroImg" accept="image/*" style="display:none"></label><button id="ppcHeroImgQ" type="button" title="Quitar imagen">✕</button></div>';
+  hh.insertAdjacentElement('afterend', hero);
+  var t = v.querySelector('.htit'); if(t) t.textContent = saludo() + ', Paul';
+  pintarHero(); return true;
+ }
+ function armarLateral(){
+  var v = document.getElementById('vistaInicio'); if(!v) return;
+  var lat = document.getElementById('ppcLateral');
+  if(!lat){
+   var secs = [].slice.call(v.querySelectorAll(':scope > details.sec[id]')); if(!secs.length) return;
+   SECCIONES = secs;
+   lat = document.createElement('aside'); lat.id = 'ppcLateral'; lat.setAttribute('aria-label','Resumen por tipo');
+   var usados = {};
+   GRUPOS.concat([['Más', secs.map(function(s){ return s.id; })]]).forEach(function(g){
+    var items = g[1].map(function(id){ return secs.find(function(s){ return s.id===id && !usados[id]; }); }).filter(Boolean);
+    if(!items.length) return;
+    var h = document.createElement('div'); h.className = 'ppcGrupo'; h.textContent = g[0]; lat.appendChild(h);
+    items.forEach(function(s){ usados[s.id] = 1; if(s.id!=='acAtencion') s.open = false; lat.appendChild(s); });
+   });
+   v.appendChild(lat);
+  }
+  v.classList.add('ppcDesk');
+ }
+ /* en pantallas angostas las secciones vuelven al inicio con sus pestañas */
+ function ajustar(){
+  var v = document.getElementById('vistaInicio'), lat = document.getElementById('ppcLateral'); if(!v || !lat) return;
+  var desk = window.innerWidth >= 1180;
+  if(!desk && lat.parentNode === v && lat.querySelector('details.sec')){
+   var ref = v.querySelector(':scope > .racc') || v.querySelector(':scope > #ppcHero');
+   [].slice.call(lat.querySelectorAll('details.sec')).forEach(function(s){ v.appendChild(s); });
+   v.classList.remove('ppcDesk'); lat.dataset.vacio = '1';
+  } else if(desk && lat.dataset.vacio){
+   delete lat.dataset.vacio; lat.innerHTML = '';
+   var usados = {};
+   GRUPOS.concat([['Más', (SECCIONES||[]).map(function(s){ return s.id; })]]).forEach(function(g){
+    var items = g[1].map(function(id){ return (SECCIONES||[]).find(function(s){ return s.id===id && !usados[id]; }); }).filter(Boolean);
+    if(!items.length) return;
+    var h = document.createElement('div'); h.className = 'ppcGrupo'; h.textContent = g[0]; lat.appendChild(h);
+    items.forEach(function(s){ usados[s.id] = 1; lat.appendChild(s); });
+   });
+   v.classList.add('ppcDesk');
+  }
+ }
+ document.addEventListener('click', function(e){
+  var t = e.target; if(!t || !t.closest) return;
+  if(t.id==='ppcFrOtra'){ offset++; catFija = catFija; pintarHero(); return; }
+  var c = t.closest('[data-fcat]'); if(c){ catFija = (catFija===c.dataset.fcat) ? '' : c.dataset.fcat; offset = 0; document.querySelectorAll('#ppcHero [data-fcat]').forEach(function(b){ b.style.borderColor = b.dataset.fcat===catFija ? 'var(--gold)' : ''; }); pintarHero(); return; }
+  if(t.id==='ppcFrMia'){ var x = prompt('Escribe tu frase (se mezclará en la rotación):'); if(x && x.trim()){ var l = propias(); l.push(x.trim().slice(0,240)); ls(KP, JSON.stringify(l)); catFija = ''; offset = 0; pintarHero(); try{ toast('Frase guardada ✓'); }catch(er){} } return; }
+  if(t.id==='ppcHeroImgQ'){ ls(KI, null); pintarHero(); return; }
+ });
+ document.addEventListener('change', function(e){
+  if(!e.target || e.target.id!=='ppcHeroImg') return;
+  var f = e.target.files && e.target.files[0]; if(!f) return;
+  var r = new FileReader();
+  r.onload = function(){ var im = new Image(); im.onload = function(){
+   var W = Math.min(1400, im.width), H = Math.round(im.height * W / im.width), cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+   cv.getContext('2d').drawImage(im, 0, 0, W, H);
+   var d = cv.toDataURL('image/jpeg', 0.78); try{ localStorage.setItem(KI, d); }catch(er){ try{ toast('La imagen es muy pesada para guardarla'); }catch(x){} return; }
+   pintarHero(); }; im.src = r.result; };
+  r.readAsDataURL(f);
+ });
+ window.addEventListener('resize', ajustar);
+ var n = 0, iv = setInterval(function(){ n++; var ok = montar(); armarLateral(); ajustar(); if(document.getElementById('ppcLateral') && ok && n > 6 || n > 40) clearInterval(iv); }, 500);
+})();
+
+</script>
 </body></html>
