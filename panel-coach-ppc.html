@@ -7756,8 +7756,8 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
  function montar(){
   if(document.getElementById('ppcBell')) return;
   var chip = document.getElementById('authChip'); if(!chip) return;
-  var wrap = document.createElement('div'); wrap.style.cssText = 'position:relative;margin-bottom:8px';
-  wrap.innerHTML = '<button class="authchip off" id="ppcBell" style="width:100%;text-align:left">🔔 Avisos <span id="ppcBellN" style="display:none;background:#E0A03D;color:#111;border-radius:10px;padding:1px 7px;margin-left:6px;font-weight:800;font-size:11px"></span></button>'+
+  var wrap = document.createElement('div'); wrap.style.cssText = 'position:relative;flex:0 0 100%;margin-bottom:2px'; chip.parentNode.style.flexWrap = 'wrap';
+  wrap.innerHTML = '<button class="authchip off" id="ppcBell" style="width:100%;text-align:left;padding:7px 12px">🔔 Avisos <span id="ppcBellN" style="display:none;background:#E0A03D;color:#111;border-radius:10px;padding:1px 7px;margin-left:6px;font-weight:800;font-size:11px"></span></button>'+
    '<div id="ppcBellBox" style="display:none;position:fixed;left:12px;bottom:70px;width:340px;max-width:calc(100vw - 24px);max-height:70vh;overflow:auto;background:#14171B;border:1px solid #2a2e34;border-radius:12px;padding:12px;z-index:9999;box-shadow:0 10px 30px rgba(0,0,0,.5)"></div>';
   chip.parentNode.insertBefore(wrap, chip);
   document.getElementById('ppcBell').onclick = function(){ var b = document.getElementById('ppcBellBox'); b.style.display = b.style.display==='none' ? 'block' : 'none'; pintar(); };
@@ -7797,6 +7797,115 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
  });
  /* Arranque: al iniciar sesión y con Firebase conectado */
  setInterval(function(){ if(AUTH.user && FB.on && !unsub) iniciar(); if(!AUTH.user && unsub) parar(); if(!document.getElementById('ppcBell')) pintar(); }, 1500);
+})();
+
+</script>
+<script id="ppcLimpio">
+/* ── Vista limpia del panel: secciones plegables, encabezado compacto, lista de atletas sin ruido ──
+   Todo se activa con body.limpio (interruptor «Vista limpia» en el menú ⋯ de la ficha). No cambia datos. */
+(function(){
+ var KEY = 'ppc_vista_limpia';
+ function on(){ try{ return localStorage.getItem(KEY) !== '0'; }catch(e){ return true; } }
+ function aplicar(){ document.body.classList.toggle('limpio', on()); var t = document.getElementById('ppcLimpioTg'); if(t) t.textContent = (on() ? '✓ ' : '') + 'Vista limpia'; }
+
+ var css = [
+  /* 1 · secciones plegables (p2 / p3) */
+  'body.limpio .sec.cerrable > .st:first-child{cursor:pointer;user-select:none}',
+  'body.limpio .sec.cerrable > .st:first-child::before{content:"▸";display:inline-block;margin-right:6px;font-size:10px;transition:transform .15s}',
+  'body.limpio .sec.cerrable:not(.cerrada) > .st:first-child::before{transform:rotate(90deg)}',
+  'body.limpio .sec.cerrable.cerrada > :not(.st:first-child){display:none !important}',
+  'body.limpio .sec.cerrable.cerrada{padding-bottom:13px}',
+  'body.limpio .sec.cerrable.cerrada > .st:first-child{margin-bottom:0}',
+  /* días de entrenamiento plegables */
+  'body.limpio .dia .dtog{background:none;border:0;color:var(--gold,#E0C23D);font-size:13px;cursor:pointer;padding:0 8px 0 0}',
+  'body.limpio .dia.dcerrado > .db{display:none}',
+  'body.limpio .dia.dcerrado{padding-bottom:6px}',
+  'body:not(.limpio) .dia .dtog{display:none}',
+  /* 3 · encabezado compacto */
+  'body.limpio #ppcMenuMas{position:relative;display:inline-block}',
+  'body.limpio #ppcMenuBox{display:none;position:absolute;right:0;top:calc(100% + 6px);min-width:210px;background:#14171B;border:1px solid #2a2e34;border-radius:12px;padding:8px;z-index:9998;box-shadow:0 10px 30px rgba(0,0,0,.5);flex-direction:column;gap:4px}',
+  'body.limpio #ppcMenuBox.abierto{display:flex}',
+  'body.limpio #ppcMenuBox .b2, body.limpio #ppcMenuBox button{width:100%;text-align:left;margin:0 !important}',
+  'body.limpio #ppcMenuBox .mtit{font-size:10px;letter-spacing:.8px;opacity:.55;padding:6px 6px 2px;text-transform:uppercase}',
+  'body:not(.limpio) #ppcMenuMas > #ppcMenuBtn{display:none}',
+  'body:not(.limpio) #ppcMenuBox{display:contents}',
+  'body:not(.limpio) #ppcMenuBox .mtit{display:none}',
+  /* 4 · lista de atletas: una sola señal */
+  'body.limpio .item .ins-badge{display:none}',
+  'body.limpio .item .ppcdias:not(.am):not(.ro){display:none}',
+  'body.limpio #ppcLeyenda{display:none}',
+  'body.limpio #ppcChips:not(.mas) .ppcchip[data-ppcf="online"]:not(.on), body.limpio #ppcChips:not(.mas) .ppcchip[data-ppcf="presencial"]:not(.on), body.limpio #ppcChips:not(.mas) .ppcchip[data-ppcf="pausa"]:not(.on), body.limpio #ppcChips:not(.mas) .ppcchip.tag:not(.on){display:none}',
+  'body.limpio #ppcChipsMas{background:none;border:1px dashed var(--line,#2a2e34);color:var(--mu,#9aa0a6);border-radius:20px;padding:3px 10px;font-size:11px;cursor:pointer;margin:0 0 9px}',
+  'body:not(.limpio) #ppcChipsMas{display:none}',
+  /* campana de avisos como fila completa */
+  '#ppcBell{display:block}'
+ ].join('\n');
+ var st = document.createElement('style'); st.id = 'ppcLimpioCss'; st.textContent = css; document.head.appendChild(st);
+
+ /* ── 1 · plegables ── */
+ var DEF_CERRADAS = /^(series por músculo|indicaciones generales|días libres|generar dieta)/i;
+ function prepararSecciones(){
+  ['p2','p3'].forEach(function(pid){
+   var p = document.getElementById(pid); if(!p) return;
+   [].slice.call(p.querySelectorAll(':scope > .sec')).forEach(function(s){
+    var h = s.firstElementChild; if(!h || !h.classList.contains('st')) return;
+    if(!s.classList.contains('cerrable')){
+     s.classList.add('cerrable');
+     if(DEF_CERRADAS.test((h.textContent||'').trim()) ) s.classList.add('cerrada');
+    }
+   });
+  });
+ }
+ /* días plegables: botón ▸ en el encabezado de cada día; estado recordado por posición */
+ var ABIERTOS = {0:true};
+ function prepararDias(){
+  var box = document.getElementById('dias'); if(!box) return;
+  [].slice.call(box.querySelectorAll(':scope > .dia')).forEach(function(d, i){
+   var h = d.querySelector('.dh'); if(!h) return;
+   if(!h.querySelector('.dtog')){ var b = document.createElement('button'); b.type = 'button'; b.className = 'dtog'; b.setAttribute('data-dtog',''); h.insertBefore(b, h.firstChild); }
+   var abierto = !!ABIERTOS[i]; if(d.classList.contains('dcerrado') === abierto) d.classList.toggle('dcerrado', !abierto);
+   var tg = h.querySelector('.dtog'), tx = abierto ? '▾' : '▸'; if(tg.textContent !== tx) tg.textContent = tx;
+  });
+ }
+ document.addEventListener('click', function(e){
+  var t = e.target; if(!t || !t.closest || !document.body.classList.contains('limpio')) return;
+  var dt = t.closest('[data-dtog]');
+  if(dt){ var dia = dt.closest('.dia'), box = document.getElementById('dias'), i = [].indexOf.call(box.querySelectorAll(':scope > .dia'), dia); ABIERTOS[i] = !ABIERTOS[i]; prepararDias(); return; }
+  var h = t.closest('.sec.cerrable > .st:first-child');
+  if(h && !t.closest('button,input,select,textarea,a')){ h.parentNode.classList.toggle('cerrada'); return; }
+  /* menú ⋯ */
+  if(t.closest('#ppcMenuBtn')){ document.getElementById('ppcMenuBox').classList.toggle('abierto'); return; }
+  if(t.id==='ppcLimpioTg'){ try{ localStorage.setItem(KEY, on()?'0':'1'); }catch(x){} aplicar(); return; }
+  if(t.id==='ppcChipsMas'){ var c = document.getElementById('ppcChips'); c.classList.toggle('mas'); t.textContent = c.classList.contains('mas') ? '− menos filtros' : '＋ más filtros'; var l = document.getElementById('ppcLeyenda'); return; }
+  var mb = document.getElementById('ppcMenuBox'); if(mb && mb.classList.contains('abierto')){ if(t.closest('#ppcMenuBox') && t.closest('button') && t.id!=='ppcLimpioTg') setTimeout(function(){ mb.classList.remove('abierto'); }, 0); else if(!t.closest('#ppcMenuMas')) mb.classList.remove('abierto'); }
+ }, true);
+
+ /* ── 3 · encabezado: WhatsApp + Guardar visibles; el resto en ⋯ ── */
+ function prepararEncabezado(){
+  var act = document.querySelector('.mh .mact'); if(!act || document.getElementById('ppcMenuMas')) return;
+  var wrap = document.createElement('span'); wrap.id = 'ppcMenuMas';
+  wrap.innerHTML = '<button class="b2" id="ppcMenuBtn" type="button" title="Más acciones">⋯ Más</button><div id="ppcMenuBox"><div class="mtit">Ficha</div></div>';
+  var box = wrap.querySelector('#ppcMenuBox');
+  ['btnApp','btnJson','fbTraer'].forEach(function(id){ var el = document.getElementById(id); if(el) box.appendChild(el); });
+  var tools = document.getElementById('ppcTools');
+  if(tools){ var tt = document.createElement('div'); tt.className = 'mtit'; tt.textContent = 'Herramientas'; box.appendChild(tt); [].slice.call(tools.querySelectorAll('button')).forEach(function(b){ box.appendChild(b); }); tools.style.display = 'none'; }
+  var tit = document.createElement('div'); tit.className = 'mtit'; tit.textContent = 'Vista'; box.appendChild(tit);
+  var tg = document.createElement('button'); tg.id = 'ppcLimpioTg'; tg.className = 'b2'; tg.type = 'button'; box.appendChild(tg);
+  var ref = document.getElementById('fbGuardar'); act.insertBefore(wrap, ref || null);
+  aplicar();
+ }
+
+ /* ── 4 · filtros reducidos ── */
+ function prepararFiltros(){
+  var chips = document.getElementById('ppcChips'); if(!chips) return;
+  if(!document.getElementById('ppcChipsMas')){ var b = document.createElement('button'); b.id = 'ppcChipsMas'; b.type = 'button'; b.textContent = '＋ más filtros'; chips.insertAdjacentElement('afterend', b); }
+ }
+
+ function tick(){ prepararSecciones(); prepararDias(); prepararEncabezado(); prepararFiltros(); }
+ aplicar();
+ var t0 = setInterval(tick, 700);
+ var obs = null, pend = false;
+ setInterval(function(){ var box = document.getElementById('dias'); if(box && (!obs || obs._box !== box)){ if(obs) obs.disconnect(); obs = new MutationObserver(function(){ if(pend) return; pend = true; setTimeout(function(){ pend = false; prepararDias(); }, 30); }); obs._box = box; obs.observe(box, {childList:true, subtree:true}); } }, 1000);
 })();
 
 </script>
