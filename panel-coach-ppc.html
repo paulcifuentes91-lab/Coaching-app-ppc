@@ -4556,12 +4556,13 @@ const GEN_PLANTILLAS = {
  ]
 };
 
+function gCerrado(x){ x = Math.max(0, x); return x < 20 ? Math.round(x/5)*5 : Math.round(x/10)*10; }
 function gramosPara(alim, macro, objetivo){
  /* despeja los gramos necesarios para alcanzar 'objetivo' de ese macro */
  const idx = {p:1, c:2, g:3}[macro];
  const por100 = alim[idx];
  if(!por100) return 0;
- return Math.round(objetivo/por100*100/5)*5;   // redondeo a 5 g
+ return gCerrado(objetivo/por100*100);   // números cerrados
 }
 
 /* Desayuno: antes era siempre huevo+clara+avena/pan+palta+café, fijo, para
@@ -4618,7 +4619,7 @@ function comidaDesayunoYogurt(macros, opciones, G){
  usado[0] += gy*yog[1]/100; usado[1] += gy*yog[2]/100; usado[2] += gy*yog[3]/100;
  const faltaP = macros.p - usado[0];
  if(faltaP > 8){
-  const gw = Math.round(faltaP/80*100/5)*5;
+  const gw = gCerrado(faltaP/80*100);
   items.push(`${gw} g ${etiquetaPolvo(opciones)}`);
   usado[0] += gw*0.80; usado[1] += gw*0.08; usado[2] += gw*0.06;
  }
@@ -4711,7 +4712,7 @@ function armarComida(plan, macros, opciones){
  };
 
  if(plan.tipo === "batido"){
-  const gw = Math.round(macros.p/80*100/5)*5;
+  const gw = gCerrado(macros.p/80*100);
   items.push(`${gw} g ${etiquetaPolvo(opciones)}`);
   usado[0] += gw*0.80; usado[1] += gw*0.08; usado[2] += gw*0.06;
   // La fruta antes siempre era plátano - ahora rota entre las de
@@ -4722,7 +4723,7 @@ function armarComida(plan, macros, opciones){
   const datosFruta = GEN_ALIM.frutas[frutaElegida] || GEN_ALIM.frutas["plátano"];
   const rest = macros.c - usado[1];
   if(rest > 25){
-   const gav = Math.round(rest*0.5/66*100/5)*5;
+   const gav = gCerrado(rest*0.5/66*100);
    items.push(`${gav} g avena`);
    usado[0] += gav*0.17; usado[1] += gav*0.66; usado[2] += gav*0.07;
    const r2 = macros.c - usado[1];
@@ -4817,7 +4818,7 @@ function generarDieta(cfg){
    const m = ult.items[i].match(/^(\d+) g (.+)$/);
    const alim = Object.entries(GEN_ALIM.prot).find(([k])=>m[2]===k) || Object.entries(GEN_ALIM.prot).find(([k])=>m[2].includes(k.split(" ")[0]));
    if(alim){
-    const nuevo = Math.max(60, Math.round((+m[1] - sobraP/alim[1][1]*100)/5)*5);
+    const nuevo = Math.max(60, gCerrado(+m[1] - sobraP/alim[1][1]*100));
     tot[0] += (nuevo-+m[1])*alim[1][1]/100; tot[2] += (nuevo-+m[1])*alim[1][3]/100;
     ult.items[i] = `${nuevo} g ${m[2]}`;
    }
@@ -4831,7 +4832,7 @@ function generarDieta(cfg){
     const m = comidas[ci].items[idx].match(/^(\d+) g (.+)$/);
     const alim = Object.entries(GEN_ALIM.carbo).find(([k])=>m[2].includes(k.split(" ")[0]));
     if(alim){
-     const nuevo = Math.max(20, Math.round((+m[1] - dif/alim[1][2]*100)/5)*5);
+     const nuevo = Math.max(20, gCerrado(+m[1] - dif/alim[1][2]*100));
      tot[1] += (nuevo-+m[1])*alim[1][2]/100; tot[0] += (nuevo-+m[1])*alim[1][1]/100;
      comidas[ci].items[idx] = `${nuevo} g ${m[2]}`;
      break;
@@ -4847,7 +4848,7 @@ function generarDieta(cfg){
     const m = comidas[ci].items[idx].match(/^(\d+) g (.+)$/);
     const alim = Object.entries(GEN_ALIM.grasa).find(([k])=>m[2].includes(k.split(" ")[0]));
     if(alim){
-     const nuevo = Math.max(5, Math.round((+m[1] - dif/alim[1][3]*100)/5)*5);
+     const nuevo = Math.max(5, gCerrado(+m[1] - dif/alim[1][3]*100));
      tot[2] += (nuevo-+m[1])*alim[1][3]/100;
      comidas[ci].items[idx] = `${nuevo} g ${m[2]}`;
      break;
@@ -5015,7 +5016,7 @@ function escalarAlimentos(bloqueEl, factor){
   const n = txt.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
   if(NO_ESCALAR.some(k=>n.includes(k))) return;
   const nuevo = txt.replace(/(\d+)(\s*)(g|gr|grs|cc|ml)\b/gi, (m,num,esp,uni)=>{
-   const v = Math.round(parseInt(num)*factor/5)*5;   // redondea a múltiplos de 5
+   const v = gCerrado(parseInt(num)*factor);   // números cerrados
    return (v>0? v : 5) + esp + uni;
   });
   if(nuevo !== txt){ inp.value = nuevo; cambiados++; }
@@ -6841,7 +6842,7 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
     var arr = [["P",kP,dP,"pechuga de pollo",31],["C",kC,dC,"arroz cocido",28],["G",kG,dG,"aceite de oliva",100]];
     arr = arr.filter(function(a){ return falta ? a[1] > 0 : a[1] < 0; }).sort(function(a,b){ return Math.abs(b[1]) - Math.abs(a[1]); });
     if(!arr.length) return "";
-    var a = arr[0], g = Math.round(Math.abs(a[2])/a[4]*100/5)*5;
+    var a = arr[0], g = (function(x){ return x < 20 ? Math.round(x/5)*5 : Math.round(x/10)*10; })(Math.abs(a[2])/a[4]*100);
     return (falta ? "prueba sumar ~" : "prueba quitar ~") + g + " g de " + a[3];
   }
 
