@@ -7938,74 +7938,6 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
 /* ── Inicio del panel: frase del día (desarrollo personal del coach) + lista lateral ordenada por tipo ── */
 (function(){
  var FRASES = {
-  'Finanzas': [
-   'Lo que no mides en tu negocio, lo pagas en tu tranquilidad.',
-   'Cobrar lo justo es parte de servir bien: un coach agotado no transforma a nadie.',
-   'El ingreso constante nace de procesos simples repetidos, no de meses heroicos.',
-   'Págate primero: ahorra antes de gastar, también como coach.',
-   'Un precio claro evita conversaciones incómodas y clientes confundidos.',
-   'Reinvierte en tu formación: es el activo que nadie puede quitarte.',
-   'Un negocio ordenado en números te deja ser creativo en lo importante.',
-   'Un atleta que renueva vale más que diez prospectos que dudan: cuida la relación.',
-   'Separa el dinero personal del de tu negocio y duerme mejor.',
-   'Tu fondo de emergencia es el primer entrenamiento de tu libertad.',
-   'Revisa tus números cada semana: lo que revisas, mejora.',
-   'No vendas horas: vende resultados medibles y un proceso claro.',
-   'La deuda mal usada pesa; bien usada, es una herramienta. Conoce la diferencia.',
-   'Crecer no es trabajar más: es sistematizar lo que ya haces bien.',
-   'Pon un precio que te permita seguir entrenando, estudiando y descansando.'
-  ],
-  'Emocional': [
-   'Sentir no te debilita; ignorar lo que sientes sí te desordena.',
-   'Ponle nombre a la emoción y perderá la mitad de su fuerza.',
-   'Tus atletas copian tu calma antes que tus consejos.',
-   'Descansar también es avanzar, aunque no se vea.',
-   'No necesitas tener todo resuelto para ser un buen coach hoy.',
-   'Pedir ayuda es una habilidad, no una derrota.',
-   'Los límites sanos protegen tu energía y tus relaciones.',
-   'Háblate como le hablarías a un atleta al que estimas.',
-   'Un mal día no define tu proceso: reanuda en la próxima decisión.',
-   'La paciencia es amor en cámara lenta.',
-   'Cuida tus vínculos como cuidas tus entrenamientos: con constancia.',
-   'No cargues con los resultados de otros: acompaña, no rescates.',
-   'La gratitud ordena la mente: nombra tres cosas buenas de hoy.',
-   'Se puede ser firme y amable al mismo tiempo.',
-   'Tu bienestar no es un lujo: es la base de todo lo que ofreces.'
-  ],
-  'Espiritual': [
-   'Haz tu trabajo como un servicio: el sentido pesa más que el resultado.',
-   'En el silencio de la mañana se ordena el resto del día.',
-   'Confía en el proceso: no todo lo que crece se ve.',
-   'Agradece lo que ya tienes antes de pedir más.',
-   'Tu propósito es ayudar a otros a ser mejores versiones de sí mismos.',
-   'Ora, medita o respira: elige el modo, pero detente un momento hoy.',
-   'La humildad abre puertas que el orgullo cierra.',
-   'Lo que das con buena intención vuelve de formas que no esperas.',
-   'No eres lo que logras: eres lo que decides ser cuando nadie mira.',
-   'Cada atleta es una persona con una historia, no un número en tu panel.',
-   'Suelta lo que no controlas y entrega lo mejor de lo que sí.',
-   'Camina con fe, pero con los pies en la acción.',
-   'La paz interior también se entrena todos los días.',
-   'Que tu éxito deje mejores a otros, no solo a ti.',
-   'Hoy es una oportunidad nueva: recíbela con gratitud.'
-  ],
-  'Deportiva': [
-   'La constancia le gana al talento cuando el talento no se entrena.',
-   'Una técnica limpia repetida mil veces es la fuerza más silenciosa.',
-   'El progreso real es lento, medible y aburrido: sigue el proceso.',
-   'Recuperarse bien es entrenar bien.',
-   'Entrena la semana pensando en la temporada, no en la sesión.',
-   'Registra, ajusta, repite: el cuaderno le gana al instinto.',
-   'La carga correcta, en el momento correcto, con el descanso correcto.',
-   'No hay atajos: hay planes bien ejecutados.',
-   'El día de competencia se prepara desde el primer día de la temporada.',
-   'Cada repetición limpia invierte en el físico y en la cabeza.',
-   'El mejor programa es el que tu atleta puede cumplir.',
-   'Mide la adherencia: sin cumplimiento, ningún método funciona.',
-   'Mejorar un 1 % cada semana cambia un físico en un año.',
-   'Escucha al cuerpo antes de que grite: el dolor tardío cuesta semanas.',
-   'El volumen construye, la intensidad refina, el descanso revela.'
-  ],
   'Versículo': [
    'Colosenses 3:23|Y todo lo que hagáis, hacedlo de corazón, como para el Señor y no para los hombres.',
    'Filipenses 4:13|Todo lo puedo en Cristo que me fortalece.',
@@ -8021,36 +7953,75 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
    'Santiago 1:5|Si alguno de vosotros tiene falta de sabiduría, pídala a Dios, el cual da a todos abundantemente y sin reproche.',
    'Proverbios 27:17|Hierro con hierro se afila; y así el hombre aguza el rostro de su amigo.',
    'Salmo 37:5|Encomienda a Jehová tu camino, y confía en él; y él hará.',
-   '2 Timoteo 1:7|No nos ha dado Dios espíritu de cobardía, sino de poder, de amor y de dominio propio.'
+   '2 Timoteo 1:7|No nos ha dado Dios espíritu de cobardía, sino de poder, de amor y de dominio propio.',
+   'Proverbios 21:5|Los pensamientos del diligente ciertamente tienden a la abundancia; mas todo el que se apresura alocadamente, de cierto va a la pobreza.',
+   'Proverbios 13:11|Las riquezas de vanidad disminuirán; pero el que recoge con mano laboriosa las aumenta.',
+   'Proverbios 22:7|El rico se enseñorea de los pobres, y el que toma prestado es siervo del que presta.',
+   'Proverbios 21:20|Tesoro precioso y aceite hay en la casa del sabio; mas el hombre insensato todo lo disipa.',
+   'Lucas 14:28|Porque ¿quién de vosotros, queriendo edificar una torre, no se sienta primero y calcula los gastos, a ver si tiene lo que necesita para acabarla?',
+   'Proverbios 14:23|En toda labor hay fruto; mas las vanas palabras de los labios empobrecen.',
+   'Eclesiastés 11:2|Reparte a siete, y aun a ocho; porque no sabes qué mal vendrá sobre la tierra.',
+   'Proverbios 3:9-10|Honra a Jehová con tus bienes, y con las primicias de todos tus frutos; y serán llenos tus graneros con abundancia.',
+   'Proverbios 10:4|La mano negligente empobrece; mas la mano de los diligentes enriquece.',
+   'Lucas 16:10|El que es fiel en lo muy poco, también en lo más es fiel.',
+   'Hebreos 13:5|Sean vuestras costumbres sin avaricia, contentos con lo que tenéis ahora.',
+   'Salmo 90:12|Enséñanos de tal modo a contar nuestros días, que traigamos al corazón sabiduría.',
+   'Proverbios 15:22|Los pensamientos son frustrados donde no hay consejo; mas en la multitud de consejeros se afirman.',
+   'Eclesiastés 9:10|Todo lo que te viniere a la mano para hacer, hazlo según tus fuerzas.',
+   'Proverbios 4:23|Sobre toda cosa guardada, guarda tu corazón; porque de él mana la vida.'
   ],
-  'Psicológica': [
-   'No eres tus pensamientos: puedes observarlos antes de creerles.',
-   'Lo que repites en tu mente, tu cuerpo termina creyéndolo.',
-   'La disciplina es motivación convertida en rutina.',
-   'Cambia «¿por qué me pasa?» por «¿qué hago ahora?».',
-   'El miedo al error cuesta más que el error mismo.',
-   'Enfócate en lo que controlas: tu esfuerzo, tu actitud, tu preparación.',
-   'La confianza se construye cumpliéndote pequeñas promesas.',
-   'Visualiza el proceso, no solo el resultado.',
-   'Un hábito nuevo debe ser fácil de empezar antes de ser perfecto.',
-   'La autocrítica útil es específica; la que destruye es global.',
-   'Cada sesgo que reconoces en ti te hace mejor coach.',
-   'Cuando algo te incomoda, mira qué valor tuyo está en juego.',
-   'Escucha más de lo que hablas: tus atletas saben mucho de sí mismos.',
-   'La mente se entrena como el músculo: con progresión y descanso.',
-   'Sé tan paciente con tus procesos como lo eres con los de tus atletas.'
+  'Educación financiera': [
+   'Fondo de emergencia: reúne de 3 a 6 meses de gastos básicos antes de invertir. Es lo que evita endeudarte en una crisis.',
+   'Págate primero: apenas recibas un ingreso, aparta el ahorro y recién después gasta.',
+   'Regla 50/30/20 como punto de partida: 50 % necesidades, 30 % gustos, 20 % ahorro y deudas.',
+   'Interés compuesto: tu dinero gana intereses sobre los intereses. El tiempo pesa más que el monto inicial.',
+   'Primero paga la deuda más cara: una tarjeta o crédito de consumo cuesta mucho más de lo que rinde un ahorro.',
+   'Separa tus cuentas: una para tu vida personal y otra para tu negocio. Sin eso, no sabes si ganas.',
+   'Ingreso variable: calcula tu promedio de los últimos 6 meses y vive con un sueldo fijo que te pagas a ti mismo.',
+   'Provisiona impuestos: cada vez que cobres, aparta la parte que corresponde al SII para no sufrir en abril.',
+   'Inflación: el dinero quieto pierde poder de compra. Ahorrar sin invertir es ir cuesta abajo lentamente.',
+   'Diversifica: no pongas todo en un solo activo, un solo cliente o una sola fuente de ingreso.',
+   'Costo real de un cliente: cuenta tu tiempo, no solo tu precio. Si no calculas tu hora, no sabes si ganas.',
+   'Margen antes que ventas: vender más no sirve si cada venta deja menos utilidad.',
+   'Flujo de caja: lo que importa no es cuánto facturas, sino cuánto entra y cuándo lo hace.',
+   'Revisa tus suscripciones y gastos hormiga una vez al mes: pequeños montos fijos suman mucho al año.',
+   'Un presupuesto no te limita: te dice a dónde va tu dinero antes de que desaparezca.',
+   'Invertir es comprar activos que producen; consumir es comprar cosas que pierden valor. Conoce la diferencia.',
+   'Antes de invertir, entiende el riesgo y el plazo: dinero que necesitas pronto no va en activos que fluctúan.',
+   'Cuotas sin interés no son gratis: comprometen tu flujo futuro. Suma todas tus cuotas antes de agregar otra.',
+   'Tu pensión también es tuya: revisa tus cotizaciones y planifica un ahorro previsional voluntario.',
+   'Un seguro cuesta poco comparado con lo que cubre: protege tu capacidad de generar ingresos primero.',
+   'Sube tus precios con la inflación y con tu experiencia: congelarlos es regalar tu margen cada año.',
+   'Ahorra para renovar tus herramientas de trabajo antes de que fallen: es un costo del negocio, no un gasto sorpresa.',
+   'No mezcles emoción con decisiones de dinero: espera 48 horas antes de cualquier compra grande.',
+   'Mide tu patrimonio: activos menos deudas. Si esa cifra sube cada trimestre, vas bien.',
+   'Metas con monto y fecha: «ahorrar $2.000.000 para marzo» funciona; «ahorrar más» no.',
+   'Un cliente que renueva cuesta mucho menos que uno nuevo: cuida a quienes ya confían en ti.',
+   'Ingresos pasivos o recurrentes (planes mensuales, programas) dan estabilidad al negocio.',
+   'Anota todo durante 30 días: sin datos, el presupuesto es un deseo.',
+   'Educación financiera es una habilidad de por vida: dedica 15 minutos a la semana a revisar tus números.',
+   'Cobrar a tiempo es parte del servicio: define fechas claras de pago y cumple tu política.'
   ]
  };
  var CATS = Object.keys(FRASES), KP = 'ppc_frases_propias', KI = 'ppc_hero_img', offset = 0, catFija = '';
- var COL = {'Finanzas':'#E0C23D','Emocional':'#E58FB0','Espiritual':'#9B8CE0','Deportiva':'#4CAF7D','Psicológica':'#5BB5E0','Versículo':'#F0D890','Mía':'#E0A03D'};
+ var COL = {'Educación financiera':'#E0C23D','Versículo':'#F0D890'};
  function ls(k, v){ try{ if(v===undefined) return localStorage.getItem(k); if(v===null) localStorage.removeItem(k); else localStorage.setItem(k, v); }catch(e){ return null; } }
  function propias(){ try{ return JSON.parse(ls(KP)||'[]').filter(Boolean); }catch(e){ return []; } }
  function dia(){ var d = new Date(); return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))/864e5); }
+ var tabCat = '';
+ function contador(){
+  /* avanza en cada apertura del panel: así siempre cambia (y cada día es distinto) */
+  var n = parseInt(ls('ppc_frase_n')||'0',10); if(isNaN(n)) n = 0;
+  var hoy = dia(), ult = parseInt(ls('ppc_frase_dia')||'0',10);
+  n += (hoy !== ult) ? 2 : 1; ls('ppc_frase_n', String(n)); ls('ppc_frase_dia', String(hoy));
+  return n > 1 ? n : hoy;   // sin almacenamiento: depende del día
+ }
+ var N0 = contador();
  function elegir(){
-  var d = dia() + offset, cat = catFija || CATS[((d % CATS.length)+CATS.length) % CATS.length];
-  var lista = FRASES[cat].slice();
-  if(!catFija){ var pr = propias(); if(pr.length && ((d % 7)+7)%7 === 6) return {cat:'Mía', txt: pr[Math.floor(d/7) % pr.length]}; }
-  return {cat:cat, txt: lista[Math.floor(Math.abs(d)/CATS.length) % lista.length]};
+  var fx = catFija || tabCat, n = N0 + offset, cat = fx || CATS[((n % CATS.length)+CATS.length) % CATS.length];
+  var lista = FRASES[cat];
+  var i = fx ? Math.abs(n) : Math.floor(Math.abs(n)/CATS.length);
+  return {cat:cat, txt: lista[i % lista.length]};
  }
  function saludo(){ var h = new Date().getHours(); return h<6 ? 'Buenas noches' : h<12 ? 'Buenos días' : h<20 ? 'Buenas tardes' : 'Buenas noches'; }
  function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
@@ -8114,7 +8085,7 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
   hero.innerHTML = '<img class="hlogo" alt=""><div><span class="hcat"></span><div class="hfrase"></div></div>'+
    '<div class="hpie"><button id="ppcFrOtra" type="button">↻ Otra frase</button>'+
    CATS.map(function(k){ return '<button type="button" data-fcat="'+k+'">'+k+'</button>'; }).join('')+
-   '<button id="ppcFrMia" type="button">＋ Mi frase</button><label>🖼 Imagen<input type="file" id="ppcHeroImg" accept="image/*" style="display:none"></label><button id="ppcHeroImgQ" type="button" title="Quitar imagen">✕</button></div>';
+   '<label>🖼 Imagen<input type="file" id="ppcHeroImg" accept="image/*" style="display:none"></label><button id="ppcHeroImgQ" type="button" title="Quitar imagen">✕</button></div>';
   hh.insertAdjacentElement('afterend', hero);
   var t = v.querySelector('.htit'); if(t) t.textContent = saludo() + ', Paul';
   pintarHero(); return true;
@@ -8158,7 +8129,6 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
   var t = e.target; if(!t || !t.closest) return;
   if(t.id==='ppcFrOtra'){ offset++; catFija = catFija; pintarHero(); return; }
   var c = t.closest('[data-fcat]'); if(c){ catFija = (catFija===c.dataset.fcat) ? '' : c.dataset.fcat; offset = 0; document.querySelectorAll('#ppcHero [data-fcat]').forEach(function(b){ b.style.borderColor = b.dataset.fcat===catFija ? 'var(--gold)' : ''; }); pintarHero(); return; }
-  if(t.id==='ppcFrMia'){ var x = prompt('Escribe tu frase (se mezclará en la rotación):'); if(x && x.trim()){ var l = propias(); l.push(x.trim().slice(0,240)); ls(KP, JSON.stringify(l)); catFija = ''; offset = 0; pintarHero(); try{ toast('Frase guardada ✓'); }catch(er){} } return; }
   if(t.id==='ppcHeroImgQ'){ ls(KI, null); pintarHero(); return; }
  });
  document.addEventListener('change', function(e){
@@ -8172,6 +8142,10 @@ body:not([data-tab="mas"]) #vistaInicio .ppc-g-mas{display:none!important}
    pintarHero(); }; im.src = r.result; };
   r.readAsDataURL(f);
  });
+ try{ new MutationObserver(function(){
+   var t = document.body.getAttribute('data-tab'), c = window.innerWidth < 1180 ? (t==='negocio' ? 'Educación financiera' : t==='mas' ? 'Versículo' : '') : '';
+   if(c !== tabCat){ tabCat = c; offset++; pintarHero(); }
+ }).observe(document.body, {attributes:true, attributeFilter:['data-tab']}); }catch(e){}
  window.addEventListener('resize', ajustar);
  var n = 0, iv = setInterval(function(){ n++; var ok = montar(); armarLateral(); ajustar(); if(document.getElementById('ppcLateral') && ok && n > 6 || n > 40) clearInterval(iv); }, 500);
 })();
