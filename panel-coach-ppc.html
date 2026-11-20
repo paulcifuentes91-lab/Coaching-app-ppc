@@ -1983,9 +1983,9 @@ function msgWhatsApp(a, tipo){
   case "chequeo":
    if(a.chk && dias!==null && dias>=0){
     const cuando = dias===0 ? "hoy" : dias===1 ? "mañana" : dias<=7 ? `en ${dias} días` : `el ${fechaBonita(a.chk)}`;
-    txt = `Hola ${nom}, te recuerdo que tienes chequeo ${cuando}. Cuando puedas mándame peso y fotos.`;
+    txt = `Hola ${nom}, ¿cómo estás? Te recuerdo que tienes chequeo ${cuando}.`;
    } else {
-    txt = `Hola ${nom}, cuando puedas mándame peso y fotos para tu chequeo.`;
+    txt = `Hola ${nom}, ¿cómo estás? Te recuerdo que tienes chequeo pendiente. Cuando puedas mándame peso y fotos.`;
    }
    break;
   case "plan":
