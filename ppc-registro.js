@@ -618,3 +618,146 @@
  });
  window.ppcRegistroMacros = {render: renderRegistro, get log(){ return foodLog; }, get agua(){ return aguaLog; }, get act(){ return actLog; }};
 })();
+
+/* ── PPC · Sesiones presenciales (descuento de sesiones 1 a 1) · v1 ──
+   Se activa solo en las apps de las atletas con plan presencial. Los datos viven en
+   athletes/<id>.sesiones: { activo, pinHash, registro: { <id>: {d,q,n,k,ts,v?} } }
+   q > 0 = sesiones agregadas (paquete) · q < 0 = sesión realizada (descuento). */
+(function(){
+ try{
+  if(typeof athleteRef==='undefined' || typeof ATHLETE_ID==='undefined') return;
+  var PRESENCIALES = ['rosa-perez-julio-2026','maria-jose-amezaga-julio-2026','magdalena-pinto-julio-2026'];
+  var D = {activo:false, pinHash:'', registro:{}}, desbloqueado = 0, tTimer = null, forzado = PRESENCIALES.indexOf(ATHLETE_ID)>=0;
+  function esc(t){ return String(t==null?'':t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function hoy(){ var d = new Date(); return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2); }
+  function fechaCorta(s){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s||''); if(!m) return s||''; var dias = ['dom','lun','mar','mié','jue','vie','sáb'], dt = new Date(+m[1], +m[2]-1, +m[3]); return dias[dt.getDay()]+' '+m[3]+'-'+m[2]+'-'+m[1].slice(2); }
+  function toast(m, err){ try{ showToast(m, !!err); }catch(e){} }
+  function lista(){ return Object.keys(D.registro||{}).map(function(k){ var r = D.registro[k]; return {id:k, d:r.d||'', q:+r.q||0, n:r.n||'', k:r.k||'', ts:+r.ts||0, v:r.v||''}; })
+    .sort(function(a,b){ return a.d===b.d ? a.ts-b.ts : (a.d<b.d?-1:1); }); }
+  function saldo(){ return lista().reduce(function(s,r){ return s+r.q; }, 0); }
+  function ultimoPaquete(){ var l = lista().filter(function(r){ return r.q>0; }); return l.length ? l[l.length-1] : null; }
+  function usadasDesdePaquete(){ var p = ultimoPaquete(); if(!p) return 0; return lista().filter(function(r){ return r.q<0 && (r.d>p.d || (r.d===p.d && r.ts>=p.ts-1)); }).length; }
+  function sha(t){
+   try{ return crypto.subtle.digest('SHA-256', new TextEncoder().encode('ppc|'+t)).then(function(b){ return Array.prototype.map.call(new Uint8Array(b), function(x){ return ('0'+x.toString(16)).slice(-2); }).join(''); }); }
+   catch(e){ return Promise.resolve('p:'+t); }
+  }
+  function guardar(obj, msg){
+   return athleteRef.set({sesiones: obj, updatedAt: firebase.firestore.FieldValue.serverTimestamp()}, {merge:true})
+    .then(function(){ if(msg) toast(msg); }).catch(function(e){ toast('ERROR: '+e.message, true); });
+  }
+  function nuevoId(){ return 's'+Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
+  function agregar(q, fecha, nota, extra){
+   var id = nuevoId(), r = {d:fecha||hoy(), q:q, n:nota||'', k:q<0?'uso':'paquete', ts:Date.now()};
+   if(extra && extra.v) r.v = extra.v;
+   var reg = {}; reg[id] = r; var o = {activo:true, registro:reg};
+   return guardar(o, q<0 ? 'Sesión descontada ✓' : 'Paquete agregado ✓');
+  }
+  function borrar(id){
+   var reg = {}; reg[id] = firebase.firestore.FieldValue.delete();
+   return guardar({registro:reg}, 'Registro eliminado');
+  }
+
+  /* ── Interfaz ── */
+  function css(){
+   if(document.getElementById('sesCss')) return;
+   var st = document.createElement('style'); st.id = 'sesCss';
+   st.textContent = '#ppcSesCard{margin:14px auto 0;max-width:420px;border:1px solid var(--border,#2a2f36);background:var(--surface,#14171B);border-radius:16px;padding:16px}'+
+   '#ppcSesCard .sTit{font-family:var(--font-mono,monospace);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted,#9BA1AA);display:flex;justify-content:space-between;align-items:center}'+
+   '#ppcSesCard .sBig{font-size:44px;font-weight:800;line-height:1;margin:10px 0 2px;color:var(--accent,#E0C23D)}'+
+   '#ppcSesCard .sSub{font-size:13px;color:var(--text-muted,#9BA1AA)}'+
+   '#ppcSesCard .sDots{display:flex;flex-wrap:wrap;gap:5px;margin:12px 0 4px}'+
+   '#ppcSesCard .sDot{width:18px;height:18px;border-radius:6px;background:var(--accent,#E0C23D)}#ppcSesCard .sDot.u{background:transparent;border:1.5px solid var(--border,#3a4048);opacity:.8}'+
+   '#ppcSesCard .sAl{margin-top:10px;padding:8px 10px;border-radius:10px;font-size:12.5px;font-weight:600}'+
+   '#ppcSesCard .sRow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border,#23282f);font-size:13px}'+
+   '#ppcSesCard .sRow:last-child{border-bottom:0}#ppcSesCard .sRow small{color:var(--text-muted,#9BA1AA)}'+
+   '#ppcSesCard button.sBtn{background:var(--surface-2,#1c1f24);color:var(--text,#e8eaed);border:1px solid var(--border,#3a4048);border-radius:10px;padding:10px 12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}'+
+   '#ppcSesCard button.sBtn.p{background:var(--accent,#E0C23D);color:#111;border-color:var(--accent,#E0C23D)}'+
+   '#ppcSesCard button.sBtn.x{padding:4px 9px;color:#E05B5B}'+
+   '#ppcSesCard input{box-sizing:border-box;width:100%;background:var(--surface-2,#1c1f24);color:var(--text,#e8eaed);border:1px solid var(--border,#3a4048);border-radius:10px;padding:10px;font-size:14px;font-family:inherit}'+
+   '#ppcSesCard details summary{cursor:pointer;font-size:12.5px;color:var(--text-muted,#9BA1AA);margin-top:12px}'+
+   '#ppcSesCard .sCoach{margin-top:12px;padding:12px;border-radius:12px;background:var(--surface-2,#1c1f24);border:1px dashed var(--accent,#E0C23D)}'+
+   '#ppcSesCard label{display:block;font-size:11.5px;color:var(--text-muted,#9BA1AA);margin:8px 0 3px}';
+   document.head.appendChild(st);
+  }
+  function montaje(){
+   var c = document.getElementById('ppcSesCard');
+   if(c) return c;
+   var host = document.getElementById('feelView') || document.querySelector('.wrap');
+   if(!host) return null;
+   c = document.createElement('div'); c.id = 'ppcSesCard';
+   host.insertBefore(c, host.firstChild);
+   return c;
+  }
+  function render(){
+   if(!(D.activo || forzado)) { var e0 = document.getElementById('ppcSesCard'); if(e0) e0.remove(); return; }
+   css(); var c = montaje(); if(!c) return;
+   var S = saldo(), P = ultimoPaquete(), lib = Date.now() < desbloqueado, L = lista(), usos = L.filter(function(r){ return r.q<0; });
+   var tot = P ? P.q : 0, usadas = P ? usadasDesdePaquete() : 0, restan = Math.max(0, S);
+   var h = '<div class="sTit"><span>🏋️ Mis sesiones presenciales</span><span>'+(lib?'🔓 coach':'')+'</span></div>';
+   if(!L.length){
+    h += '<div class="sBig" style="font-size:28px">Sin paquete cargado</div><div class="sSub">Tu coach cargará tu paquete de sesiones y aquí verás cuántas te quedan.</div>';
+   } else {
+    h += '<div class="sBig">'+(S<0?'−'+Math.abs(S):S)+'</div><div class="sSub">'+(S===1?'sesión disponible':(S<0?'sesiones adeudadas':'sesiones disponibles'))+(P?' · de un paquete de '+tot+(usadas?' · '+usadas+' realizadas':''):'')+'</div>';
+    if(P && tot>0 && tot<=40){ h += '<div class="sDots">'; for(var i=0;i<tot;i++) h += '<div class="sDot'+(i<usadas?' u':'')+'"></div>'; h += '</div>'; }
+    if(P && P.v){ var dv = new Date(P.v+'T23:59:59'), dd = Math.ceil((dv-Date.now())/864e5); h += '<div class="sSub">Vigencia del paquete: '+fechaCorta(P.v)+(dd<0?' · <b style="color:#E05B5B">vencido</b>':(dd<=14?' · <b style="color:#E0A03D">quedan '+dd+' días</b>':''))+'</div>'; }
+    if(S<=0) h += '<div class="sAl" style="background:rgba(224,91,91,.14);color:#E05B5B">'+(S<0?'Tienes sesiones por regularizar.':'Ya usaste todas tus sesiones.')+' Habla con tu coach para renovar.</div>';
+    else if(S<=2) h += '<div class="sAl" style="background:rgba(224,160,61,.14);color:#E0A03D">Te quedan pocas sesiones: ve renovando tu paquete con tu coach.</div>';
+    h += '<details><summary>Historial ('+usos.length+(usos.length===1?' sesión realizada':' sesiones realizadas')+')</summary><div style="margin-top:6px">'+
+      L.slice().reverse().map(function(r){
+       return '<div class="sRow"><div><b>'+(r.q<0?'Sesión realizada':'+'+r.q+' sesión'+(r.q===1?'':'es')+' agregadas')+'</b> <small>· '+fechaCorta(r.d)+(r.n?' · '+esc(r.n):'')+'</small></div>'+(lib?'<button class="sBtn x" data-ses-del="'+r.id+'">✕</button>':'')+'</div>';
+      }).join('')+'</div></details>';
+   }
+   if(lib){
+    h += '<div class="sCoach"><div style="font-weight:800;margin-bottom:6px">Panel del coach</div>'+
+     '<label>Fecha de la sesión</label><input type="date" id="sesF" value="'+hoy()+'">'+
+     '<label>Nota (opcional)</label><input id="sesN" placeholder="Ej: piernas, evaluación, reposición…">'+
+     '<div style="display:flex;gap:8px;margin-top:10px"><button class="sBtn p" id="sesDesc" style="flex:1">− Descontar 1 sesión</button></div>'+
+     '<div style="border-top:1px solid var(--border,#2a2f36);margin:14px 0 4px"></div>'+
+     '<label>Agregar paquete · cantidad de sesiones</label><input id="sesQ" inputmode="numeric" placeholder="Ej: 8">'+
+     '<label>Vigencia (opcional)</label><input type="date" id="sesV">'+
+     '<label>Nota (pago, plan…)</label><input id="sesPN" placeholder="Ej: plan 8 sesiones noviembre">'+
+     '<div style="display:flex;gap:8px;margin-top:10px"><button class="sBtn" id="sesAdd" style="flex:1">+ Agregar paquete</button><button class="sBtn" id="sesLock">🔒 Bloquear</button></div></div>';
+   } else {
+    h += '<div style="margin-top:12px;text-align:right"><button class="sBtn" id="sesUnlock" style="font-size:12px;padding:6px 10px;opacity:.75">🔑 Modo coach</button></div>';
+   }
+   c.innerHTML = h;
+   var q = function(id){ return c.querySelector('#'+id); };
+   if(q('sesUnlock')) q('sesUnlock').onclick = pedirPin;
+   if(q('sesLock')) q('sesLock').onclick = function(){ desbloqueado = 0; render(); };
+   if(q('sesDesc')) q('sesDesc').onclick = function(){
+     var f = q('sesF').value || hoy(), n = q('sesN').value.trim();
+     if(!confirm('¿Descontar 1 sesión del '+fechaCorta(f)+'?')) return;
+     desbloqueado = Date.now()+5*60*1000; agregar(-1, f, n);
+   };
+   if(q('sesAdd')) q('sesAdd').onclick = function(){
+     var n = parseInt(q('sesQ').value, 10); if(!(n>0 && n<=200)){ toast('Ingresa una cantidad válida', true); return; }
+     if(!confirm('¿Agregar un paquete de '+n+' sesiones?')) return;
+     desbloqueado = Date.now()+5*60*1000; agregar(n, hoy(), q('sesPN').value.trim(), {v:q('sesV').value||''});
+   };
+   Array.prototype.forEach.call(c.querySelectorAll('[data-ses-del]'), function(b){ b.onclick = function(){ if(confirm('¿Eliminar este registro?')) borrar(b.dataset.sesDel); }; });
+  }
+  function pedirPin(){
+   if(!D.pinHash){
+    var p1 = prompt('Primera vez: crea un PIN de coach (4 a 8 dígitos). Con él se descuentan sesiones y nadie más puede editarlas.');
+    if(p1===null) return;
+    if(!/^\d{4,8}$/.test(p1.trim())){ toast('El PIN debe tener entre 4 y 8 dígitos', true); return; }
+    sha(p1.trim()).then(function(hh){ return guardar({activo:true, pinHash:hh}, 'PIN creado ✓').then(function(){ desbloqueado = Date.now()+5*60*1000; render(); }); });
+    return;
+   }
+   var p = prompt('PIN de coach:'); if(p===null) return;
+   sha(p.trim()).then(function(hh){
+    if(hh===D.pinHash){ desbloqueado = Date.now()+5*60*1000; render(); clearTimeout(tTimer); tTimer = setTimeout(function(){ desbloqueado = 0; render(); }, 5*60*1000+500); }
+    else toast('PIN incorrecto', true);
+   });
+  }
+  athleteRef.onSnapshot(function(doc){
+   if(!doc.exists) return;
+   var s = (doc.data()||{}).sesiones || {};
+   D = {activo: !!s.activo, pinHash: s.pinHash||'', registro: s.registro||{}};
+   render();
+  });
+  /* si la vista se reconstruye, vuelve a montar la tarjeta */
+  var n = 0, iv = setInterval(function(){ n++; if((D.activo||forzado) && !document.getElementById('ppcSesCard')) render(); if(n>60) clearInterval(iv); }, 1000);
+  window.ppcSesiones = {saldo: saldo, lista: lista};
+ }catch(e){ try{ console.warn('ppc-sesiones', e); }catch(x){} }
+})();
