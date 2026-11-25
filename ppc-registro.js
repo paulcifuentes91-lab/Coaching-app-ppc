@@ -679,18 +679,57 @@
    '#ppcSesCard label{display:block;font-size:11.5px;color:var(--text-muted,#9BA1AA);margin:8px 0 3px}';
    document.head.appendChild(st);
   }
+  var enSes = false;
+  function vistaSes(){
+   var v = document.getElementById('ppcSesView');
+   if(v) return v;
+   var ref = document.getElementById('progressView') || document.getElementById('nutritionView'); if(!ref || !ref.parentNode) return null;
+   v = document.createElement('div'); v.id = 'ppcSesView'; v.style.display = 'none';
+   ref.parentNode.insertBefore(v, ref.nextSibling);
+   return v;
+  }
+  function aplicarVista(){
+   var v = vistaSes(); if(!v) return;
+   var ids = ['feelView','trainingView','nutritionView','progressView'], rb = document.getElementById('resetBtn');
+   if(enSes && (D.activo || forzado)){
+    ids.forEach(function(i){ var e = document.getElementById(i); if(e) e.style.display = 'none'; });
+    v.style.display = ''; if(rb) rb.style.display = 'none';
+   } else { v.style.display = 'none'; if(rb) rb.style.display = ''; enSes = false; }
+   var b = document.getElementById('ppcSesBtn');
+   if(b){ b.classList.toggle('active', enSes); }
+   Array.prototype.forEach.call(document.querySelectorAll('#viewSwitch .view-btn[data-view]'), function(x){ if(enSes) x.classList.remove('active'); });
+  }
+  function botonSes(){
+   if(!(D.activo || forzado)) return;
+   var sw = document.getElementById('viewSwitch'); if(!sw) return;
+   var b = document.getElementById('ppcSesBtn');
+   if(!b){
+    b = document.createElement('button'); b.id = 'ppcSesBtn'; b.className = 'view-btn'; b.style.flex = '1 1 100%'; b.style.position = 'relative'; b.style.overflow = 'hidden';
+    b.innerHTML = '<span class="vb-bg">🗓</span><div class="vb-label">SESIONES</div><div class="vb-spec" id="ppcSesSpec">Presenciales · saldo</div>';
+    b.addEventListener('click', function(){ enSes = true; try{ renderAll(); }catch(e){ aplicarVista(); } window.scrollTo({top:0}); });
+    sw.appendChild(b);
+   }
+   var sp = document.getElementById('ppcSesSpec'); if(sp){ var S = saldo(); sp.textContent = lista().length ? (S<0?'Debes '+Math.abs(S):S)+(Math.abs(S)===1?' sesión':' sesiones')+(S<0?'':' disponibles') : 'Presenciales · saldo'; }
+  }
+  function enganchar(){
+   if(window.__ppcSesHook || typeof window.renderAll!=='function') return; window.__ppcSesHook = 1;
+   var orig = window.renderAll;
+   window.renderAll = function(){ var r = orig.apply(this, arguments); try{ botonSes(); aplicarVista(); }catch(e){} return r; };
+   var sw = document.getElementById('viewSwitch');
+   if(sw) sw.addEventListener('click', function(ev){ var b = ev.target.closest && ev.target.closest('.view-btn'); if(b && b.id!=='ppcSesBtn') enSes = false; }, true);
+  }
   function montaje(){
    var c = document.getElementById('ppcSesCard');
    if(c) return c;
-   var host = document.getElementById('feelView') || document.querySelector('.wrap');
-   if(!host) return null;
+   var vista = vistaSes();
+   if(!vista) return null;
    c = document.createElement('div'); c.id = 'ppcSesCard';
-   host.insertBefore(c, host.firstChild);
+   vista.appendChild(c);
    return c;
   }
   function render(){
-   if(!(D.activo || forzado)) { var e0 = document.getElementById('ppcSesCard'); if(e0) e0.remove(); return; }
-   css(); var c = montaje(); if(!c) return;
+   if(!(D.activo || forzado)) { var e0 = document.getElementById('ppcSesCard'); if(e0) e0.remove(); var b0 = document.getElementById('ppcSesBtn'); if(b0) b0.remove(); enSes = false; try{ aplicarVista(); }catch(e){} return; }
+   css(); enganchar(); var c = montaje(); if(!c) return; botonSes(); aplicarVista();
    var S = saldo(), P = ultimoPaquete(), lib = Date.now() < desbloqueado, L = lista(), usos = L.filter(function(r){ return r.q<0; });
    var tot = P ? P.q : 0, usadas = P ? usadasDesdePaquete() : 0, restan = Math.max(0, S);
    var h = '<div class="sTit"><span>🏋️ Mis sesiones presenciales</span><span>'+(lib?'🔓 coach':'')+'</span></div>';
